@@ -1,9 +1,22 @@
 import { createServer } from "./app";
+import { env } from "./config/env";
+import { prisma } from "./database/prisma";
+import { logger } from "./utils/logger";
 
-const PORT = process.env.PORT || 3000;
+const app = createServer();
 
-const server = createServer();
-
-server.listen(PORT, () => {
-  console.log(`Backend running on port ${PORT}`);
+const server = app.listen(env.BACKEND_PORT, () => {
+  logger.info(`Backend running on port ${env.BACKEND_PORT}`);
 });
+
+const shutdown = async () => {
+  logger.info("Shutting down backend server");
+
+  server.close(async () => {
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
