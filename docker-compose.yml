@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ramofinance-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ramofinance
+      POSTGRES_PASSWORD: ramofinance
+      POSTGRES_DB: ramofinance_alerts
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ramofinance -d ramofinance_alerts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    container_name: ramofinance-backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      BACKEND_PORT: 3000
+      DATABASE_URL: postgresql://ramofinance:ramofinance@postgres:5432/ramofinance_alerts
+      TELEGRAM_BOT_USERNAME: ramofinancebot
+      WS_PORT: 4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    container_name: ramofinance-frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
