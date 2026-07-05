@@ -7,32 +7,126 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum MarketType {
+  FOREX
+  CRYPTO
+  STOCK
+  INDEX
+  COMMODITY
+}
+
+enum AlertDirection {
+  ABOVE
+  BELOW
+  CROSSING_UP
+  CROSSING_DOWN
+}
+
+enum AlertStatus {
+  ACTIVE
+  TRIGGERED
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  EXPIRED
+  CANCELLED
+}
+
 model User {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  telegramId   String?  @unique
+  username     String?
+  firstName    String?
+  lastName     String?
+  languageCode String?
+  role         UserRole @default(USER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  alerts        Alert[]
+  subscriptions Subscription[]
+
+  @@index([telegramId])
+  @@index([username])
+}
+
+model Market {
+  id         String     @id @default(uuid())
+  symbol     String     @unique
+  name       String?
+  type       MarketType
+  baseAsset  String?
+  quoteAsset String?
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  alerts Alert[]
+
+  @@index([symbol])
+  @@index([type])
+}
+
+model Alert {
+  id             String         @id @default(uuid())
+  userId         String
+  marketId       String
+  title          String?
+  targetPrice    Decimal
+  direction      AlertDirection
+  status         AlertStatus    @default(ACTIVE)
+  triggeredAt    DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([marketId])
+  @@index([status])
+  @@index([direction])
 }
 
 model Line {
   id        String   @id @default(uuid())
+  userId    String?
+  marketId  String?
+  label     String?
+  price     Decimal
+  color     String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
 
-model Alert {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Market {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@index([userId])
+  @@index([marketId])
 }
 
 model Subscription {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String             @id @default(uuid())
+  userId    String
+  plan      String
+  status    SubscriptionStatus @default(TRIAL)
+  startsAt  DateTime           @default(now())
+  endsAt    DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
 }
