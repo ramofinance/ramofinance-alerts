@@ -6,6 +6,7 @@ import { errorHandler } from "./middleware/error-handler";
 import { notFoundHandler } from "./middleware/not-found";
 import { alertRoutes } from "./modules/alerts/alert.routes";
 import { marketRoutes } from "./modules/markets/market.routes";
+import { subscriptionRoutes } from "./modules/subscriptions/subscription.routes";
 import { userRoutes } from "./modules/users/user.routes";
 import { healthRoutes } from "./routes/health.routes";
 
@@ -20,6 +21,7 @@ export const createServer = () => {
   app.use(healthRoutes);
   app.use(alertRoutes);
   app.use(marketRoutes);
+  app.use(subscriptionRoutes);
   app.use(userRoutes);
 
   app.use(notFoundHandler);
