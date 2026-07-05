@@ -4,7 +4,8 @@ import express from "express";
 import helmet from "helmet";
 import { errorHandler } from "./middleware/error-handler";
 import { notFoundHandler } from "./middleware/not-found";
-import { healthRoutes } from "./routes/health.routes"; import { alertRoutes } from "./modules/alerts/alert.routes";
+import { alertRoutes } from "./modules/alerts/alert.routes";
+import { healthRoutes } from "./routes/health.routes";
 
 export const createServer = () => {
   const app = express();
@@ -14,7 +15,8 @@ export const createServer = () => {
   app.use(compression());
   app.use(express.json());
 
-  app.use(healthRoutes); app.use(alertRoutes);
+  app.use(healthRoutes);
+  app.use(alertRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
