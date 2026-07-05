@@ -1,6 +1,7 @@
 import { Server as HttpServer } from "http";
 import { WebSocket, WebSocketServer } from "ws";
 import { logger } from "../utils/logger";
+import { setWebSocketServer } from "./websocket-broadcast";
 import {
   createWebSocketEvent,
   serializeWebSocketEvent,
@@ -19,6 +20,8 @@ export const setupWebSocketServer = (server: HttpServer) => {
     server,
     path: WS_PATH
   });
+
+  setWebSocketServer(wss);
 
   wss.on("connection", (socket: AliveWebSocket, request) => {
     socket.isAlive = true;
