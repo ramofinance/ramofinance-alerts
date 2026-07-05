@@ -27,6 +27,27 @@ export const alertService = {
       throw new AppError("targetPrice must be a positive number", 400);
     }
 
+    const [user, market] = await Promise.all([
+      alertRepository.findUserById(input.userId),
+      alertRepository.findMarketById(input.marketId)
+    ]);
+
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    if (!market) {
+      throw new AppError("Market not found", 404);
+    }
+
+    if (!user.isActive) {
+      throw new AppError("User is inactive", 400);
+    }
+
+    if (!market.isActive) {
+      throw new AppError("Market is inactive", 400);
+    }
+
     const expiresAt = input.expiresAt ? new Date(input.expiresAt) : undefined;
 
     if (expiresAt && Number.isNaN(expiresAt.getTime())) {

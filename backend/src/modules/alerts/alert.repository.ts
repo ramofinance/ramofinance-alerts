@@ -18,7 +18,27 @@ export type ListAlertsFilters = {
   limit: number;
 };
 
+const buildAlertWhere = (
+  filters: Omit<ListAlertsFilters, "page" | "limit">
+): Prisma.AlertWhereInput => ({
+  userId: filters.userId,
+  marketId: filters.marketId,
+  status: filters.status
+});
+
 export const alertRepository = {
+  findUserById(id: string) {
+    return prisma.user.findUnique({
+      where: { id }
+    });
+  },
+
+  findMarketById(id: string) {
+    return prisma.market.findUnique({
+      where: { id }
+    });
+  },
+
   create(data: CreateAlertData) {
     return prisma.alert.create({
       data: {
@@ -37,14 +57,8 @@ export const alertRepository = {
   },
 
   findMany(filters: ListAlertsFilters) {
-    const where: Prisma.AlertWhereInput = {
-      userId: filters.userId,
-      marketId: filters.marketId,
-      status: filters.status
-    };
-
     return prisma.alert.findMany({
-      where,
+      where: buildAlertWhere(filters),
       include: {
         user: true,
         market: true
@@ -58,13 +72,9 @@ export const alertRepository = {
   },
 
   count(filters: Omit<ListAlertsFilters, "page" | "limit">) {
-    const where: Prisma.AlertWhereInput = {
-      userId: filters.userId,
-      marketId: filters.marketId,
-      status: filters.status
-    };
-
-    return prisma.alert.count({ where });
+    return prisma.alert.count({
+      where: buildAlertWhere(filters)
+    });
   },
 
   findById(id: string) {
