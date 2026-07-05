@@ -21,6 +21,17 @@ const listAlertsSchema = z.object({
   limit: z.coerce.number().int().positive().optional()
 });
 
+const updateAlertSchema = z
+  .object({
+    title: z.string().trim().min(1).max(120).nullable().optional(),
+    targetPrice: z.string().trim().min(1).optional(),
+    direction: z.nativeEnum(AlertDirection).optional(),
+    expiresAt: z.string().datetime().nullable().optional()
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided"
+  });
+
 const updateAlertStatusSchema = z.object({
   status: z.nativeEnum(AlertStatus)
 });
@@ -66,6 +77,20 @@ export const listAlertsController: RequestHandler = async (req, res, next) => {
 export const getAlertByIdController: RequestHandler = async (req, res, next) => {
   try {
     const alert = await alertService.getAlertById(req.params.id);
+
+    res.json({
+      success: true,
+      data: alert
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateAlertController: RequestHandler = async (req, res, next) => {
+  try {
+    const input = parseOrThrow(updateAlertSchema, req.body);
+    const alert = await alertService.updateAlert(req.params.id, input);
 
     res.json({
       success: true,

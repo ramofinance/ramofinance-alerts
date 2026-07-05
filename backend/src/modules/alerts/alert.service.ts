@@ -19,6 +19,13 @@ type ListAlertsInput = {
   limit?: number;
 };
 
+type UpdateAlertInput = {
+  title?: string | null;
+  targetPrice?: string;
+  direction?: AlertDirection;
+  expiresAt?: string | null;
+};
+
 export const alertService = {
   async createAlert(input: CreateAlertInput) {
     const targetPrice = Number(input.targetPrice);
@@ -102,6 +109,36 @@ export const alertService = {
     }
 
     return alert;
+  },
+
+  async updateAlert(id: string, input: UpdateAlertInput) {
+    await this.getAlertById(id);
+
+    if (input.targetPrice !== undefined) {
+      const targetPrice = Number(input.targetPrice);
+
+      if (!Number.isFinite(targetPrice) || targetPrice <= 0) {
+        throw new AppError("targetPrice must be a positive number", 400);
+      }
+    }
+
+    const expiresAt =
+      input.expiresAt === undefined
+        ? undefined
+        : input.expiresAt === null
+          ? null
+          : new Date(input.expiresAt);
+
+    if (expiresAt instanceof Date && Number.isNaN(expiresAt.getTime())) {
+      throw new AppError("expiresAt must be a valid date", 400);
+    }
+
+    return alertRepository.update(id, {
+      title: input.title,
+      targetPrice: input.targetPrice,
+      direction: input.direction,
+      expiresAt
+    });
   },
 
   async updateAlertStatus(id: string, status: AlertStatus) {

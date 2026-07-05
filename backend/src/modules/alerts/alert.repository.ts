@@ -18,6 +18,13 @@ export type ListAlertsFilters = {
   limit: number;
 };
 
+export type UpdateAlertData = {
+  title?: string | null;
+  targetPrice?: string;
+  direction?: AlertDirection;
+  expiresAt?: Date | null;
+};
+
 const buildAlertWhere = (
   filters: Omit<ListAlertsFilters, "page" | "limit">
 ): Prisma.AlertWhereInput => ({
@@ -80,6 +87,17 @@ export const alertRepository = {
   findById(id: string) {
     return prisma.alert.findUnique({
       where: { id },
+      include: {
+        user: true,
+        market: true
+      }
+    });
+  },
+
+  update(id: string, data: UpdateAlertData) {
+    return prisma.alert.update({
+      where: { id },
+      data,
       include: {
         user: true,
         market: true
