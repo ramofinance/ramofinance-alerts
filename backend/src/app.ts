@@ -5,6 +5,7 @@ import helmet from "helmet";
 import { errorHandler } from "./middleware/error-handler";
 import { notFoundHandler } from "./middleware/not-found";
 import { alertRoutes } from "./modules/alerts/alert.routes";
+import { marketRoutes } from "./modules/markets/market.routes";
 import { healthRoutes } from "./routes/health.routes";
 
 export const createServer = () => {
@@ -17,6 +18,7 @@ export const createServer = () => {
 
   app.use(healthRoutes);
   app.use(alertRoutes);
+  app.use(marketRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
