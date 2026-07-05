@@ -8,5 +8,11 @@
   "scripts": {
     "dev": "npm run dev -w backend & npm run dev -w frontend",
     "build": "npm run build -w backend && npm run build -w frontend"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0"
   }
 }
