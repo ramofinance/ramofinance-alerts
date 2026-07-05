@@ -1,6 +1,11 @@
 import { Server as HttpServer } from "http";
 import { WebSocket, WebSocketServer } from "ws";
 import { logger } from "../utils/logger";
+import {
+  createWebSocketEvent,
+  serializeWebSocketEvent,
+  websocketEventTypes
+} from "./websocket-events";
 
 type AliveWebSocket = WebSocket & {
   isAlive?: boolean;
@@ -27,12 +32,11 @@ export const setupWebSocketServer = (server: HttpServer) => {
     );
 
     socket.send(
-      JSON.stringify({
-        type: "connection.ready",
-        payload: {
+      serializeWebSocketEvent(
+        createWebSocketEvent(websocketEventTypes.CONNECTION_READY, {
           message: "RAMOFINANCE Alerts WebSocket connected"
-        }
-      })
+        })
+      )
     );
 
     socket.on("pong", () => {
@@ -40,20 +44,21 @@ export const setupWebSocketServer = (server: HttpServer) => {
     });
 
     socket.on("message", (message) => {
+      const messageText = message.toString();
+
       logger.debug(
         {
-          message: message.toString()
+          message: messageText
         },
         "WebSocket message received"
       );
 
       socket.send(
-        JSON.stringify({
-          type: "message.received",
-          payload: {
-            message: message.toString()
-          }
-        })
+        serializeWebSocketEvent(
+          createWebSocketEvent(websocketEventTypes.MESSAGE_RECEIVED, {
+            message: messageText
+          })
+        )
       );
     });
 
