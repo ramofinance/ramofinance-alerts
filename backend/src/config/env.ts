@@ -13,6 +13,7 @@ const envSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_BOT_USERNAME: z.string().default("ramofinancebot"),
   TELEGRAM_WEBAPP_URL: z.string().optional(),
+  TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
 
   JWT_SECRET: z.string().optional(),
 

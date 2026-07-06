@@ -9,6 +9,7 @@ import { lineRoutes } from "./modules/lines/line.routes";
 import { marketRoutes } from "./modules/markets/market.routes";
 import { priceEngineRoutes } from "./modules/price-engine/price-engine.routes";
 import { subscriptionRoutes } from "./modules/subscriptions/subscription.routes";
+import { telegramRoutes } from "./telegram/telegram.routes";
 import { userRoutes } from "./modules/users/user.routes";
 import { healthRoutes } from "./routes/health.routes";
 
@@ -27,6 +28,7 @@ export const createServer = () => {
   app.use(priceEngineRoutes);
   app.use(subscriptionRoutes);
   app.use(userRoutes);
+  app.use(telegramRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
