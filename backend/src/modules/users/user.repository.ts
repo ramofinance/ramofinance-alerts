@@ -1,4 +1,4 @@
-import { Prisma, UserRole } from "@prisma/client";
+import { PreferredLanguage, Prisma, UserRole } from "@prisma/client";
 import { prisma } from "../../database/prisma";
 
 export type ListUsersFilters = {
@@ -15,6 +15,7 @@ export type UpsertUserData = {
   firstName?: string;
   lastName?: string;
   languageCode?: string;
+  preferredLanguage?: PreferredLanguage | null;
 };
 
 const buildUserWhere = (
@@ -65,14 +66,16 @@ export const userRepository = {
         username: data.username,
         firstName: data.firstName,
         lastName: data.lastName,
-        languageCode: data.languageCode
+        languageCode: data.languageCode,
+        preferredLanguage: data.preferredLanguage
       },
       create: {
         telegramId: data.telegramId,
         username: data.username,
         firstName: data.firstName,
         lastName: data.lastName,
-        languageCode: data.languageCode
+        languageCode: data.languageCode,
+        preferredLanguage: data.preferredLanguage
       }
     });
   },
@@ -81,6 +84,13 @@ export const userRepository = {
     return prisma.user.update({
       where: { id },
       data: { isActive }
+    });
+  },
+
+  setPreferredLanguage(id: string, preferredLanguage: PreferredLanguage) {
+    return prisma.user.update({
+      where: { id },
+      data: { preferredLanguage }
     });
   }
 };

@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { PreferredLanguage, UserRole } from "@prisma/client";
 import { AppError } from "../../utils/app-error";
 import { userRepository } from "./user.repository";
 
@@ -16,6 +16,7 @@ type UpsertTelegramUserInput = {
   firstName?: string;
   lastName?: string;
   languageCode?: string;
+  preferredLanguage?: PreferredLanguage | null;
 };
 
 export const userService = {
@@ -66,5 +67,10 @@ export const userService = {
   async setUserActive(id: string, isActive: boolean) {
     await this.getUserById(id);
     return userRepository.setActive(id, isActive);
+  },
+
+  async setUserPreferredLanguage(id: string, preferredLanguage: PreferredLanguage) {
+    await this.getUserById(id);
+    return userRepository.setPreferredLanguage(id, preferredLanguage);
   }
 };

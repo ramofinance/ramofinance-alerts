@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { PreferredLanguage, UserRole } from "@prisma/client";
 import type { RequestHandler } from "express";
 import { z } from "zod";
 import { AppError } from "../../utils/app-error";
@@ -17,11 +17,16 @@ const upsertTelegramUserSchema = z.object({
   username: z.string().trim().min(1).optional(),
   firstName: z.string().trim().min(1).optional(),
   lastName: z.string().trim().min(1).optional(),
-  languageCode: z.string().trim().min(1).optional()
+  languageCode: z.string().trim().min(1).optional(),
+  preferredLanguage: z.nativeEnum(PreferredLanguage).nullable().optional()
 });
 
 const setUserActiveSchema = z.object({
   isActive: z.boolean()
+});
+
+const setUserPreferredLanguageSchema = z.object({
+  preferredLanguage: z.nativeEnum(PreferredLanguage)
 });
 
 const parseOrThrow = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
@@ -79,6 +84,23 @@ export const setUserActiveController: RequestHandler = async (req, res, next) =>
   try {
     const input = parseOrThrow(setUserActiveSchema, req.body);
     const user = await userService.setUserActive(req.params.id, input.isActive);
+
+    res.json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const setUserPreferredLanguageController: RequestHandler = async (req, res, next) => {
+  try {
+    const input = parseOrThrow(setUserPreferredLanguageSchema, req.body);
+    const user = await userService.setUserPreferredLanguage(
+      req.params.id,
+      input.preferredLanguage
+    );
 
     res.json({
       success: true,
