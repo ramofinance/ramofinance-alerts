@@ -1,5 +1,7 @@
 import { AlertDirection, AlertStatus } from "@prisma/client";
 import { AppError } from "../../utils/app-error";
+import { broadcastWebSocketEvent } from "../../websocket/websocket-broadcast";
+import { websocketEventTypes } from "../../websocket/websocket-events";
 import { alertRepository } from "./alert.repository";
 
 type CreateAlertInput = {
@@ -61,7 +63,7 @@ export const alertService = {
       throw new AppError("expiresAt must be a valid date", 400);
     }
 
-    return alertRepository.create({
+    const alert = await alertRepository.create({
       userId: input.userId,
       marketId: input.marketId,
       title: input.title,
@@ -69,6 +71,12 @@ export const alertService = {
       direction: input.direction,
       expiresAt
     });
+
+    broadcastWebSocketEvent(websocketEventTypes.ALERT_CREATED, {
+      alert
+    });
+
+    return alert;
   },
 
   async listAlerts(input: ListAlertsInput) {
@@ -143,7 +151,16 @@ export const alertService = {
 
   async updateAlertStatus(id: string, status: AlertStatus) {
     await this.getAlertById(id);
-    return alertRepository.updateStatus(id, status);
+
+    const alert = await alertRepository.updateStatus(id, status);
+
+    if (status === AlertStatus.TRIGGERED) {
+      broadcastWebSocketEvent(websocketEventTypes.ALERT_TRIGGERED, {
+        alert
+      });
+    }
+
+    return alert;
   },
 
   async deleteAlert(id: string) {
