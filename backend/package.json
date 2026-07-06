@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js",
-    "seed": "ts-node --transpile-only src/database/seed.ts"
+    "start": "npm run db:migrate && node dist/server.js",
+    "seed": "ts-node --transpile-only src/database/seed.ts",
+    "db:migrate": "prisma migrate deploy --schema ../database/prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
