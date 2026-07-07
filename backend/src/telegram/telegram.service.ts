@@ -58,6 +58,50 @@ const sendTelegramMessage = async (
   };
 };
 
+const answerTelegramCallbackQuery = async (
+  callbackQueryId: string,
+  text?: string
+) => {
+  if (!env.TELEGRAM_BOT_TOKEN) {
+    return {
+      sent: false,
+      reason: "TELEGRAM_BOT_TOKEN is not configured"
+    };
+  }
+
+  const response = await fetch(telegramApiUrl("answerCallbackQuery"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      callback_query_id: callbackQueryId,
+      text
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+
+    logger.error(
+      {
+        status: response.status,
+        errorText
+      },
+      "Failed to answer Telegram callback query"
+    );
+
+    return {
+      sent: false,
+      reason: errorText
+    };
+  }
+
+  return {
+    sent: true
+  };
+};
+
 const buildStartReplyMarkup = (language: PreferredLanguage) => {
   if (!env.TELEGRAM_WEBAPP_URL) {
     return undefined;
@@ -96,6 +140,74 @@ const buildLanguageReplyMarkup = () => {
 
 export const telegramService = {
   async processUpdate(update: TelegramUpdate) {
+    const callbackQuery = update.callback_query;
+
+    if (callbackQuery?.from) {
+      const telegramUser = callbackQuery.from;
+
+      const user = await userService.upsertTelegramUser({
+        telegramId: String(telegramUser.id),
+        username: telegramUser.username,
+        firstName: telegramUser.first_name,
+        lastName: telegramUser.last_name,
+        languageCode: telegramUser.language_code
+      });
+
+      const language = resolveTelegramLanguage(
+        user.preferredLanguage,
+        telegramUser.language_code
+      );
+
+      if (callbackQuery.data === "language:FA" || callbackQuery.data === "language:EN") {
+        const preferredLanguage =
+          callbackQuery.data === "language:FA"
+            ? PreferredLanguage.FA
+            : PreferredLanguage.EN;
+
+        const updatedUser = await userService.setUserPreferredLanguage(
+          user.id,
+          preferredLanguage
+        );
+
+        const callbackAnswerResult = await answerTelegramCallbackQuery(
+          callbackQuery.id,
+          telegramText.languageChangedMessage(preferredLanguage)
+        );
+
+        const sendResult = callbackQuery.message
+          ? await sendTelegramMessage(
+              callbackQuery.message.chat.id,
+              telegramText.languageChangedMessage(preferredLanguage)
+            )
+          : {
+              sent: false,
+              reason: "Callback query message is not available"
+            };
+
+        return {
+          processed: true,
+          command: "set_language_callback",
+          language: preferredLanguage,
+          user: updatedUser,
+          callbackAnswerResult,
+          sendResult
+        };
+      }
+
+      const callbackAnswerResult = await answerTelegramCallbackQuery(
+        callbackQuery.id,
+        telegramText.fallbackMessage(language)
+      );
+
+      return {
+        processed: true,
+        command: "unsupported_callback",
+        language,
+        user,
+        callbackAnswerResult
+      };
+    }
+
     const message = update.message;
 
     if (!message?.from) {
