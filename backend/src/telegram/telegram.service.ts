@@ -9,8 +9,8 @@ const telegramApiUrl = (method: string) => {
   return `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`;
 };
 
-const sendTelegramMessage = async (
-  chatId: number,
+export const sendTelegramMessage = async (
+  chatId: number | string,
   text: string,
   replyMarkup?: object
 ) => {

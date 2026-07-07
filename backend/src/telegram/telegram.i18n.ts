@@ -69,5 +69,36 @@ export const telegramText = {
     }
 
     return "Open RAMOFINANCE Alerts";
+  },
+
+  alertTriggeredMessage(
+    language: PreferredLanguage,
+    input: {
+      symbol: string;
+      direction: string;
+      targetPrice: string;
+      currentPrice: number;
+      title?: string | null;
+    }
+  ) {
+    if (language === PreferredLanguage.FA) {
+      return [
+        "🚨 هشدار فعال شد",
+        "",
+        `بازار: <b>${input.symbol}</b>`,
+        `عنوان: ${input.title ?? "بدون عنوان"}`,
+        `شرط: ${input.direction} ${input.targetPrice}`,
+        `قیمت فعلی: ${input.currentPrice}`
+      ].join("\n");
+    }
+
+    return [
+      "🚨 Alert triggered",
+      "",
+      `Market: <b>${input.symbol}</b>`,
+      `Title: ${input.title ?? "Untitled"}`,
+      `Condition: ${input.direction} ${input.targetPrice}`,
+      `Current price: ${input.currentPrice}`
+    ].join("\n");
   }
 };
