@@ -4,10 +4,12 @@ import { getMarkets } from "./api/markets";
 import { updatePrice } from "./api/prices";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
+import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, Market } from "./types/api";
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
+  const [telegramMiniApp, setTelegramMiniApp] = useState(() => initializeTelegramMiniApp());
 
   const [markets, setMarkets] = useState<Market[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -51,12 +53,20 @@ export default function App() {
   };
 
   useEffect(() => {
+    setTelegramMiniApp(initializeTelegramMiniApp());
     loadDashboardData();
   }, []);
 
   return (
     <main style={{ fontFamily: "Arial, sans-serif", padding: 24 }}>
       <h1>RAMOFINANCE Alerts</h1>
+
+      <section>
+        <h2>Telegram Mini App</h2>
+        <p>Mode: {telegramMiniApp.isTelegramMiniApp ? "Telegram" : "Browser"}</p>
+        <p>User: {telegramMiniApp.user?.username ? `@${telegramMiniApp.user.username}` : telegramMiniApp.user?.first_name ?? "Not available"}</p>
+        <p>Language: {telegramMiniApp.user?.language_code ?? "Not available"}</p>
+      </section>
 
       <section>
         <h2>Realtime Connection</h2>
