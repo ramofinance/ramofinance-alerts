@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { getAlerts } from "./api/alerts";
+import { createAlert, getAlerts } from "./api/alerts";
 import { getMarkets } from "./api/markets";
 import { updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
-import type { Alert, Market, PreferredLanguage, User } from "./types/api";
+import type { Alert, AlertDirection, Market, PreferredLanguage, User } from "./types/api";
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
@@ -19,6 +19,10 @@ export default function App() {
   const [priceUpdateResult, setPriceUpdateResult] = useState<string | null>(null);
   const [backendUser, setBackendUser] = useState<User | null>(null);
   const [appLanguage, setAppLanguage] = useState<PreferredLanguage | null>(null);
+  const [newAlertTitle, setNewAlertTitle] = useState("Mini App BTC Alert");
+  const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("80000");
+  const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
+  const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
 
   const loadDashboardData = async () => {
     try {
@@ -36,6 +40,37 @@ export default function App() {
       setError(err instanceof Error ? err.message : "Failed to load dashboard data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateAlert = async () => {
+    try {
+      setCreateAlertResult(null);
+
+      if (!backendUser) {
+        setCreateAlertResult("Telegram backend user is not connected");
+        return;
+      }
+
+      const market = markets[0];
+
+      if (!market) {
+        setCreateAlertResult("No market available");
+        return;
+      }
+
+      const alert = await createAlert({
+        userId: backendUser.id,
+        marketId: market.id,
+        title: newAlertTitle,
+        targetPrice: newAlertTargetPrice,
+        direction: newAlertDirection
+      });
+
+      setCreateAlertResult(`Alert created: ${alert.title ?? alert.id}`);
+      await loadDashboardData();
+    } catch (err) {
+      setCreateAlertResult(err instanceof Error ? err.message : "Create alert failed");
     }
   };
 
@@ -108,6 +143,44 @@ export default function App() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section>
+        <h2>Create Alert</h2>
+
+        <div>
+          <input
+            value={newAlertTitle}
+            onChange={(event) => setNewAlertTitle(event.target.value)}
+            placeholder="Alert title"
+          />
+        </div>
+
+        <div>
+          <input
+            value={newAlertTargetPrice}
+            onChange={(event) => setNewAlertTargetPrice(event.target.value)}
+            placeholder="Target price"
+          />
+        </div>
+
+        <div>
+          <select
+            value={newAlertDirection}
+            onChange={(event) => setNewAlertDirection(event.target.value as AlertDirection)}
+          >
+            <option value="ABOVE">ABOVE</option>
+            <option value="BELOW">BELOW</option>
+            <option value="CROSSING_UP">CROSSING_UP</option>
+            <option value="CROSSING_DOWN">CROSSING_DOWN</option>
+          </select>
+        </div>
+
+        <button type="button" onClick={handleCreateAlert}>
+          Create BTCUSDT Alert
+        </button>
+
+        {createAlertResult ? <p>{createAlertResult}</p> : null}
       </section>
 
       <section>

@@ -41,6 +41,8 @@ export type Alert = {
 
 export type PreferredLanguage = "FA" | "EN";
 
+export type AlertDirection = "ABOVE" | "BELOW" | "CROSSING_UP" | "CROSSING_DOWN";
+
 export type User = {
   id: string;
   telegramId: string;
