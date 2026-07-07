@@ -52,3 +52,12 @@ export const apiPost = async <TData, TBody extends object>(
 
   return parseApiResponse<TData>(response);
 };
+
+
+export const apiDelete = async <TData>(path: string): Promise<TData> => {
+  const response = await fetch(buildUrl(path), {
+    method: "DELETE"
+  });
+
+  return parseApiResponse<TData>(response);
+};

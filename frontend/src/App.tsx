@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createAlert, getAlerts } from "./api/alerts";
+import { createAlert, deleteAlert, getAlerts } from "./api/alerts";
 import { getMarkets } from "./api/markets";
 import { updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
@@ -23,6 +23,7 @@ export default function App() {
   const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("80000");
   const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
   const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
+  const [deleteAlertResult, setDeleteAlertResult] = useState<string | null>(null);
 
   const loadDashboardData = async (userId?: string) => {
     try {
@@ -71,6 +72,19 @@ export default function App() {
       await loadDashboardData(backendUser.id);
     } catch (err) {
       setCreateAlertResult(err instanceof Error ? err.message : "Create alert failed");
+    }
+  };
+
+  const handleDeleteAlert = async (alertId: string) => {
+    try {
+      setDeleteAlertResult(null);
+
+      await deleteAlert(alertId);
+
+      setDeleteAlertResult("Alert deleted");
+      await loadDashboardData(backendUser?.id);
+    } catch (err) {
+      setDeleteAlertResult(err instanceof Error ? err.message : "Delete alert failed");
     }
   };
 
@@ -204,12 +218,16 @@ export default function App() {
         </button>
 
         {priceUpdateResult ? <p>{priceUpdateResult}</p> : null}
+        {deleteAlertResult ? <p>{deleteAlertResult}</p> : null}
 
         <ul>
           {alerts.map((alert) => (
             <li key={alert.id}>
               {alert.title ?? "Untitled alert"} — {alert.market?.symbol ?? alert.marketId} —{" "}
-              {alert.direction} {alert.targetPrice} — {alert.status}
+              {alert.direction} {alert.targetPrice} — {alert.status}{" "}
+              <button type="button" onClick={() => handleDeleteAlert(alert.id)}>
+                Delete
+              </button>
             </li>
           ))}
         </ul>

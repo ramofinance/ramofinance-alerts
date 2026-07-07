@@ -1,5 +1,5 @@
 import type { Alert, AlertDirection, PaginatedResponse } from "../types/api";
-import { apiGet, apiPost } from "./http-client";
+import { apiDelete, apiGet, apiPost } from "./http-client";
 
 export type CreateAlertInput = {
   userId: string;
@@ -36,4 +36,9 @@ export const getAlerts = (filters?: GetAlertsFilters) => {
 
 export const createAlert = (input: CreateAlertInput) => {
   return apiPost<Alert, CreateAlertInput>("/api/alerts", input);
+};
+
+
+export const deleteAlert = (id: string) => {
+  return apiDelete<null>(`/api/alerts/${id}`);
 };
