@@ -24,14 +24,14 @@ export default function App() {
   const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
   const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (userId?: string) => {
     try {
       setLoading(true);
       setError(null);
 
       const [marketsResponse, alertsResponse] = await Promise.all([
         getMarkets(),
-        getAlerts()
+        getAlerts(userId ? { userId } : undefined)
       ]);
 
       setMarkets(marketsResponse.items);
@@ -68,7 +68,7 @@ export default function App() {
       });
 
       setCreateAlertResult(`Alert created: ${alert.title ?? alert.id}`);
-      await loadDashboardData();
+      await loadDashboardData(backendUser.id);
     } catch (err) {
       setCreateAlertResult(err instanceof Error ? err.message : "Create alert failed");
     }
@@ -84,7 +84,7 @@ export default function App() {
         `Price updated: ${result.market.symbol} = ${result.price}. Triggered alerts: ${result.triggeredAlerts.length}`
       );
 
-      await loadDashboardData();
+      await loadDashboardData(backendUser?.id);
     } catch (err) {
       setPriceUpdateResult(err instanceof Error ? err.message : "Price update failed");
     }
@@ -97,13 +97,16 @@ export default function App() {
 
     if (currentTelegramMiniApp.initData) {
       getTelegramMe(currentTelegramMiniApp.initData)
-        .then((data) => {
+        .then(async (data) => {
           setBackendUser(data.user);
           setAppLanguage(data.language);
+          await loadDashboardData(data.user.id);
         })
         .catch((err) => {
           setError(err instanceof Error ? err.message : "Failed to load Telegram user");
         });
+
+      return;
     }
 
     loadDashboardData();
@@ -116,9 +119,19 @@ export default function App() {
       <section>
         <h2>Telegram Mini App</h2>
         <p>Mode: {telegramMiniApp.isTelegramMiniApp ? "Telegram" : "Browser"}</p>
-        <p>User: {telegramMiniApp.user?.username ? `@${telegramMiniApp.user.username}` : telegramMiniApp.user?.first_name ?? "Not available"}</p>
+        <p>
+          User:{" "}
+          {telegramMiniApp.user?.username
+            ? `@${telegramMiniApp.user.username}`
+            : telegramMiniApp.user?.first_name ?? "Not available"}
+        </p>
         <p>Language: {telegramMiniApp.user?.language_code ?? "Not available"}</p>
-        <p>Backend User: {backendUser?.username ? `@${backendUser.username}` : backendUser?.firstName ?? "Not connected"}</p>
+        <p>
+          Backend User:{" "}
+          {backendUser?.username
+            ? `@${backendUser.username}`
+            : backendUser?.firstName ?? "Not connected"}
+        </p>
         <p>App Language: {appLanguage ?? "Not connected"}</p>
       </section>
 

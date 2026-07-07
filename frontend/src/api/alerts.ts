@@ -9,8 +9,29 @@ export type CreateAlertInput = {
   direction: AlertDirection;
 };
 
-export const getAlerts = () => {
-  return apiGet<PaginatedResponse<Alert>>("/api/alerts");
+export type GetAlertsFilters = {
+  userId?: string;
+  status?: string;
+};
+
+const buildAlertsQuery = (filters?: GetAlertsFilters) => {
+  const params = new URLSearchParams();
+
+  if (filters?.userId) {
+    params.set("userId", filters.userId);
+  }
+
+  if (filters?.status) {
+    params.set("status", filters.status);
+  }
+
+  const query = params.toString();
+
+  return query ? `/api/alerts?${query}` : "/api/alerts";
+};
+
+export const getAlerts = (filters?: GetAlertsFilters) => {
+  return apiGet<PaginatedResponse<Alert>>(buildAlertsQuery(filters));
 };
 
 export const createAlert = (input: CreateAlertInput) => {
