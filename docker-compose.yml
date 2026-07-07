@@ -27,7 +27,10 @@ services:
       NODE_ENV: production
       BACKEND_PORT: 3000
       DATABASE_URL: postgresql://ramofinance:ramofinance@postgres:5432/ramofinance_alerts
-      TELEGRAM_BOT_USERNAME: ramofinancebot
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-ramofinance_alerts_bot}
+      TELEGRAM_WEBAPP_URL: ${TELEGRAM_WEBAPP_URL:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
       WS_PORT: 4000
     ports:
       - "3000:3000"
