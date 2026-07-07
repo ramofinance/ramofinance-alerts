@@ -1,6 +1,9 @@
 import type { RequestHandler } from "express";
 import { env } from "../config/env";
 import { AppError } from "../utils/app-error";
+import { userService } from "../modules/users/user.service";
+import { verifyTelegramMiniAppInitData } from "./telegram-mini-app-auth";
+import { resolveTelegramLanguage } from "./telegram.i18n";
 import { telegramService } from "./telegram.service";
 import type { TelegramUpdate } from "./telegram.types";
 
@@ -40,4 +43,42 @@ export const telegramStatusController: RequestHandler = (_req, res) => {
       userCanChangeLanguage: true
     }
   });
+};
+
+
+export const telegramMeController: RequestHandler = async (req, res, next) => {
+  try {
+    const initDataHeader = req.header("x-telegram-init-data") ?? "";
+    const initData = verifyTelegramMiniAppInitData(initDataHeader);
+
+    if (!initData.user?.id) {
+      throw new AppError("Telegram user is required", 401);
+    }
+
+    const telegramUser = initData.user;
+
+    const user = await userService.upsertTelegramUser({
+      telegramId: String(telegramUser.id),
+      username: telegramUser.username,
+      firstName: telegramUser.first_name,
+      lastName: telegramUser.last_name,
+      languageCode: telegramUser.language_code
+    });
+
+    const language = resolveTelegramLanguage(
+      user.preferredLanguage,
+      telegramUser.language_code
+    );
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        language,
+        authDate: initData.authDate
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
 };

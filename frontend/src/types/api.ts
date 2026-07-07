@@ -37,3 +37,26 @@ export type Alert = {
   updatedAt: string;
   market?: Market;
 };
+
+
+export type PreferredLanguage = "FA" | "EN";
+
+export type User = {
+  id: string;
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  languageCode: string | null;
+  preferredLanguage: PreferredLanguage | null;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TelegramMe = {
+  user: User;
+  language: PreferredLanguage;
+  authDate?: number;
+};

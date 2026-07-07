@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { getAlerts } from "./api/alerts";
 import { getMarkets } from "./api/markets";
 import { updatePrice } from "./api/prices";
+import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
-import type { Alert, Market } from "./types/api";
+import type { Alert, Market, PreferredLanguage, User } from "./types/api";
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
@@ -16,6 +17,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [priceUpdateResult, setPriceUpdateResult] = useState<string | null>(null);
+  const [backendUser, setBackendUser] = useState<User | null>(null);
+  const [appLanguage, setAppLanguage] = useState<PreferredLanguage | null>(null);
 
   const loadDashboardData = async () => {
     try {
@@ -53,7 +56,21 @@ export default function App() {
   };
 
   useEffect(() => {
-    setTelegramMiniApp(initializeTelegramMiniApp());
+    const currentTelegramMiniApp = initializeTelegramMiniApp();
+
+    setTelegramMiniApp(currentTelegramMiniApp);
+
+    if (currentTelegramMiniApp.initData) {
+      getTelegramMe(currentTelegramMiniApp.initData)
+        .then((data) => {
+          setBackendUser(data.user);
+          setAppLanguage(data.language);
+        })
+        .catch((err) => {
+          setError(err instanceof Error ? err.message : "Failed to load Telegram user");
+        });
+    }
+
     loadDashboardData();
   }, []);
 
@@ -66,6 +83,8 @@ export default function App() {
         <p>Mode: {telegramMiniApp.isTelegramMiniApp ? "Telegram" : "Browser"}</p>
         <p>User: {telegramMiniApp.user?.username ? `@${telegramMiniApp.user.username}` : telegramMiniApp.user?.first_name ?? "Not available"}</p>
         <p>Language: {telegramMiniApp.user?.language_code ?? "Not available"}</p>
+        <p>Backend User: {backendUser?.username ? `@${backendUser.username}` : backendUser?.firstName ?? "Not connected"}</p>
+        <p>App Language: {appLanguage ?? "Not connected"}</p>
       </section>
 
       <section>

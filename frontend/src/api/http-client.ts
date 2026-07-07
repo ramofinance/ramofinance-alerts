@@ -23,8 +23,18 @@ const parseApiResponse = async <TData>(response: Response): Promise<TData> => {
   return (json as ApiResponse<TData>).data;
 };
 
-export const apiGet = async <TData>(path: string): Promise<TData> => {
-  const response = await fetch(buildUrl(path));
+type RequestOptions = {
+  headers?: Record<string, string>;
+};
+
+export const apiGet = async <TData>(
+  path: string,
+  options?: RequestOptions
+): Promise<TData> => {
+  const response = await fetch(buildUrl(path), {
+    headers: options?.headers
+  });
+
   return parseApiResponse<TData>(response);
 };
 
