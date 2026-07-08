@@ -1,0 +1,111 @@
+import type { PreferredLanguage } from "../types/api";
+
+export const getAppDirection = (language: PreferredLanguage | null) => {
+  return language === "FA" ? "rtl" : "ltr";
+};
+
+export const getAppCopy = (language: PreferredLanguage | null) => {
+  if (language === "FA") {
+    return {
+      eyebrow: "RAMOFINANCE",
+      title: "مینی‌اپ هشدارها",
+      subtitle: "ساخت، مدیریت و تست هشدارهای بازار داخل تلگرام.",
+      telegramUser: "کاربر تلگرام",
+      backendUser: "کاربر سیستم",
+      mode: "حالت",
+      telegram: "تلگرام",
+      browser: "پیش‌نمایش مرورگر",
+      language: "زبان",
+      appLanguage: "زبان برنامه",
+      notAvailable: "در دسترس نیست",
+      notConnected: "متصل نیست",
+      alerts: "هشدارها",
+      market: "بازار",
+      noMarket: "بازاری وجود ندارد",
+      marketUnavailable: "اطلاعات بازار هنوز آماده نیست.",
+      createAlert: "ساخت هشدار",
+      newAlert: "هشدار جدید BTCUSDT",
+      titleLabel: "عنوان",
+      targetPrice: "قیمت هدف",
+      direction: "جهت",
+      createButton: "ساخت هشدار",
+      myAlerts: "هشدارهای من",
+      loading: "در حال بارگذاری...",
+      testPrice: "تست قیمت",
+      noAlerts: "هنوز هشداری نداری. اولین هشدار را بساز.",
+      delete: "حذف",
+      debug: "دیباگ",
+      apiUrl: "آدرس API",
+      websocketUrl: "آدرس WebSocket",
+      noMessage: "هنوز پیامی نیست",
+      telegramNotConnected: "کاربر تلگرام به بک‌اند متصل نیست",
+      noMarketAvailable: "بازاری موجود نیست",
+      createSuccess: "هشدار ساخته شد",
+      createFailed: "ساخت هشدار ناموفق بود",
+      deleteSuccess: "هشدار حذف شد",
+      deleteFailed: "حذف هشدار ناموفق بود",
+      priceUpdated: "قیمت به‌روزرسانی شد",
+      triggeredAlerts: "هشدارهای فعال‌شده",
+      priceUpdateFailed: "به‌روزرسانی قیمت ناموفق بود",
+      loadFailed: "بارگذاری اطلاعات ناموفق بود",
+      telegramUserFailed: "بارگذاری کاربر تلگرام ناموفق بود",
+      directions: {
+        ABOVE: "بالاتر از",
+        BELOW: "پایین‌تر از",
+        CROSSING_UP: "عبور رو به بالا",
+        CROSSING_DOWN: "عبور رو به پایین"
+      }
+    };
+  }
+
+  return {
+    eyebrow: "RAMOFINANCE",
+    title: "Alerts Mini App",
+    subtitle: "Create, manage and test your market alerts directly inside Telegram.",
+    telegramUser: "Telegram User",
+    backendUser: "Backend User",
+    mode: "Mode",
+    telegram: "Telegram",
+    browser: "Browser preview",
+    language: "Language",
+    appLanguage: "App Language",
+    notAvailable: "Not available",
+    notConnected: "Not connected",
+    alerts: "Alerts",
+    market: "Market",
+    noMarket: "No market",
+    marketUnavailable: "Market data is not available yet.",
+    createAlert: "Create Alert",
+    newAlert: "New BTCUSDT Alert",
+    titleLabel: "Title",
+    targetPrice: "Target Price",
+    direction: "Direction",
+    createButton: "Create Alert",
+    myAlerts: "My Alerts",
+    loading: "Loading...",
+    testPrice: "Test Price",
+    noAlerts: "No alerts yet. Create your first alert above.",
+    delete: "Delete",
+    debug: "Debug",
+    apiUrl: "API URL",
+    websocketUrl: "WebSocket URL",
+    noMessage: "No message yet",
+    telegramNotConnected: "Telegram backend user is not connected",
+    noMarketAvailable: "No market available",
+    createSuccess: "Alert created",
+    createFailed: "Create alert failed",
+    deleteSuccess: "Alert deleted",
+    deleteFailed: "Delete alert failed",
+    priceUpdated: "Price updated",
+    triggeredAlerts: "Triggered alerts",
+    priceUpdateFailed: "Price update failed",
+    loadFailed: "Failed to load dashboard data",
+    telegramUserFailed: "Failed to load Telegram user",
+    directions: {
+      ABOVE: "Above",
+      BELOW: "Below",
+      CROSSING_UP: "Crossing Up",
+      CROSSING_DOWN: "Crossing Down"
+    }
+  };
+};

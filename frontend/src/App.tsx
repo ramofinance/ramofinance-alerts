@@ -5,15 +5,9 @@ import { updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
+import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, AlertDirection, Market, PreferredLanguage, User } from "./types/api";
-
-const directionLabels: Record<AlertDirection, string> = {
-  ABOVE: "Above",
-  BELOW: "Below",
-  CROSSING_UP: "Crossing Up",
-  CROSSING_DOWN: "Crossing Down"
-};
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
@@ -33,6 +27,8 @@ export default function App() {
   const [deleteAlertResult, setDeleteAlertResult] = useState<string | null>(null);
 
   const activeMarket = markets[0];
+  const copy = getAppCopy(appLanguage);
+  const appDirection = getAppDirection(appLanguage);
 
   const loadDashboardData = async (userId?: string) => {
     try {
@@ -47,7 +43,7 @@ export default function App() {
       setMarkets(marketsResponse.items);
       setAlerts(alertsResponse.items);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+      setError(err instanceof Error ? err.message : copy.loadFailed);
     } finally {
       setLoading(false);
     }
@@ -58,12 +54,12 @@ export default function App() {
       setCreateAlertResult(null);
 
       if (!backendUser) {
-        setCreateAlertResult("Telegram backend user is not connected");
+        setCreateAlertResult(copy.telegramNotConnected);
         return;
       }
 
       if (!activeMarket) {
-        setCreateAlertResult("No market available");
+        setCreateAlertResult(copy.noMarketAvailable);
         return;
       }
 
@@ -75,10 +71,10 @@ export default function App() {
         direction: newAlertDirection
       });
 
-      setCreateAlertResult(`Alert created: ${alert.title ?? alert.id}`);
+      setCreateAlertResult(`${copy.createSuccess}: ${alert.title ?? alert.id}`);
       await loadDashboardData(backendUser.id);
     } catch (err) {
-      setCreateAlertResult(err instanceof Error ? err.message : "Create alert failed");
+      setCreateAlertResult(err instanceof Error ? err.message : copy.createFailed);
     }
   };
 
@@ -88,10 +84,10 @@ export default function App() {
 
       await deleteAlert(alertId);
 
-      setDeleteAlertResult("Alert deleted");
+      setDeleteAlertResult(copy.deleteSuccess);
       await loadDashboardData(backendUser?.id);
     } catch (err) {
-      setDeleteAlertResult(err instanceof Error ? err.message : "Delete alert failed");
+      setDeleteAlertResult(err instanceof Error ? err.message : copy.deleteFailed);
     }
   };
 
@@ -102,12 +98,12 @@ export default function App() {
       const result = await updatePrice("BTCUSDT", "78000");
 
       setPriceUpdateResult(
-        `Price updated: ${result.market.symbol} = ${result.price}. Triggered alerts: ${result.triggeredAlerts.length}`
+        `${copy.priceUpdated}: ${result.market.symbol} = ${result.price}. ${copy.triggeredAlerts}: ${result.triggeredAlerts.length}`
       );
 
       await loadDashboardData(backendUser?.id);
     } catch (err) {
-      setPriceUpdateResult(err instanceof Error ? err.message : "Price update failed");
+      setPriceUpdateResult(err instanceof Error ? err.message : copy.priceUpdateFailed);
     }
   };
 
@@ -124,7 +120,7 @@ export default function App() {
           await loadDashboardData(data.user.id);
         })
         .catch((err) => {
-          setError(err instanceof Error ? err.message : "Failed to load Telegram user");
+          setError(err instanceof Error ? err.message : copy.telegramUserFailed);
         });
 
       return;
@@ -135,21 +131,19 @@ export default function App() {
 
   const telegramUserLabel = telegramMiniApp.user?.username
     ? `@${telegramMiniApp.user.username}`
-    : telegramMiniApp.user?.first_name ?? "Browser preview";
+    : telegramMiniApp.user?.first_name ?? copy.browser;
 
   const backendUserLabel = backendUser?.username
     ? `@${backendUser.username}`
-    : backendUser?.firstName ?? "Not connected";
+    : backendUser?.firstName ?? copy.notConnected;
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" dir={appDirection}>
       <section className="hero-card">
         <div>
-          <p className="eyebrow">RAMOFINANCE</p>
-          <h1>Alerts Mini App</h1>
-          <p className="hero-text">
-            Create, manage and test your market alerts directly inside Telegram.
-          </p>
+          <p className="eyebrow">{copy.eyebrow}</p>
+          <h1>{copy.title}</h1>
+          <p className="hero-text">{copy.subtitle}</p>
         </div>
 
         <div className="status-pill">
@@ -162,76 +156,84 @@ export default function App() {
 
       <section className="grid">
         <article className="card">
-          <p className="card-label">Telegram User</p>
+          <p className="card-label">{copy.telegramUser}</p>
           <h2>{telegramUserLabel}</h2>
-          <p>Mode: {telegramMiniApp.isTelegramMiniApp ? "Telegram" : "Browser"}</p>
-          <p>Language: {telegramMiniApp.user?.language_code ?? "Not available"}</p>
+          <p>
+            {copy.mode}: {telegramMiniApp.isTelegramMiniApp ? copy.telegram : copy.browser}
+          </p>
+          <p>
+            {copy.language}: {telegramMiniApp.user?.language_code ?? copy.notAvailable}
+          </p>
         </article>
 
         <article className="card">
-          <p className="card-label">Backend User</p>
+          <p className="card-label">{copy.backendUser}</p>
           <h2>{backendUserLabel}</h2>
-          <p>App Language: {appLanguage ?? "Not connected"}</p>
-          <p>Alerts: {alerts.length}</p>
+          <p>
+            {copy.appLanguage}: {appLanguage ?? copy.notConnected}
+          </p>
+          <p>
+            {copy.alerts}: {alerts.length}
+          </p>
         </article>
       </section>
 
       <section className="card">
         <div className="section-header">
           <div>
-            <p className="card-label">Market</p>
-            <h2>{activeMarket?.symbol ?? "No market"}</h2>
+            <p className="card-label">{copy.market}</p>
+            <h2>{activeMarket?.symbol ?? copy.noMarket}</h2>
           </div>
-          <span className="market-badge">{activeMarket?.type ?? "Market"}</span>
+          <span className="market-badge">{activeMarket?.type ?? copy.market}</span>
         </div>
 
-        <p className="muted">{activeMarket?.name ?? "Market data is not available yet."}</p>
+        <p className="muted">{activeMarket?.name ?? copy.marketUnavailable}</p>
       </section>
 
       <section className="card">
         <div className="section-header">
           <div>
-            <p className="card-label">Create Alert</p>
-            <h2>New BTCUSDT Alert</h2>
+            <p className="card-label">{copy.createAlert}</p>
+            <h2>{copy.newAlert}</h2>
           </div>
         </div>
 
         <div className="form-grid">
           <label>
-            Title
+            {copy.titleLabel}
             <input
               value={newAlertTitle}
               onChange={(event) => setNewAlertTitle(event.target.value)}
-              placeholder="Alert title"
+              placeholder={copy.titleLabel}
             />
           </label>
 
           <label>
-            Target Price
+            {copy.targetPrice}
             <input
               value={newAlertTargetPrice}
               onChange={(event) => setNewAlertTargetPrice(event.target.value)}
-              placeholder="Target price"
+              placeholder={copy.targetPrice}
               inputMode="decimal"
             />
           </label>
 
           <label>
-            Direction
+            {copy.direction}
             <select
               value={newAlertDirection}
               onChange={(event) => setNewAlertDirection(event.target.value as AlertDirection)}
             >
-              <option value="ABOVE">Above</option>
-              <option value="BELOW">Below</option>
-              <option value="CROSSING_UP">Crossing Up</option>
-              <option value="CROSSING_DOWN">Crossing Down</option>
+              <option value="ABOVE">{copy.directions.ABOVE}</option>
+              <option value="BELOW">{copy.directions.BELOW}</option>
+              <option value="CROSSING_UP">{copy.directions.CROSSING_UP}</option>
+              <option value="CROSSING_DOWN">{copy.directions.CROSSING_DOWN}</option>
             </select>
           </label>
         </div>
 
         <button className="primary-button" type="button" onClick={handleCreateAlert}>
-          Create Alert
+          {copy.createButton}
         </button>
 
         {createAlertResult ? <div className="alert-box">{createAlertResult}</div> : null}
@@ -240,12 +242,12 @@ export default function App() {
       <section className="card">
         <div className="section-header">
           <div>
-            <p className="card-label">My Alerts</p>
-            <h2>{loading ? "Loading..." : `${alerts.length} alerts`}</h2>
+            <p className="card-label">{copy.myAlerts}</p>
+            <h2>{loading ? copy.loading : `${alerts.length} ${copy.alerts}`}</h2>
           </div>
 
           <button className="secondary-button" type="button" onClick={handlePriceUpdate}>
-            Test Price
+            {copy.testPrice}
           </button>
         </div>
 
@@ -254,7 +256,7 @@ export default function App() {
 
         <div className="alerts-list">
           {alerts.length === 0 && !loading ? (
-            <p className="empty-state">No alerts yet. Create your first alert above.</p>
+            <p className="empty-state">{copy.noAlerts}</p>
           ) : null}
 
           {alerts.map((alert) => (
@@ -262,7 +264,8 @@ export default function App() {
               <div>
                 <h3>{alert.title ?? "Untitled alert"}</h3>
                 <p>
-                  {alert.market?.symbol ?? alert.marketId} · {directionLabels[alert.direction as AlertDirection] ?? alert.direction} ·{" "}
+                  {alert.market?.symbol ?? alert.marketId} ·{" "}
+                  {copy.directions[alert.direction as AlertDirection] ?? alert.direction} ·{" "}
                   {alert.targetPrice}
                 </p>
               </div>
@@ -270,7 +273,7 @@ export default function App() {
               <div className="alert-actions">
                 <span className="market-badge">{alert.status}</span>
                 <button type="button" onClick={() => handleDeleteAlert(alert.id)}>
-                  Delete
+                  {copy.delete}
                 </button>
               </div>
             </article>
@@ -279,10 +282,14 @@ export default function App() {
       </section>
 
       <details className="debug-box">
-        <summary>Debug</summary>
-        <p>API URL: {frontendEnv.apiUrl}</p>
-        <p>WebSocket URL: {frontendEnv.websocketUrl}</p>
-        <pre>{lastMessage ? JSON.stringify(lastMessage, null, 2) : "No message yet"}</pre>
+        <summary>{copy.debug}</summary>
+        <p>
+          {copy.apiUrl}: {frontendEnv.apiUrl}
+        </p>
+        <p>
+          {copy.websocketUrl}: {frontendEnv.websocketUrl}
+        </p>
+        <pre>{lastMessage ? JSON.stringify(lastMessage, null, 2) : copy.noMessage}</pre>
       </details>
     </main>
   );
