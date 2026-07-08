@@ -8,6 +8,13 @@ import { useWebSocket } from "./hooks/use-websocket";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, AlertDirection, Market, PreferredLanguage, User } from "./types/api";
 
+const directionLabels: Record<AlertDirection, string> = {
+  ABOVE: "Above",
+  BELOW: "Below",
+  CROSSING_UP: "Crossing Up",
+  CROSSING_DOWN: "Crossing Down"
+};
+
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
   const [telegramMiniApp, setTelegramMiniApp] = useState(() => initializeTelegramMiniApp());
@@ -24,6 +31,8 @@ export default function App() {
   const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
   const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
   const [deleteAlertResult, setDeleteAlertResult] = useState<string | null>(null);
+
+  const activeMarket = markets[0];
 
   const loadDashboardData = async (userId?: string) => {
     try {
@@ -53,16 +62,14 @@ export default function App() {
         return;
       }
 
-      const market = markets[0];
-
-      if (!market) {
+      if (!activeMarket) {
         setCreateAlertResult("No market available");
         return;
       }
 
       const alert = await createAlert({
         userId: backendUser.id,
-        marketId: market.id,
+        marketId: activeMarket.id,
         title: newAlertTitle,
         targetPrice: newAlertTargetPrice,
         direction: newAlertDirection
@@ -126,112 +133,157 @@ export default function App() {
     loadDashboardData();
   }, []);
 
-  return (
-    <main style={{ fontFamily: "Arial, sans-serif", padding: 24 }}>
-      <h1>RAMOFINANCE Alerts</h1>
+  const telegramUserLabel = telegramMiniApp.user?.username
+    ? `@${telegramMiniApp.user.username}`
+    : telegramMiniApp.user?.first_name ?? "Browser preview";
 
-      <section>
-        <h2>Telegram Mini App</h2>
-        <p>Mode: {telegramMiniApp.isTelegramMiniApp ? "Telegram" : "Browser"}</p>
-        <p>
-          User:{" "}
-          {telegramMiniApp.user?.username
-            ? `@${telegramMiniApp.user.username}`
-            : telegramMiniApp.user?.first_name ?? "Not available"}
-        </p>
-        <p>Language: {telegramMiniApp.user?.language_code ?? "Not available"}</p>
-        <p>
-          Backend User:{" "}
-          {backendUser?.username
-            ? `@${backendUser.username}`
-            : backendUser?.firstName ?? "Not connected"}
-        </p>
-        <p>App Language: {appLanguage ?? "Not connected"}</p>
+  const backendUserLabel = backendUser?.username
+    ? `@${backendUser.username}`
+    : backendUser?.firstName ?? "Not connected";
+
+  return (
+    <main className="app-shell">
+      <section className="hero-card">
+        <div>
+          <p className="eyebrow">RAMOFINANCE</p>
+          <h1>Alerts Mini App</h1>
+          <p className="hero-text">
+            Create, manage and test your market alerts directly inside Telegram.
+          </p>
+        </div>
+
+        <div className="status-pill">
+          <span className={`status-dot status-dot--${status}`} />
+          {status}
+        </div>
       </section>
 
-      <section>
-        <h2>Realtime Connection</h2>
-        <p>Status: {status}</p>
+      {error ? <div className="alert-box alert-box--error">{error}</div> : null}
+
+      <section className="grid">
+        <article className="card">
+          <p className="card-label">Telegram User</p>
+          <h2>{telegramUserLabel}</h2>
+          <p>Mode: {telegramMiniApp.isTelegramMiniApp ? "Telegram" : "Browser"}</p>
+          <p>Language: {telegramMiniApp.user?.language_code ?? "Not available"}</p>
+        </article>
+
+        <article className="card">
+          <p className="card-label">Backend User</p>
+          <h2>{backendUserLabel}</h2>
+          <p>App Language: {appLanguage ?? "Not connected"}</p>
+          <p>Alerts: {alerts.length}</p>
+        </article>
+      </section>
+
+      <section className="card">
+        <div className="section-header">
+          <div>
+            <p className="card-label">Market</p>
+            <h2>{activeMarket?.symbol ?? "No market"}</h2>
+          </div>
+          <span className="market-badge">{activeMarket?.type ?? "Market"}</span>
+        </div>
+
+        <p className="muted">{activeMarket?.name ?? "Market data is not available yet."}</p>
+      </section>
+
+      <section className="card">
+        <div className="section-header">
+          <div>
+            <p className="card-label">Create Alert</p>
+            <h2>New BTCUSDT Alert</h2>
+          </div>
+        </div>
+
+        <div className="form-grid">
+          <label>
+            Title
+            <input
+              value={newAlertTitle}
+              onChange={(event) => setNewAlertTitle(event.target.value)}
+              placeholder="Alert title"
+            />
+          </label>
+
+          <label>
+            Target Price
+            <input
+              value={newAlertTargetPrice}
+              onChange={(event) => setNewAlertTargetPrice(event.target.value)}
+              placeholder="Target price"
+              inputMode="decimal"
+            />
+          </label>
+
+          <label>
+            Direction
+            <select
+              value={newAlertDirection}
+              onChange={(event) => setNewAlertDirection(event.target.value as AlertDirection)}
+            >
+              <option value="ABOVE">Above</option>
+              <option value="BELOW">Below</option>
+              <option value="CROSSING_UP">Crossing Up</option>
+              <option value="CROSSING_DOWN">Crossing Down</option>
+            </select>
+          </label>
+        </div>
+
+        <button className="primary-button" type="button" onClick={handleCreateAlert}>
+          Create Alert
+        </button>
+
+        {createAlertResult ? <div className="alert-box">{createAlertResult}</div> : null}
+      </section>
+
+      <section className="card">
+        <div className="section-header">
+          <div>
+            <p className="card-label">My Alerts</p>
+            <h2>{loading ? "Loading..." : `${alerts.length} alerts`}</h2>
+          </div>
+
+          <button className="secondary-button" type="button" onClick={handlePriceUpdate}>
+            Test Price
+          </button>
+        </div>
+
+        {priceUpdateResult ? <div className="alert-box">{priceUpdateResult}</div> : null}
+        {deleteAlertResult ? <div className="alert-box">{deleteAlertResult}</div> : null}
+
+        <div className="alerts-list">
+          {alerts.length === 0 && !loading ? (
+            <p className="empty-state">No alerts yet. Create your first alert above.</p>
+          ) : null}
+
+          {alerts.map((alert) => (
+            <article className="alert-item" key={alert.id}>
+              <div>
+                <h3>{alert.title ?? "Untitled alert"}</h3>
+                <p>
+                  {alert.market?.symbol ?? alert.marketId} · {directionLabels[alert.direction as AlertDirection] ?? alert.direction} ·{" "}
+                  {alert.targetPrice}
+                </p>
+              </div>
+
+              <div className="alert-actions">
+                <span className="market-badge">{alert.status}</span>
+                <button type="button" onClick={() => handleDeleteAlert(alert.id)}>
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <details className="debug-box">
+        <summary>Debug</summary>
         <p>API URL: {frontendEnv.apiUrl}</p>
         <p>WebSocket URL: {frontendEnv.websocketUrl}</p>
-
         <pre>{lastMessage ? JSON.stringify(lastMessage, null, 2) : "No message yet"}</pre>
-      </section>
-
-      <section>
-        <h2>Markets</h2>
-        {loading ? <p>Loading...</p> : null}
-        {error ? <p style={{ color: "crimson" }}>{error}</p> : null}
-
-        <ul>
-          {markets.map((market) => (
-            <li key={market.id}>
-              {market.symbol} — {market.name ?? "No name"} — {market.type}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <h2>Create Alert</h2>
-
-        <div>
-          <input
-            value={newAlertTitle}
-            onChange={(event) => setNewAlertTitle(event.target.value)}
-            placeholder="Alert title"
-          />
-        </div>
-
-        <div>
-          <input
-            value={newAlertTargetPrice}
-            onChange={(event) => setNewAlertTargetPrice(event.target.value)}
-            placeholder="Target price"
-          />
-        </div>
-
-        <div>
-          <select
-            value={newAlertDirection}
-            onChange={(event) => setNewAlertDirection(event.target.value as AlertDirection)}
-          >
-            <option value="ABOVE">ABOVE</option>
-            <option value="BELOW">BELOW</option>
-            <option value="CROSSING_UP">CROSSING_UP</option>
-            <option value="CROSSING_DOWN">CROSSING_DOWN</option>
-          </select>
-        </div>
-
-        <button type="button" onClick={handleCreateAlert}>
-          Create BTCUSDT Alert
-        </button>
-
-        {createAlertResult ? <p>{createAlertResult}</p> : null}
-      </section>
-
-      <section>
-        <h2>Alerts</h2>
-
-        <button type="button" onClick={handlePriceUpdate}>
-          Test BTCUSDT Price Update
-        </button>
-
-        {priceUpdateResult ? <p>{priceUpdateResult}</p> : null}
-        {deleteAlertResult ? <p>{deleteAlertResult}</p> : null}
-
-        <ul>
-          {alerts.map((alert) => (
-            <li key={alert.id}>
-              {alert.title ?? "Untitled alert"} — {alert.market?.symbol ?? alert.marketId} —{" "}
-              {alert.direction} {alert.targetPrice} — {alert.status}{" "}
-              <button type="button" onClick={() => handleDeleteAlert(alert.id)}>
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+      </details>
     </main>
   );
 }

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-docker compose up -d
-
 if [ -z "${CODESPACE_NAME:-}" ]; then
   echo "CODESPACE_NAME is not set."
   exit 1
@@ -11,6 +9,10 @@ fi
 set -a
 source .env
 set +a
+
+docker compose up -d postgres
+docker compose up -d --force-recreate backend
+docker compose up -d frontend
 
 FRONTEND_PUBLIC_URL="https://${CODESPACE_NAME}-5173.app.github.dev/"
 BACKEND_PUBLIC_URL="https://${CODESPACE_NAME}-3000.app.github.dev"
