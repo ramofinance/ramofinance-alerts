@@ -162,6 +162,30 @@ label {
   font-weight: 700;
 }
 
+.form-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.alert-preview {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: rgba(56, 189, 248, 0.08);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.alert-preview span {
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.alert-preview strong {
+  color: #f8fafc;
+  font-size: 15px;
+}
+
 input,
 select {
   width: 100%;
@@ -267,7 +291,8 @@ pre {
     flex-direction: column;
   }
 
-  .grid {
+  .grid,
+  .form-grid--two {
     grid-template-columns: 1fr;
   }
 

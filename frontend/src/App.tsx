@@ -20,13 +20,29 @@ export default function App() {
   const [priceUpdateResult, setPriceUpdateResult] = useState<string | null>(null);
   const [backendUser, setBackendUser] = useState<User | null>(null);
   const [appLanguage, setAppLanguage] = useState<PreferredLanguage | null>(null);
-  const [newAlertTitle, setNewAlertTitle] = useState("Mini App BTC Alert");
-  const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("80000");
+  const [selectedMarketId, setSelectedMarketId] = useState("");
+  const [marketSearch, setMarketSearch] = useState("");
+  const [newAlertTitle, setNewAlertTitle] = useState("");
+  const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("");
   const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
   const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
   const [deleteAlertResult, setDeleteAlertResult] = useState<string | null>(null);
 
-  const activeMarket = markets[0];
+  const filteredMarkets = markets.filter((market) => {
+    const query = marketSearch.trim().toLowerCase();
+
+    if (!query) {
+      return true;
+    }
+
+    return (
+      market.symbol.toLowerCase().includes(query) ||
+      (market.name?.toLowerCase().includes(query) ?? false)
+    );
+  });
+
+  const selectedMarket = markets.find((market) => market.id === selectedMarketId);
+  const activeMarket = selectedMarket ?? filteredMarkets[0] ?? markets[0];
   const copy = getAppCopy(appLanguage);
   const appDirection = getAppDirection(appLanguage);
 
@@ -41,6 +57,7 @@ export default function App() {
       ]);
 
       setMarkets(marketsResponse.items);
+      setSelectedMarketId((currentMarketId) => currentMarketId || marketsResponse.items[0]?.id || "");
       setAlerts(alertsResponse.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.loadFailed);
@@ -63,11 +80,19 @@ export default function App() {
         return;
       }
 
+      if (!newAlertTargetPrice.trim() || Number.isNaN(Number(newAlertTargetPrice))) {
+        setCreateAlertResult(copy.invalidTargetPrice);
+        return;
+      }
+
+      const cleanTitle =
+        newAlertTitle.trim() || `${activeMarket.symbol} ${copy.directions[newAlertDirection]}`;
+
       const alert = await createAlert({
         userId: backendUser.id,
         marketId: activeMarket.id,
-        title: newAlertTitle,
-        targetPrice: newAlertTargetPrice,
+        title: cleanTitle,
+        targetPrice: newAlertTargetPrice.trim(),
         direction: newAlertDirection
       });
 
@@ -200,36 +225,74 @@ export default function App() {
 
         <div className="form-grid">
           <label>
+            {copy.searchMarket}
+            <input
+              value={marketSearch}
+              onChange={(event) => setMarketSearch(event.target.value)}
+              placeholder={copy.searchMarketPlaceholder}
+            />
+          </label>
+
+          <label>
+            {copy.selectMarket}
+            <select
+              value={activeMarket?.id ?? ""}
+              onChange={(event) => setSelectedMarketId(event.target.value)}
+              disabled={filteredMarkets.length === 0}
+            >
+              {filteredMarkets.length === 0 ? (
+                <option value="">{copy.noMarketFound}</option>
+              ) : null}
+
+              {filteredMarkets.map((market) => (
+                <option value={market.id} key={market.id}>
+                  {market.symbol} - {market.name ?? market.type}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="form-grid form-grid--two">
+            <label>
+              {copy.direction}
+              <select
+                value={newAlertDirection}
+                onChange={(event) => setNewAlertDirection(event.target.value as AlertDirection)}
+              >
+                <option value="ABOVE">{copy.directions.ABOVE}</option>
+                <option value="BELOW">{copy.directions.BELOW}</option>
+                <option value="CROSSING_UP">{copy.directions.CROSSING_UP}</option>
+                <option value="CROSSING_DOWN">{copy.directions.CROSSING_DOWN}</option>
+              </select>
+            </label>
+
+            <label>
+              {copy.targetPrice}
+              <input
+                value={newAlertTargetPrice}
+                onChange={(event) => setNewAlertTargetPrice(event.target.value)}
+                placeholder={copy.targetPricePlaceholder}
+                inputMode="decimal"
+              />
+            </label>
+          </div>
+
+          <label>
             {copy.titleLabel}
             <input
               value={newAlertTitle}
               onChange={(event) => setNewAlertTitle(event.target.value)}
-              placeholder={copy.titleLabel}
+              placeholder={copy.optionalTitlePlaceholder}
             />
           </label>
 
-          <label>
-            {copy.targetPrice}
-            <input
-              value={newAlertTargetPrice}
-              onChange={(event) => setNewAlertTargetPrice(event.target.value)}
-              placeholder={copy.targetPrice}
-              inputMode="decimal"
-            />
-          </label>
-
-          <label>
-            {copy.direction}
-            <select
-              value={newAlertDirection}
-              onChange={(event) => setNewAlertDirection(event.target.value as AlertDirection)}
-            >
-              <option value="ABOVE">{copy.directions.ABOVE}</option>
-              <option value="BELOW">{copy.directions.BELOW}</option>
-              <option value="CROSSING_UP">{copy.directions.CROSSING_UP}</option>
-              <option value="CROSSING_DOWN">{copy.directions.CROSSING_DOWN}</option>
-            </select>
-          </label>
+          <div className="alert-preview">
+            <span>{copy.preview}</span>
+            <strong>
+              {activeMarket?.symbol ?? copy.noMarket} · {copy.directions[newAlertDirection]} ·{" "}
+              {newAlertTargetPrice || copy.targetPricePlaceholder}
+            </strong>
+          </div>
         </div>
 
         <button className="primary-button" type="button" onClick={handleCreateAlert}>
