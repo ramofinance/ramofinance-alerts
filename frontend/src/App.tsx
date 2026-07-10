@@ -224,6 +224,21 @@ export default function App() {
         </div>
 
         <p className="muted">{activeMarket?.name ?? copy.marketUnavailable}</p>
+
+        {activeMarket?.latestPrice ? (
+          <div className="latest-price-box">
+            <span>{copy.latestPrice}</span>
+            <strong>{activeMarket.latestPrice.price}</strong>
+            <small>
+              {copy.source}: {activeMarket.latestPrice.source}
+            </small>
+          </div>
+        ) : (
+          <div className="latest-price-box latest-price-box--empty">
+            <span>{copy.latestPrice}</span>
+            <strong>{copy.noLatestPrice}</strong>
+          </div>
+        )}
       </section>
 
       <section className="card">

@@ -115,6 +115,33 @@ h3 {
   margin-bottom: 14px;
 }
 
+.latest-price-box {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: rgba(56, 189, 248, 0.08);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.latest-price-box span,
+.latest-price-box small {
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.latest-price-box strong {
+  color: #f8fafc;
+  font-size: 24px;
+}
+
+.latest-price-box--empty {
+  border-style: dashed;
+  background: rgba(148, 163, 184, 0.08);
+}
+
 .status-pill,
 .market-badge {
   display: inline-flex;
