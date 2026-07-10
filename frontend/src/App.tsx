@@ -24,6 +24,7 @@ export default function App() {
   const [marketSearch, setMarketSearch] = useState("");
   const [newAlertTitle, setNewAlertTitle] = useState("");
   const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("");
+  const [testPrice, setTestPrice] = useState("");
   const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
   const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
   const [deleteAlertResult, setDeleteAlertResult] = useState<string | null>(null);
@@ -120,7 +121,17 @@ export default function App() {
     try {
       setPriceUpdateResult(null);
 
-      const result = await updatePrice("BTCUSDT", "78000");
+      if (!activeMarket) {
+        setPriceUpdateResult(copy.noMarketAvailable);
+        return;
+      }
+
+      if (!testPrice.trim() || Number.isNaN(Number(testPrice))) {
+        setPriceUpdateResult(copy.invalidTestPrice);
+        return;
+      }
+
+      const result = await updatePrice(activeMarket.symbol, testPrice.trim());
 
       setPriceUpdateResult(
         `${copy.priceUpdated}: ${result.market.symbol} = ${result.price}. ${copy.triggeredAlerts}: ${result.triggeredAlerts.length}`
@@ -309,9 +320,17 @@ export default function App() {
             <h2>{loading ? copy.loading : `${alerts.length} ${copy.alerts}`}</h2>
           </div>
 
-          <button className="secondary-button" type="button" onClick={handlePriceUpdate}>
-            {copy.testPrice}
-          </button>
+          <div className="price-test-box">
+            <input
+              value={testPrice}
+              onChange={(event) => setTestPrice(event.target.value)}
+              placeholder={copy.testPricePlaceholder}
+              inputMode="decimal"
+            />
+            <button className="secondary-button" type="button" onClick={handlePriceUpdate}>
+              {copy.testPrice}
+            </button>
+          </div>
         </div>
 
         {priceUpdateResult ? <div className="alert-box">{priceUpdateResult}</div> : null}

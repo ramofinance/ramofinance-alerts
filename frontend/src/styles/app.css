@@ -202,6 +202,13 @@ select:focus {
   border-color: #38bdf8;
 }
 
+.price-test-box {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) auto;
+  gap: 8px;
+  align-items: center;
+}
+
 .primary-button,
 .secondary-button,
 .alert-actions button {
@@ -296,8 +303,16 @@ pre {
     grid-template-columns: 1fr;
   }
 
-  .alert-actions {
+  .alert-actions,
+  .price-test-box {
     width: 100%;
+  }
+
+  .price-test-box {
+    grid-template-columns: 1fr;
+  }
+
+  .alert-actions {
     justify-content: space-between;
   }
 }
