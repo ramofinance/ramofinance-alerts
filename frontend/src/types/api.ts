@@ -13,6 +13,15 @@ export type PaginatedResponse<TItem> = {
   };
 };
 
+export type MarketPrice = {
+  id: string;
+  marketId: string;
+  price: string;
+  source: string;
+  updatedAt: string;
+  createdAt: string;
+};
+
 export type Market = {
   id: string;
   symbol: string;
@@ -21,6 +30,7 @@ export type Market = {
   baseAsset: string | null;
   quoteAsset: string | null;
   isActive: boolean;
+  latestPrice?: MarketPrice | null;
 };
 
 export type Alert = {

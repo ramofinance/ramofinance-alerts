@@ -4,7 +4,27 @@ import { prisma } from "../../database/prisma";
 export const priceEngineRepository = {
   findMarketBySymbol(symbol: string) {
     return prisma.market.findUnique({
-      where: { symbol }
+      where: { symbol },
+      include: {
+        latestPrice: true
+      }
+    });
+  },
+
+  upsertLatestMarketPrice(marketId: string, price: number, source = "manual") {
+    return prisma.marketPrice.upsert({
+      where: {
+        marketId
+      },
+      update: {
+        price,
+        source
+      },
+      create: {
+        marketId,
+        price,
+        source
+      }
     });
   },
 

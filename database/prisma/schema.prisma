@@ -79,9 +79,24 @@ model Market {
   updatedAt  DateTime   @updatedAt
 
   alerts Alert[]
+  latestPrice MarketPrice?
 
   @@index([symbol])
   @@index([type])
+}
+
+model MarketPrice {
+  id        String   @id @default(uuid())
+  marketId  String   @unique
+  price     Decimal
+  source    String   @default("manual")
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([marketId])
+  @@index([updatedAt])
 }
 
 model Alert {

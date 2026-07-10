@@ -61,7 +61,10 @@ export const priceEngineService = {
       throw new AppError("Market is inactive", 400);
     }
 
-    const previousPrice = lastPrices.get(symbol);
+    const previousPrice = lastPrices.get(symbol) ?? Number(market.latestPrice?.price ?? undefined);
+
+    await priceEngineRepository.upsertLatestMarketPrice(market.id, currentPrice);
+
     const activeAlerts = await priceEngineRepository.findActiveAlertsByMarketId(market.id);
 
     const triggeredAlerts = [];

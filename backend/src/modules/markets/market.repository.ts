@@ -36,6 +36,9 @@ export const marketRepository = {
   findMany(filters: ListMarketsFilters) {
     return prisma.market.findMany({
       where: buildMarketWhere(filters),
+      include: {
+        latestPrice: true
+      },
       orderBy: {
         symbol: "asc"
       },
@@ -52,7 +55,10 @@ export const marketRepository = {
 
   findById(id: string) {
     return prisma.market.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        latestPrice: true
+      }
     });
   }
 };
