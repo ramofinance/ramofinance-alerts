@@ -165,6 +165,28 @@ export default function App() {
     loadDashboardData();
   }, []);
 
+  useEffect(() => {
+    if (!lastMessage) {
+      return;
+    }
+
+    if (lastMessage.type === "price.updated") {
+      const payload = lastMessage.payload as { market?: Market };
+
+      if (payload.market?.id) {
+        setMarkets((currentMarkets) =>
+          currentMarkets.map((market) =>
+            market.id === payload.market?.id ? { ...market, ...payload.market } : market
+          )
+        );
+      }
+    }
+
+    if (lastMessage.type === "alert.triggered") {
+      void loadDashboardData(backendUser?.id);
+    }
+  }, [lastMessage]);
+
   const telegramUserLabel = telegramMiniApp.user?.username
     ? `@${telegramMiniApp.user.username}`
     : telegramMiniApp.user?.first_name ?? copy.browser;
