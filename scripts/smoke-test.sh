@@ -20,8 +20,8 @@ echo "----- price update api -----"
 curl -fsS -X POST "$BACKEND_URL/api/prices/update" \
   -H "Content-Type: application/json" \
   -d '{
-    "symbol": "BTCUSDT",
-    "price": "79000"
+    "symbol": "XAUUSD",
+    "price": "2400"
   }'
 echo
 
