@@ -40,7 +40,7 @@ export type Alert = {
   title: string | null;
   targetPrice: string;
   direction: string;
-  status: string;
+  status: AlertStatus;
   triggeredAt: string | null;
   expiresAt: string | null;
   createdAt: string;
@@ -52,6 +52,8 @@ export type Alert = {
 export type PreferredLanguage = "FA" | "EN";
 
 export type AlertDirection = "ABOVE" | "BELOW" | "CROSSING_UP" | "CROSSING_DOWN";
+
+export type AlertStatus = "ACTIVE" | "TRIGGERED" | "PAUSED" | "CANCELLED" | "EXPIRED";
 
 export type User = {
   id: string;

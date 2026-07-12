@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createAlert, deleteAlert, getAlerts } from "./api/alerts";
+import { createAlert, deleteAlert, getAlerts, updateAlertStatus } from "./api/alerts";
 import { getMarkets } from "./api/markets";
 import { updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
@@ -7,7 +7,7 @@ import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
-import type { Alert, AlertDirection, Market, PreferredLanguage, User } from "./types/api";
+import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User } from "./types/api";
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
@@ -114,6 +114,21 @@ export default function App() {
       await loadDashboardData(backendUser?.id);
     } catch (err) {
       setDeleteAlertResult(err instanceof Error ? err.message : copy.deleteFailed);
+    }
+  };
+
+  const handleToggleAlertStatus = async (alert: Alert) => {
+    try {
+      setDeleteAlertResult(null);
+
+      const nextStatus: AlertStatus = alert.status === "PAUSED" ? "ACTIVE" : "PAUSED";
+
+      await updateAlertStatus(alert.id, nextStatus);
+
+      setDeleteAlertResult(nextStatus === "PAUSED" ? copy.pauseSuccess : copy.resumeSuccess);
+      await loadDashboardData(backendUser?.id);
+    } catch (err) {
+      setDeleteAlertResult(err instanceof Error ? err.message : copy.statusUpdateFailed);
     }
   };
 
@@ -391,6 +406,11 @@ export default function App() {
 
               <div className="alert-actions">
                 <span className="market-badge">{alert.status}</span>
+                {alert.status === "ACTIVE" || alert.status === "PAUSED" ? (
+                  <button type="button" onClick={() => handleToggleAlertStatus(alert)}>
+                    {alert.status === "PAUSED" ? copy.resume : copy.pause}
+                  </button>
+                ) : null}
                 <button type="button" onClick={() => handleDeleteAlert(alert.id)}>
                   {copy.delete}
                 </button>

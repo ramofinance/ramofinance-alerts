@@ -1,5 +1,5 @@
-import type { Alert, AlertDirection, PaginatedResponse } from "../types/api";
-import { apiDelete, apiGet, apiPost } from "./http-client";
+import type { Alert, AlertDirection, AlertStatus, PaginatedResponse } from "../types/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "./http-client";
 
 export type CreateAlertInput = {
   userId: string;
@@ -41,4 +41,10 @@ export const createAlert = (input: CreateAlertInput) => {
 
 export const deleteAlert = (id: string) => {
   return apiDelete<null>(`/api/alerts/${id}`);
+};
+
+export const updateAlertStatus = (id: string, status: AlertStatus) => {
+  return apiPatch<Alert, { status: AlertStatus }>(`/api/alerts/${id}/status`, {
+    status
+  });
 };

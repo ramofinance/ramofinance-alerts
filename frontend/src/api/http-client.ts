@@ -53,6 +53,21 @@ export const apiPost = async <TData, TBody extends object>(
   return parseApiResponse<TData>(response);
 };
 
+export const apiPatch = async <TData, TBody extends object>(
+  path: string,
+  body: TBody
+): Promise<TData> => {
+  const response = await fetch(buildUrl(path), {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  return parseApiResponse<TData>(response);
+};
+
 
 export const apiDelete = async <TData>(path: string): Promise<TData> => {
   const response = await fetch(buildUrl(path), {
