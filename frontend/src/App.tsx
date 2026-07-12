@@ -26,6 +26,7 @@ export default function App() {
   const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("");
   const [testPrice, setTestPrice] = useState("");
   const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
+  const [alertStatusFilter, setAlertStatusFilter] = useState<AlertStatus | "ALL">("ALL");
   const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
   const [deleteAlertResult, setDeleteAlertResult] = useState<string | null>(null);
   const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
@@ -45,6 +46,10 @@ export default function App() {
       (market.name?.toLowerCase().includes(query) ?? false)
     );
   });
+
+  const filteredAlerts = alerts.filter((alert) =>
+    alertStatusFilter === "ALL" ? true : alert.status === alertStatusFilter
+  );
 
   const selectedMarket = markets.find((market) => market.id === selectedMarketId);
   const activeMarket = selectedMarket ?? filteredMarkets[0] ?? markets[0];
@@ -438,10 +443,21 @@ export default function App() {
         <div className="section-header">
           <div>
             <p className="card-label">{copy.myAlerts}</p>
-            <h2>{loading ? copy.loading : `${alerts.length} ${copy.alerts}`}</h2>
+            <h2>{loading ? copy.loading : `${filteredAlerts.length} ${copy.alerts}`}</h2>
           </div>
 
           <div className="price-test-box">
+            <select
+              value={alertStatusFilter}
+              onChange={(event) => setAlertStatusFilter(event.target.value as AlertStatus | "ALL")}
+              aria-label={copy.filterStatus}
+            >
+              <option value="ALL">{copy.allStatuses}</option>
+              <option value="ACTIVE">{copy.statuses.ACTIVE}</option>
+              <option value="PAUSED">{copy.statuses.PAUSED}</option>
+              <option value="TRIGGERED">{copy.statuses.TRIGGERED}</option>
+            </select>
+
             <input
               value={testPrice}
               onChange={(event) => setTestPrice(event.target.value)}
@@ -458,11 +474,11 @@ export default function App() {
         {deleteAlertResult ? <div className="alert-box">{deleteAlertResult}</div> : null}
 
         <div className="alerts-list">
-          {alerts.length === 0 && !loading ? (
+          {filteredAlerts.length === 0 && !loading ? (
             <p className="empty-state">{copy.noAlerts}</p>
           ) : null}
 
-          {alerts.map((alert) => {
+          {filteredAlerts.map((alert) => {
             const isEditing = editingAlertId === alert.id;
 
             if (isEditing) {
