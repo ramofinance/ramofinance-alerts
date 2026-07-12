@@ -40,7 +40,8 @@ const runPricePollingTick = async () => {
 
         await priceEngineService.processPriceUpdate({
           symbol: market.symbol,
-          price
+          price,
+          source: "binance"
         });
       } catch (error) {
         logger.warn(

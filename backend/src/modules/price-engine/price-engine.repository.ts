@@ -11,7 +11,7 @@ export const priceEngineRepository = {
     });
   },
 
-  upsertLatestMarketPrice(marketId: string, price: number, source = "manual") {
+  upsertLatestMarketPrice(marketId: string, price: string, source = "manual") {
     return prisma.marketPrice.upsert({
       where: {
         marketId

@@ -10,6 +10,7 @@ import { priceEngineRepository } from "./price-engine.repository";
 type PriceUpdateInput = {
   symbol: string;
   price: string;
+  source?: string;
 };
 
 const lastPrices = new Map<string, number>();
@@ -41,7 +42,9 @@ const shouldTriggerAlert = (
 export const priceEngineService = {
   async processPriceUpdate(input: PriceUpdateInput) {
     const symbol = input.symbol.trim().toUpperCase();
-    const currentPrice = Number(input.price);
+    const cleanPrice = input.price.trim();
+    const currentPrice = Number(cleanPrice);
+    const source = input.source?.trim() || "manual";
 
     if (!symbol) {
       throw new AppError("symbol is required", 400);
@@ -63,7 +66,7 @@ export const priceEngineService = {
 
     const previousPrice = lastPrices.get(symbol) ?? Number(market.latestPrice?.price ?? undefined);
 
-    await priceEngineRepository.upsertLatestMarketPrice(market.id, currentPrice);
+    await priceEngineRepository.upsertLatestMarketPrice(market.id, cleanPrice, source);
 
     const activeAlerts = await priceEngineRepository.findActiveAlertsByMarketId(market.id);
 
