@@ -66,7 +66,16 @@ export const priceEngineService = {
 
     const previousPrice = lastPrices.get(symbol) ?? Number(market.latestPrice?.price ?? undefined);
 
-    await priceEngineRepository.upsertLatestMarketPrice(market.id, cleanPrice, source);
+    const latestPrice = await priceEngineRepository.upsertLatestMarketPrice(
+      market.id,
+      cleanPrice,
+      source
+    );
+
+    const marketWithLatestPrice = {
+      ...market,
+      latestPrice
+    };
 
     const activeAlerts = await priceEngineRepository.findActiveAlertsByMarketId(market.id);
 
@@ -127,16 +136,18 @@ export const priceEngineService = {
     lastPrices.set(symbol, currentPrice);
 
     broadcastWebSocketEvent(websocketEventTypes.PRICE_UPDATED, {
-      market,
+      market: marketWithLatestPrice,
       price: currentPrice,
       previousPrice,
+      source,
       triggeredAlertsCount: triggeredAlerts.length
     });
 
     return {
-      market,
+      market: marketWithLatestPrice,
       price: currentPrice,
       previousPrice,
+      source,
       triggeredAlerts
     };
   }
