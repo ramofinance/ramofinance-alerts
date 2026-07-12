@@ -1,4 +1,4 @@
-import { AlertStatus } from "@prisma/client";
+import { AlertStatus, MarketType } from "@prisma/client";
 import { prisma } from "../../database/prisma";
 
 export const priceEngineRepository = {
@@ -24,6 +24,18 @@ export const priceEngineRepository = {
         marketId,
         price,
         source
+      }
+    });
+  },
+
+  findActiveMarketsByType(type: MarketType) {
+    return prisma.market.findMany({
+      where: {
+        type,
+        isActive: true
+      },
+      orderBy: {
+        symbol: "asc"
       }
     });
   },

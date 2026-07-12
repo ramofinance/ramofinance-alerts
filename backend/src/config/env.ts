@@ -1,6 +1,18 @@
 import "dotenv/config";
 import { z } from "zod";
 
+const booleanFromEnv = z.preprocess((value) => {
+  if (value === "true") {
+    return true;
+  }
+
+  if (value === "false") {
+    return false;
+  }
+
+  return value;
+}, z.boolean());
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
@@ -17,7 +29,10 @@ const envSchema = z.object({
 
   JWT_SECRET: z.string().optional(),
 
-  WS_PORT: z.coerce.number().int().positive().default(4000)
+  WS_PORT: z.coerce.number().int().positive().default(4000),
+
+  PRICE_POLLING_ENABLED: booleanFromEnv.default(false),
+  PRICE_POLLING_INTERVAL_MS: z.coerce.number().int().positive().default(30000)
 });
 
 export const env = envSchema.parse(process.env);
