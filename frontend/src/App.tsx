@@ -433,7 +433,7 @@ export default function App() {
               </div>
 
               <div className="alert-actions">
-                <span className="market-badge">{alert.status}</span>
+                <span className="market-badge">{copy.statuses[alert.status] ?? alert.status}</span>
                 {alert.status === "ACTIVE" || alert.status === "PAUSED" ? (
                   <button type="button" onClick={() => handleToggleAlertStatus(alert)}>
                     {alert.status === "PAUSED" ? copy.resume : copy.pause}

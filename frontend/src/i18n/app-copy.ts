@@ -72,6 +72,13 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
         BELOW: "پایین‌تر از",
         CROSSING_UP: "عبور رو به بالا",
         CROSSING_DOWN: "عبور رو به پایین"
+      },
+      statuses: {
+        ACTIVE: "فعال",
+        PAUSED: "متوقف",
+        TRIGGERED: "فعال‌شده",
+        CANCELLED: "لغوشده",
+        EXPIRED: "منقضی‌شده"
       }
     };
   }
@@ -142,6 +149,13 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
       BELOW: "Below",
       CROSSING_UP: "Crossing Up",
       CROSSING_DOWN: "Crossing Down"
+    },
+    statuses: {
+      ACTIVE: "Active",
+      PAUSED: "Paused",
+      TRIGGERED: "Triggered",
+      CANCELLED: "Cancelled",
+      EXPIRED: "Expired"
     }
   };
 };
