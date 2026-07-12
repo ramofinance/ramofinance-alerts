@@ -2,6 +2,8 @@ export const websocketEventTypes = {
   CONNECTION_READY: "connection.ready",
   MESSAGE_RECEIVED: "message.received",
   ALERT_CREATED: "alert.created",
+  ALERT_UPDATED: "alert.updated",
+  ALERT_DELETED: "alert.deleted",
   ALERT_TRIGGERED: "alert.triggered",
   PRICE_UPDATED: "price.updated",
   SYSTEM_HEARTBEAT: "system.heartbeat"

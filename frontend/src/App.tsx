@@ -197,10 +197,38 @@ export default function App() {
       }
     }
 
+    if (lastMessage.type === "alert.created" || lastMessage.type === "alert.updated") {
+      const payload = lastMessage.payload as { alert?: Alert };
+
+      if (payload.alert?.userId === backendUser?.id) {
+        setAlerts((currentAlerts) => {
+          const exists = currentAlerts.some((alert) => alert.id === payload.alert?.id);
+
+          if (!exists && payload.alert) {
+            return [payload.alert, ...currentAlerts];
+          }
+
+          return currentAlerts.map((alert) =>
+            alert.id === payload.alert?.id && payload.alert ? payload.alert : alert
+          );
+        });
+      }
+    }
+
+    if (lastMessage.type === "alert.deleted") {
+      const payload = lastMessage.payload as { alert?: Alert };
+
+      if (payload.alert?.userId === backendUser?.id) {
+        setAlerts((currentAlerts) =>
+          currentAlerts.filter((alert) => alert.id !== payload.alert?.id)
+        );
+      }
+    }
+
     if (lastMessage.type === "alert.triggered") {
       void loadDashboardData(backendUser?.id);
     }
-  }, [lastMessage]);
+  }, [lastMessage, backendUser?.id]);
 
   const telegramUserLabel = telegramMiniApp.user?.username
     ? `@${telegramMiniApp.user.username}`

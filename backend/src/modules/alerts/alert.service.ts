@@ -141,18 +141,28 @@ export const alertService = {
       throw new AppError("expiresAt must be a valid date", 400);
     }
 
-    return alertRepository.update(id, {
+    const alert = await alertRepository.update(id, {
       title: input.title,
       targetPrice: input.targetPrice,
       direction: input.direction,
       expiresAt
     });
+
+    broadcastWebSocketEvent(websocketEventTypes.ALERT_UPDATED, {
+      alert
+    });
+
+    return alert;
   },
 
   async updateAlertStatus(id: string, status: AlertStatus) {
     await this.getAlertById(id);
 
     const alert = await alertRepository.updateStatus(id, status);
+
+    broadcastWebSocketEvent(websocketEventTypes.ALERT_UPDATED, {
+      alert
+    });
 
     if (status === AlertStatus.TRIGGERED) {
       broadcastWebSocketEvent(websocketEventTypes.ALERT_TRIGGERED, {
@@ -164,7 +174,11 @@ export const alertService = {
   },
 
   async deleteAlert(id: string) {
-    await this.getAlertById(id);
+    const alert = await this.getAlertById(id);
     await alertRepository.delete(id);
+
+    broadcastWebSocketEvent(websocketEventTypes.ALERT_DELETED, {
+      alert
+    });
   }
 };
