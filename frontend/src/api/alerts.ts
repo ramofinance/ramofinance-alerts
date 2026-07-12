@@ -9,6 +9,12 @@ export type CreateAlertInput = {
   direction: AlertDirection;
 };
 
+export type UpdateAlertInput = {
+  title?: string | null;
+  targetPrice?: string;
+  direction?: AlertDirection;
+};
+
 export type GetAlertsFilters = {
   userId?: string;
   status?: string;
@@ -38,6 +44,9 @@ export const createAlert = (input: CreateAlertInput) => {
   return apiPost<Alert, CreateAlertInput>("/api/alerts", input);
 };
 
+export const updateAlert = (id: string, input: UpdateAlertInput) => {
+  return apiPatch<Alert, UpdateAlertInput>(`/api/alerts/${id}`, input);
+};
 
 export const deleteAlert = (id: string) => {
   return apiDelete<null>(`/api/alerts/${id}`);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createAlert, deleteAlert, getAlerts, updateAlertStatus } from "./api/alerts";
+import { createAlert, deleteAlert, getAlerts, updateAlert, updateAlertStatus } from "./api/alerts";
 import { getMarkets } from "./api/markets";
 import { updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
@@ -28,6 +28,10 @@ export default function App() {
   const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
   const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
   const [deleteAlertResult, setDeleteAlertResult] = useState<string | null>(null);
+  const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
+  const [editAlertTitle, setEditAlertTitle] = useState("");
+  const [editAlertTargetPrice, setEditAlertTargetPrice] = useState("");
+  const [editAlertDirection, setEditAlertDirection] = useState<AlertDirection>("ABOVE");
 
   const filteredMarkets = markets.filter((market) => {
     const query = marketSearch.trim().toLowerCase();
@@ -101,6 +105,43 @@ export default function App() {
       await loadDashboardData(backendUser.id);
     } catch (err) {
       setCreateAlertResult(err instanceof Error ? err.message : copy.createFailed);
+    }
+  };
+
+  const handleStartEditAlert = (alert: Alert) => {
+    setEditingAlertId(alert.id);
+    setEditAlertTitle(alert.title ?? "");
+    setEditAlertTargetPrice(alert.targetPrice);
+    setEditAlertDirection(alert.direction as AlertDirection);
+  };
+
+  const handleCancelEditAlert = () => {
+    setEditingAlertId(null);
+    setEditAlertTitle("");
+    setEditAlertTargetPrice("");
+    setEditAlertDirection("ABOVE");
+  };
+
+  const handleSaveAlertUpdate = async (alertId: string) => {
+    try {
+      setDeleteAlertResult(null);
+
+      if (!editAlertTargetPrice.trim() || Number.isNaN(Number(editAlertTargetPrice))) {
+        setDeleteAlertResult(copy.invalidTargetPrice);
+        return;
+      }
+
+      await updateAlert(alertId, {
+        title: editAlertTitle.trim() || null,
+        targetPrice: editAlertTargetPrice.trim(),
+        direction: editAlertDirection
+      });
+
+      setDeleteAlertResult(copy.updateSuccess);
+      handleCancelEditAlert();
+      await loadDashboardData(backendUser?.id);
+    } catch (err) {
+      setDeleteAlertResult(err instanceof Error ? err.message : copy.updateFailed);
     }
   };
 
@@ -421,30 +462,92 @@ export default function App() {
             <p className="empty-state">{copy.noAlerts}</p>
           ) : null}
 
-          {alerts.map((alert) => (
-            <article className="alert-item" key={alert.id}>
-              <div>
-                <h3>{alert.title ?? "Untitled alert"}</h3>
-                <p>
-                  {alert.market?.symbol ?? alert.marketId} ·{" "}
-                  {copy.directions[alert.direction as AlertDirection] ?? alert.direction} ·{" "}
-                  {alert.targetPrice}
-                </p>
-              </div>
+          {alerts.map((alert) => {
+            const isEditing = editingAlertId === alert.id;
 
-              <div className="alert-actions">
-                <span className="market-badge">{copy.statuses[alert.status] ?? alert.status}</span>
-                {alert.status === "ACTIVE" || alert.status === "PAUSED" ? (
-                  <button type="button" onClick={() => handleToggleAlertStatus(alert)}>
-                    {alert.status === "PAUSED" ? copy.resume : copy.pause}
+            if (isEditing) {
+              return (
+                <article className="alert-item alert-item--editing" key={alert.id}>
+                  <div className="alert-edit-form">
+                    <label>
+                      {copy.titleLabel}
+                      <input
+                        value={editAlertTitle}
+                        onChange={(event) => setEditAlertTitle(event.target.value)}
+                        placeholder={copy.optionalTitlePlaceholder}
+                      />
+                    </label>
+
+                    <div className="form-grid form-grid--two">
+                      <label>
+                        {copy.direction}
+                        <select
+                          value={editAlertDirection}
+                          onChange={(event) =>
+                            setEditAlertDirection(event.target.value as AlertDirection)
+                          }
+                        >
+                          <option value="ABOVE">{copy.directions.ABOVE}</option>
+                          <option value="BELOW">{copy.directions.BELOW}</option>
+                          <option value="CROSSING_UP">{copy.directions.CROSSING_UP}</option>
+                          <option value="CROSSING_DOWN">{copy.directions.CROSSING_DOWN}</option>
+                        </select>
+                      </label>
+
+                      <label>
+                        {copy.targetPrice}
+                        <input
+                          value={editAlertTargetPrice}
+                          onChange={(event) => setEditAlertTargetPrice(event.target.value)}
+                          placeholder={copy.targetPricePlaceholder}
+                          inputMode="decimal"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="alert-actions alert-edit-actions">
+                      <button type="button" onClick={() => handleSaveAlertUpdate(alert.id)}>
+                        {copy.save}
+                      </button>
+                      <button type="button" onClick={handleCancelEditAlert}>
+                        {copy.cancel}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            }
+
+            return (
+              <article className="alert-item" key={alert.id}>
+                <div>
+                  <h3>{alert.title ?? "Untitled alert"}</h3>
+                  <p>
+                    {alert.market?.symbol ?? alert.marketId} ·{" "}
+                    {copy.directions[alert.direction as AlertDirection] ?? alert.direction} ·{" "}
+                    {alert.targetPrice}
+                  </p>
+                </div>
+
+                <div className="alert-actions">
+                  <span className="market-badge">{copy.statuses[alert.status] ?? alert.status}</span>
+                  {alert.status === "ACTIVE" || alert.status === "PAUSED" ? (
+                    <>
+                      <button type="button" onClick={() => handleStartEditAlert(alert)}>
+                        {copy.edit}
+                      </button>
+                      <button type="button" onClick={() => handleToggleAlertStatus(alert)}>
+                        {alert.status === "PAUSED" ? copy.resume : copy.pause}
+                      </button>
+                    </>
+                  ) : null}
+                  <button type="button" onClick={() => handleDeleteAlert(alert.id)}>
+                    {copy.delete}
                   </button>
-                ) : null}
-                <button type="button" onClick={() => handleDeleteAlert(alert.id)}>
-                  {copy.delete}
-                </button>
-              </div>
-            </article>
-          ))}
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 

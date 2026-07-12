@@ -286,10 +286,24 @@ select:focus {
   padding: 14px;
 }
 
+.alert-item--editing {
+  align-items: stretch;
+}
+
+.alert-edit-form {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
 .alert-actions {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+
+.alert-edit-actions {
+  justify-content: flex-end;
 }
 
 .empty-state {
