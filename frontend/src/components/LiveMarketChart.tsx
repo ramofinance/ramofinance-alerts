@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { ColorType, createChart, type IChartApi, type ISeriesApi, type LineData, type Time } from "lightweight-charts";
-import type { Market } from "../types/api";
+import type { Alert, AlertDirection, Market } from "../types/api";
 
 type LiveMarketChartProps = {
   market: Market | undefined;
+  alerts: Alert[];
+  directionLabels: Record<AlertDirection, string>;
   title: string;
   emptyText: string;
 };
@@ -12,11 +14,18 @@ const toChartTime = (value: string): Time => {
   return Math.floor(new Date(value).getTime() / 1000) as Time;
 };
 
-export const LiveMarketChart = ({ market, title, emptyText }: LiveMarketChartProps) => {
+export const LiveMarketChart = ({
+  market,
+  alerts,
+  directionLabels,
+  title,
+  emptyText
+}: LiveMarketChartProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const dataRef = useRef<LineData[]>([]);
+  const priceLinesRef = useRef<ReturnType<ISeriesApi<"Line">["createPriceLine"]>[]>([]);
 
   useEffect(() => {
     if (!containerRef.current || chartRef.current) {
@@ -62,6 +71,8 @@ export const LiveMarketChart = ({ market, title, emptyText }: LiveMarketChartPro
 
     return () => {
       window.removeEventListener("resize", resizeChart);
+      priceLinesRef.current.forEach((line) => series.removePriceLine(line));
+      priceLinesRef.current = [];
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
@@ -73,6 +84,44 @@ export const LiveMarketChart = ({ market, title, emptyText }: LiveMarketChartPro
     dataRef.current = [];
     seriesRef.current?.setData([]);
   }, [market?.id]);
+
+  useEffect(() => {
+    if (!seriesRef.current) {
+      return;
+    }
+
+    priceLinesRef.current.forEach((line) => seriesRef.current?.removePriceLine(line));
+    priceLinesRef.current = [];
+
+    if (!market?.id) {
+      return;
+    }
+
+    const marketAlerts = alerts.filter(
+      (alert) =>
+        alert.marketId === market.id &&
+        (alert.status === "ACTIVE" || alert.status === "PAUSED")
+    );
+
+    priceLinesRef.current = marketAlerts
+      .map((alert) => {
+        const price = Number(alert.targetPrice);
+
+        if (!Number.isFinite(price)) {
+          return null;
+        }
+
+        return seriesRef.current?.createPriceLine({
+          price,
+          color: alert.status === "PAUSED" ? "rgba(148, 163, 184, 0.72)" : "#facc15",
+          lineWidth: 2,
+          lineStyle: 2,
+          axisLabelVisible: true,
+          title: `${directionLabels[alert.direction as AlertDirection] ?? alert.direction} ${alert.targetPrice}`
+        });
+      })
+      .filter((line): line is ReturnType<ISeriesApi<"Line">["createPriceLine"]> => Boolean(line));
+  }, [alerts, directionLabels, market?.id]);
 
   useEffect(() => {
     if (!market?.latestPrice || !seriesRef.current) {

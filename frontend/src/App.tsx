@@ -355,6 +355,8 @@ export default function App() {
 
       <LiveMarketChart
         market={activeMarket}
+        alerts={alerts}
+        directionLabels={copy.directions}
         title={copy.liveChart}
         emptyText={copy.noLatestPrice}
       />
