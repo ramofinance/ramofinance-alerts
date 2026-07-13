@@ -40,6 +40,28 @@ const shouldTriggerAlert = (
 };
 
 export const priceEngineService = {
+  async getPriceHistory(symbolInput: string, limitInput = 100) {
+    const symbol = symbolInput.trim().toUpperCase();
+    const limit = Math.min(Math.max(limitInput, 1), 500);
+
+    if (!symbol) {
+      throw new AppError("symbol is required", 400);
+    }
+
+    const market = await priceEngineRepository.findMarketBySymbol(symbol);
+
+    if (!market) {
+      throw new AppError("Market not found", 404);
+    }
+
+    const items = await priceEngineRepository.findMarketPriceHistory(market.id, limit);
+
+    return {
+      market,
+      items: items.reverse()
+    };
+  },
+
   async processPriceUpdate(input: PriceUpdateInput) {
     const symbol = input.symbol.trim().toUpperCase();
     const cleanPrice = input.price.trim();

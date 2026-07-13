@@ -50,6 +50,18 @@ export const priceEngineRepository = {
     });
   },
 
+  findMarketPriceHistory(marketId: string, limit = 100) {
+    return prisma.marketPriceHistory.findMany({
+      where: {
+        marketId
+      },
+      orderBy: {
+        observedAt: "desc"
+      },
+      take: limit
+    });
+  },
+
   findActiveAlertsByMarketId(marketId: string) {
     return prisma.alert.findMany({
       where: {

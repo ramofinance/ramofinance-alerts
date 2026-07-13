@@ -8,6 +8,14 @@ const priceUpdateSchema = z.object({
   price: z.string().trim().min(1)
 });
 
+const priceHistoryParamsSchema = z.object({
+  symbol: z.string().trim().min(1)
+});
+
+const priceHistoryQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(500).optional()
+});
+
 const parseOrThrow = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
   const result = schema.safeParse(data);
 
@@ -22,6 +30,21 @@ export const processPriceUpdateController: RequestHandler = async (req, res, nex
   try {
     const input = parseOrThrow(priceUpdateSchema, req.body);
     const result = await priceEngineService.processPriceUpdate(input);
+
+    res.json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPriceHistoryController: RequestHandler = async (req, res, next) => {
+  try {
+    const params = parseOrThrow(priceHistoryParamsSchema, req.params);
+    const query = parseOrThrow(priceHistoryQuerySchema, req.query);
+    const result = await priceEngineService.getPriceHistory(params.symbol, query.limit);
 
     res.json({
       success: true,
