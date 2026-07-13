@@ -1,20 +1,21 @@
 import { useEffect, useState } from "react";
 import { createAlert, deleteAlert, getAlerts, updateAlert, updateAlertStatus } from "./api/alerts";
 import { getMarkets } from "./api/markets";
-import { updatePrice } from "./api/prices";
+import { getPriceHistory, updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { LiveMarketChart } from "./components/LiveMarketChart";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
-import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User } from "./types/api";
+import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User, MarketPriceHistory } from "./types/api";
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
   const [telegramMiniApp, setTelegramMiniApp] = useState(() => initializeTelegramMiniApp());
 
   const [markets, setMarkets] = useState<Market[]>([]);
+  const [priceHistory, setPriceHistory] = useState<MarketPriceHistory[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -356,6 +357,7 @@ export default function App() {
       <LiveMarketChart
         market={activeMarket}
         alerts={alerts}
+      history={priceHistory}
         directionLabels={copy.directions}
         title={copy.liveChart}
         emptyText={copy.noLatestPrice}

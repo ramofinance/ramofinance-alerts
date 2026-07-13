@@ -22,6 +22,15 @@ export type MarketPrice = {
   createdAt: string;
 };
 
+export type MarketPriceHistory = {
+  id: string;
+  marketId: string;
+  price: string;
+  source: string;
+  observedAt: string;
+  createdAt: string;
+};
+
 export type Market = {
   id: string;
   symbol: string;

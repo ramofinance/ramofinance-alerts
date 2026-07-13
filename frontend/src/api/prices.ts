@@ -1,5 +1,5 @@
-import type { Alert, Market } from "../types/api";
-import { apiPost } from "./http-client";
+import type { Alert, Market, MarketPriceHistory } from "../types/api";
+import { apiGet, apiPost } from "./http-client";
 
 type PriceUpdateResponse = {
   market: Market;
@@ -15,5 +15,17 @@ export const updatePrice = (symbol: string, price: string) => {
       symbol,
       price
     }
+  );
+};
+
+
+export type PriceHistoryResponse = {
+  market: Market;
+  items: MarketPriceHistory[];
+};
+
+export const getPriceHistory = (symbol: string, limit = 120) => {
+  return apiGet<PriceHistoryResponse>(
+    `/api/prices/${encodeURIComponent(symbol)}/history?limit=${limit}`
   );
 };
