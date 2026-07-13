@@ -80,6 +80,7 @@ model Market {
 
   alerts Alert[]
   latestPrice MarketPrice?
+  priceHistory MarketPriceHistory[]
 
   @@index([symbol])
   @@index([type])
@@ -97,6 +98,21 @@ model MarketPrice {
 
   @@index([marketId])
   @@index([updatedAt])
+}
+
+model MarketPriceHistory {
+  id         String   @id @default(uuid())
+  marketId   String
+  price      Decimal
+  source     String   @default("manual")
+  observedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@index([marketId])
+  @@index([marketId, observedAt])
+  @@index([observedAt])
 }
 
 model Alert {

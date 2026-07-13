@@ -72,6 +72,12 @@ export const priceEngineService = {
       source
     );
 
+    await priceEngineRepository.createMarketPriceHistory(
+      market.id,
+      cleanPrice,
+      source
+    );
+
     const marketWithLatestPrice = {
       ...market,
       latestPrice

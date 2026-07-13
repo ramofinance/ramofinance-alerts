@@ -28,6 +28,16 @@ export const priceEngineRepository = {
     });
   },
 
+  createMarketPriceHistory(marketId: string, price: string, source = "manual") {
+    return prisma.marketPriceHistory.create({
+      data: {
+        marketId,
+        price,
+        source
+      }
+    });
+  },
+
   findActiveMarketsByType(type: MarketType) {
     return prisma.market.findMany({
       where: {
