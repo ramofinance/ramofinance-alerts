@@ -5,6 +5,7 @@ import { updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
+import { LiveMarketChart } from "./components/LiveMarketChart";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User } from "./types/api";
@@ -351,6 +352,12 @@ export default function App() {
           </div>
         )}
       </section>
+
+      <LiveMarketChart
+        market={activeMarket}
+        title={copy.liveChart}
+        emptyText={copy.noLatestPrice}
+      />
 
       <section className="card">
         <div className="section-header">
