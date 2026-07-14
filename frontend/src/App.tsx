@@ -8,6 +8,7 @@ import { useWebSocket } from "./hooks/use-websocket";
 import { LiveMarketChart } from "./components/LiveMarketChart";
 import { AlertsList } from "./components/AlertsList";
 import { BottomTabs } from "./components/BottomTabs";
+import { CreateAlertCard } from "./components/CreateAlertCard";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User, MarketPriceHistory } from "./types/api";
@@ -449,6 +450,23 @@ export default function App() {
 
       {activeTab === "ALERTS" ? (
       <>
+      <CreateAlertCard
+        activeMarket={activeMarket}
+        filteredMarkets={filteredMarkets}
+        marketSearch={marketSearch}
+        setMarketSearch={setMarketSearch}
+        setSelectedMarketId={setSelectedMarketId}
+        newAlertDirection={newAlertDirection}
+        setNewAlertDirection={setNewAlertDirection}
+        newAlertTargetPrice={newAlertTargetPrice}
+        setNewAlertTargetPrice={setNewAlertTargetPrice}
+        newAlertTitle={newAlertTitle}
+        setNewAlertTitle={setNewAlertTitle}
+        createAlertResult={createAlertResult}
+        handleCreateAlert={handleCreateAlert}
+        copy={copy}
+      />
+
       <AlertsList
         filteredAlerts={filteredAlerts}
         loading={loading}
