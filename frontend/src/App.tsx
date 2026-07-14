@@ -6,6 +6,7 @@ import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { LiveMarketChart } from "./components/LiveMarketChart";
+import { AlertsList } from "./components/AlertsList";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User, MarketPriceHistory } from "./types/api";
@@ -460,92 +461,31 @@ export default function App() {
 
       {activeTab === "ALERTS" ? (
       <>
-      <section className="card">
-        <div className="section-header">
-          <div>
-            <p className="card-label">{copy.createAlert}</p>
-            <h2>{copy.newAlert}</h2>
-          </div>
-        </div>
-
-        <div className="form-grid">
-          <label>
-            {copy.searchMarket}
-            <input
-              value={marketSearch}
-              onChange={(event) => setMarketSearch(event.target.value)}
-              placeholder={copy.searchMarketPlaceholder}
-            />
-          </label>
-
-          <label>
-            {copy.selectMarket}
-            <select
-              value={activeMarket?.id ?? ""}
-              onChange={(event) => setSelectedMarketId(event.target.value)}
-              disabled={filteredMarkets.length === 0}
-            >
-              {filteredMarkets.length === 0 ? (
-                <option value="">{copy.noMarketFound}</option>
-              ) : null}
-
-              {filteredMarkets.map((market) => (
-                <option value={market.id} key={market.id}>
-                  {market.symbol} - {market.name ?? market.type}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="form-grid form-grid--two">
-            <label>
-              {copy.direction}
-              <select
-                value={newAlertDirection}
-                onChange={(event) => setNewAlertDirection(event.target.value as AlertDirection)}
-              >
-                <option value="ABOVE">{copy.directions.ABOVE}</option>
-                <option value="BELOW">{copy.directions.BELOW}</option>
-                <option value="CROSSING_UP">{copy.directions.CROSSING_UP}</option>
-                <option value="CROSSING_DOWN">{copy.directions.CROSSING_DOWN}</option>
-              </select>
-            </label>
-
-            <label>
-              {copy.targetPrice}
-              <input
-                value={newAlertTargetPrice}
-                onChange={(event) => setNewAlertTargetPrice(event.target.value)}
-                placeholder={copy.targetPricePlaceholder}
-                inputMode="decimal"
-              />
-            </label>
-          </div>
-
-          <label>
-            {copy.titleLabel}
-            <input
-              value={newAlertTitle}
-              onChange={(event) => setNewAlertTitle(event.target.value)}
-              placeholder={copy.optionalTitlePlaceholder}
-            />
-          </label>
-
-          <div className="alert-preview">
-            <span>{copy.preview}</span>
-            <strong>
-              {activeMarket?.symbol ?? copy.noMarket} · {copy.directions[newAlertDirection]} ·{" "}
-              {newAlertTargetPrice || copy.targetPricePlaceholder}
-            </strong>
-          </div>
-        </div>
-
-        <button className="primary-button" type="button" onClick={handleCreateAlert}>
-          {copy.createButton}
-        </button>
-
-        {createAlertResult ? <div className="alert-box">{createAlertResult}</div> : null}
-      </section>
+      <AlertsList
+        filteredAlerts={filteredAlerts}
+        loading={loading}
+        alertStats={alertStats}
+        alertStatusFilter={alertStatusFilter}
+        setAlertStatusFilter={setAlertStatusFilter}
+        testPrice={testPrice}
+        setTestPrice={setTestPrice}
+        priceUpdateResult={priceUpdateResult}
+        deleteAlertResult={deleteAlertResult}
+        copy={copy}
+        handlePriceUpdate={handlePriceUpdate}
+        editingAlertId={editingAlertId}
+        editAlertTitle={editAlertTitle}
+        setEditAlertTitle={setEditAlertTitle}
+        editAlertTargetPrice={editAlertTargetPrice}
+        setEditAlertTargetPrice={setEditAlertTargetPrice}
+        editAlertDirection={editAlertDirection}
+        setEditAlertDirection={setEditAlertDirection}
+        handleSaveAlertUpdate={handleSaveAlertUpdate}
+        handleCancelEditAlert={handleCancelEditAlert}
+        handleStartEditAlert={handleStartEditAlert}
+        handleToggleAlertStatus={handleToggleAlertStatus}
+        handleDeleteAlert={handleDeleteAlert}
+      />
 
       <section className="card">
         <div className="section-header">
