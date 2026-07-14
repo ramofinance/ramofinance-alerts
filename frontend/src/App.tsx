@@ -261,7 +261,10 @@ export default function App() {
     }
 
     if (lastMessage.type === "price.updated") {
-      const payload = lastMessage.payload as { market?: Market };
+      const payload = lastMessage.payload as {
+        market?: Market;
+        price?: number;
+      };
 
       if (payload.market?.id) {
         setMarkets((currentMarkets) =>
@@ -269,6 +272,22 @@ export default function App() {
             market.id === payload.market?.id ? { ...market, ...payload.market } : market
           )
         );
+
+        if (payload.market.id === activeMarket?.id) {
+          if (payload.price !== undefined) {
+            setPriceHistory((currentHistory) => [
+              ...currentHistory.slice(-119),
+              {
+                id: `${Date.now()}`,
+                marketId: payload.market!.id,
+                price: String(payload.price),
+                source: "websocket",
+                observedAt: new Date().toISOString(),
+                createdAt: new Date().toISOString()
+              }
+            ]);
+          }
+        }
       }
     }
 
