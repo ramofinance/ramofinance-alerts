@@ -438,12 +438,16 @@ export default function App() {
       <LiveMarketChart
         market={activeMarket}
         alerts={alerts}
-      history={priceHistory}
+        history={priceHistory}
         directionLabels={copy.directions}
         title={copy.liveChart}
         emptyText={copy.noLatestPrice}
       />
+      </section>
+      ) : null}
 
+      {activeTab === "ALERTS" ? (
+      <>
       <section className="card">
         <div className="section-header">
           <div>
@@ -658,8 +662,7 @@ export default function App() {
           })}
         </div>
       </section>
-
-      </section>
+      </>
       ) : null}
 
       <details className="debug-box">
