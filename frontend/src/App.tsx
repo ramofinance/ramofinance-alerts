@@ -670,6 +670,7 @@ export default function App() {
       </>
       ) : null}
 
+      {activeTab === "SETTINGS" ? (
       <details className="debug-box">
         <summary>{copy.debug}</summary>
         <p>
@@ -680,6 +681,7 @@ export default function App() {
         </p>
         <pre>{lastMessage ? JSON.stringify(lastMessage, null, 2) : copy.noMessage}</pre>
       </details>
+      ) : null}
     </main>
   );
 }
