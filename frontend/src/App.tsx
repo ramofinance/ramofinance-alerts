@@ -391,6 +391,7 @@ export default function App() {
         </article>
       </section>
 
+      {activeTab === "HOME" || activeTab === "CHART" ? (
       <section className="card">
         <div className="section-header">
           <div>
@@ -417,7 +418,10 @@ export default function App() {
           </div>
         )}
       </section>
+      ) : null}
 
+      {activeTab === "CHART" ? (
+      <section>
       <section className="market-shortcuts">
         {markets.slice(0, 5).map((market) => (
           <button
@@ -654,6 +658,9 @@ export default function App() {
           })}
         </div>
       </section>
+
+      </section>
+      ) : null}
 
       <details className="debug-box">
         <summary>{copy.debug}</summary>
