@@ -49,6 +49,7 @@ export function LiveMarketChart({
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
   const priceLinesRef = useRef<IPriceLine[]>([]);
+  const hasFittedContentRef = useRef(false);
 
   const chartData = useMemo(() => {
     const points: LineData[] = history.map((item) => ({
@@ -136,7 +137,11 @@ export function LiveMarketChart({
     }
 
     seriesRef.current.setData(chartData);
-    chartRef.current?.timeScale().fitContent();
+
+    if (!hasFittedContentRef.current && chartData.length > 0) {
+      chartRef.current?.timeScale().fitContent();
+      hasFittedContentRef.current = true;
+    }
   }, [chartData, market?.id]);
 
   useEffect(() => {
