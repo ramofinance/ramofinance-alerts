@@ -7,6 +7,7 @@ import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { LiveMarketChart } from "./components/LiveMarketChart";
 import { AlertsList } from "./components/AlertsList";
+import { BottomTabs } from "./components/BottomTabs";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User, MarketPriceHistory } from "./types/api";
@@ -342,24 +343,11 @@ export default function App() {
 
   return (
     <main className="app-shell" dir={appDirection}>
-      <nav className="tab-bar">
-        {[
-          ["HOME", "🏠", copy.tabs.home],
-          ["CHART", "📈", copy.tabs.chart],
-          ["ALERTS", "🔔", copy.tabs.alerts],
-          ["SETTINGS", "⚙️", copy.tabs.settings]
-        ].map(([key, icon, label]) => (
-          <button
-            key={key}
-            type="button"
-            className={activeTab === key ? "tab-button active" : "tab-button"}
-            onClick={() => setActiveTab(key as typeof activeTab)}
-          >
-            <span>{icon}</span>
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
+      <BottomTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        copy={copy}
+      />
       {activeTab === "HOME" ? (
       <>
       <section className="hero-card">
