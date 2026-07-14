@@ -9,6 +9,7 @@ import { LiveMarketChart } from "./components/LiveMarketChart";
 import { AlertsList } from "./components/AlertsList";
 import { BottomTabs } from "./components/BottomTabs";
 import { CreateAlertCard } from "./components/CreateAlertCard";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User, MarketPriceHistory } from "./types/api";
@@ -497,16 +498,12 @@ export default function App() {
       ) : null}
 
       {activeTab === "SETTINGS" ? (
-      <details className="debug-box">
-        <summary>{copy.debug}</summary>
-        <p>
-          {copy.apiUrl}: {frontendEnv.apiUrl}
-        </p>
-        <p>
-          {copy.websocketUrl}: {frontendEnv.websocketUrl}
-        </p>
-        <pre>{lastMessage ? JSON.stringify(lastMessage, null, 2) : copy.noMessage}</pre>
-      </details>
+      <SettingsPanel
+        copy={copy}
+        apiUrl={frontendEnv.apiUrl}
+        websocketUrl={frontendEnv.websocketUrl}
+        lastMessage={lastMessage}
+      />
       ) : null}
     </main>
   );
