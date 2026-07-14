@@ -162,7 +162,8 @@ export function LiveMarketChart({
           title: `${directionLabels[alert.direction] ?? alert.direction} ${alert.targetPrice}`,
           axisLabelVisible: true,
           lineVisible: true,
-          lineWidth: 1
+          lineWidth: 2,
+          lineStyle: alert.direction.includes("DOWN") ? 2 : 0
         })
       );
   }, [alerts, directionLabels, market?.id]);
