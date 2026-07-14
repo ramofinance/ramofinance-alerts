@@ -23,6 +23,7 @@ export default function App() {
   const [backendUser, setBackendUser] = useState<User | null>(null);
   const [appLanguage, setAppLanguage] = useState<PreferredLanguage | null>(null);
   const [selectedMarketId, setSelectedMarketId] = useState("");
+  const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
   const [marketSearch, setMarketSearch] = useState("");
   const [newAlertTitle, setNewAlertTitle] = useState("");
   const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("");
@@ -334,6 +335,23 @@ export default function App() {
 
   return (
     <main className="app-shell" dir={appDirection}>
+      <nav className="tab-bar">
+        {[
+          ["HOME", "Home"],
+          ["CHART", "Chart"],
+          ["ALERTS", "Alerts"],
+          ["SETTINGS", "Settings"]
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={activeTab === key ? "tab-button active" : "tab-button"}
+            onClick={() => setActiveTab(key as typeof activeTab)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
       <section className="hero-card">
         <div>
           <p className="eyebrow">{copy.eyebrow}</p>
