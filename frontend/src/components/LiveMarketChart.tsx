@@ -169,6 +169,11 @@ export function LiveMarketChart({
           <h2>{title}</h2>
           <p>{market ? market.symbol : emptyText}</p>
         </div>
+        {market?.latestPrice ? (
+          <strong className="chart-current-price">
+            {Number(market.latestPrice.price).toLocaleString()}
+          </strong>
+        ) : null}
       </div>
       <div ref={containerRef} className="chart-container" />
     </section>
