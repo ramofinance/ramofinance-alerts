@@ -10,6 +10,7 @@ import { AlertsList } from "./components/AlertsList";
 import { BottomTabs } from "./components/BottomTabs";
 import { CreateAlertCard } from "./components/CreateAlertCard";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { useAlerts } from "./hooks/useAlerts";
 import { HomePanel } from "./components/HomePanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
@@ -30,17 +31,35 @@ export default function App() {
   const [selectedMarketId, setSelectedMarketId] = useState("");
   const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
   const [marketSearch, setMarketSearch] = useState("");
-  const [newAlertTitle, setNewAlertTitle] = useState("");
-  const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("");
-  const [testPrice, setTestPrice] = useState("");
-  const [newAlertDirection, setNewAlertDirection] = useState<AlertDirection>("ABOVE");
-  const [alertStatusFilter, setAlertStatusFilter] = useState<AlertStatus | "ALL">("ALL");
-  const [createAlertResult, setCreateAlertResult] = useState<string | null>(null);
-  const [deleteAlertResult, setDeleteAlertResult] = useState<string | null>(null);
-  const [editingAlertId, setEditingAlertId] = useState<string | null>(null);
-  const [editAlertTitle, setEditAlertTitle] = useState("");
-  const [editAlertTargetPrice, setEditAlertTargetPrice] = useState("");
-  const [editAlertDirection, setEditAlertDirection] = useState<AlertDirection>("ABOVE");
+
+  const alertState = useAlerts({ alerts });
+
+  const {
+    filteredAlerts,
+    alertStats,
+    newAlertTitle,
+    setNewAlertTitle,
+    newAlertTargetPrice,
+    setNewAlertTargetPrice,
+    newAlertDirection,
+    setNewAlertDirection,
+    testPrice,
+    setTestPrice,
+    alertStatusFilter,
+    setAlertStatusFilter,
+    createAlertResult,
+    setCreateAlertResult,
+    deleteAlertResult,
+    setDeleteAlertResult,
+    editingAlertId,
+    setEditingAlertId,
+    editAlertTitle,
+    setEditAlertTitle,
+    editAlertTargetPrice,
+    setEditAlertTargetPrice,
+    editAlertDirection,
+    setEditAlertDirection
+  } = alertState;
 
   const filteredMarkets = markets.filter((market) => {
     const query = marketSearch.trim().toLowerCase();
@@ -55,15 +74,6 @@ export default function App() {
     );
   });
 
-  const filteredAlerts = alerts.filter((alert) =>
-    alertStatusFilter === "ALL" ? true : alert.status === alertStatusFilter
-  );
-
-  const alertStats = {
-    active: alerts.filter((alert) => alert.status === "ACTIVE").length,
-    paused: alerts.filter((alert) => alert.status === "PAUSED").length,
-    triggered: alerts.filter((alert) => alert.status === "TRIGGERED").length
-  };
 
   const selectedMarket = markets.find((market) => market.id === selectedMarketId);
   const activeMarket = selectedMarket ?? filteredMarkets[0] ?? markets[0];

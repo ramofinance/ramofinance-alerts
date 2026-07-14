@@ -1,0 +1,78 @@
+import { useMemo, useState } from "react";
+import type { Alert, AlertDirection, AlertStatus } from "../types/api";
+
+type Props = {
+  alerts: Alert[];
+};
+
+export function useAlerts({ alerts }: Props) {
+  const [newAlertTitle, setNewAlertTitle] = useState("");
+  const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("");
+  const [newAlertDirection, setNewAlertDirection] =
+    useState<AlertDirection>("ABOVE");
+
+  const [testPrice, setTestPrice] = useState("");
+  const [alertStatusFilter, setAlertStatusFilter] =
+    useState<AlertStatus | "ALL">("ALL");
+
+  const [createAlertResult, setCreateAlertResult] =
+    useState<string | null>(null);
+
+  const [deleteAlertResult, setDeleteAlertResult] =
+    useState<string | null>(null);
+
+  const [editingAlertId, setEditingAlertId] =
+    useState<string | null>(null);
+
+  const [editAlertTitle, setEditAlertTitle] = useState("");
+  const [editAlertTargetPrice, setEditAlertTargetPrice] = useState("");
+  const [editAlertDirection, setEditAlertDirection] =
+    useState<AlertDirection>("ABOVE");
+
+  const filteredAlerts = useMemo(
+    () =>
+      alerts.filter((alert) =>
+        alertStatusFilter === "ALL"
+          ? true
+          : alert.status === alertStatusFilter
+      ),
+    [alerts, alertStatusFilter]
+  );
+
+  const alertStats = {
+    active: alerts.filter((alert) => alert.status === "ACTIVE").length,
+    paused: alerts.filter((alert) => alert.status === "PAUSED").length,
+    triggered: alerts.filter((alert) => alert.status === "TRIGGERED").length
+  };
+
+  return {
+    filteredAlerts,
+    alertStats,
+
+    newAlertTitle,
+    setNewAlertTitle,
+    newAlertTargetPrice,
+    setNewAlertTargetPrice,
+    newAlertDirection,
+    setNewAlertDirection,
+
+    testPrice,
+    setTestPrice,
+    alertStatusFilter,
+    setAlertStatusFilter,
+
+    createAlertResult,
+    setCreateAlertResult,
+    deleteAlertResult,
+    setDeleteAlertResult,
+
+    editingAlertId,
+    setEditingAlertId,
+    editAlertTitle,
+    setEditAlertTitle,
+    editAlertTargetPrice,
+    setEditAlertTargetPrice,
+    editAlertDirection,
+    setEditAlertDirection
+  };
+}
