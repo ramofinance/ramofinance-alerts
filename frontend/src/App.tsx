@@ -337,18 +337,19 @@ export default function App() {
     <main className="app-shell" dir={appDirection}>
       <nav className="tab-bar">
         {[
-          ["HOME", copy.tabs.home],
-          ["CHART", copy.tabs.chart],
-          ["ALERTS", copy.tabs.alerts],
-          ["SETTINGS", copy.tabs.settings]
-        ].map(([key, label]) => (
+          ["HOME", "🏠", copy.tabs.home],
+          ["CHART", "📈", copy.tabs.chart],
+          ["ALERTS", "🔔", copy.tabs.alerts],
+          ["SETTINGS", "⚙️", copy.tabs.settings]
+        ].map(([key, icon, label]) => (
           <button
             key={key}
             type="button"
             className={activeTab === key ? "tab-button active" : "tab-button"}
             onClick={() => setActiveTab(key as typeof activeTab)}
           >
-            {label}
+            <span>{icon}</span>
+            <span>{label}</span>
           </button>
         ))}
       </nav>
