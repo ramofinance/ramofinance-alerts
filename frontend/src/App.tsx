@@ -229,6 +229,33 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    if (!activeMarket?.symbol) {
+      setPriceHistory([]);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    getPriceHistory(activeMarket.symbol, 120)
+      .then((result) => {
+        if (!cancelled) {
+          setPriceHistory(result.items);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPriceHistory([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeMarket?.symbol]);
+
+  useEffect(() => {
     if (!lastMessage) {
       return;
     }

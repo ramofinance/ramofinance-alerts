@@ -32,7 +32,9 @@ function normalizeChartData(items: LineData[]): LineData[] {
     }
   }
 
-  return [...byTime.values()].sort((a, b) => Number(a.time) - Number(b.time));
+  return [...byTime.values()]
+    .sort((a, b) => Number(a.time) - Number(b.time))
+    .slice(-120);
 }
 
 export function LiveMarketChart({
@@ -45,7 +47,7 @@ export function LiveMarketChart({
 }: LiveMarketChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
   const priceLinesRef = useRef<IPriceLine[]>([]);
 
   const chartData = useMemo(() => {
@@ -54,13 +56,6 @@ export function LiveMarketChart({
       value: Number(item.price)
     }));
 
-    if (points.length === 0 && market?.latestPrice) {
-      points.push({
-        time: toChartTime(market.latestPrice.updatedAt),
-        value: Number(market.latestPrice.price)
-      });
-    }
-
     if (market?.latestPrice) {
       points.push({
         time: toChartTime(market.latestPrice.updatedAt),
@@ -68,7 +63,7 @@ export function LiveMarketChart({
       });
     }
 
-    return normalizeChartData(points).slice(-120);
+    return normalizeChartData(points);
   }, [history, market?.latestPrice]);
 
   useEffect(() => {
@@ -87,16 +82,22 @@ export function LiveMarketChart({
         horzLines: { color: "rgba(148, 163, 184, 0.12)" }
       },
       rightPriceScale: {
-        borderColor: "rgba(148, 163, 184, 0.2)"
+        borderColor: "rgba(148, 163, 184, 0.2)",
+        scaleMargins: {
+          top: 0.15,
+          bottom: 0.15
+        }
       },
       timeScale: {
         borderColor: "rgba(148, 163, 184, 0.2)",
         timeVisible: true,
-        secondsVisible: false
+        secondsVisible: true,
+        rightOffset: 8,
+        barSpacing: 8
       }
     });
 
-    const series = chart.addLineSeries({
+    const series = chart.addAreaSeries({
       lineWidth: 2,
       priceLineVisible: false,
       lastValueVisible: true
