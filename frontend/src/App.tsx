@@ -10,6 +10,7 @@ import { AlertsList } from "./components/AlertsList";
 import { BottomTabs } from "./components/BottomTabs";
 import { CreateAlertCard } from "./components/CreateAlertCard";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { HomePanel } from "./components/HomePanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User, MarketPriceHistory } from "./types/api";
@@ -352,44 +353,17 @@ export default function App() {
       />
       {activeTab === "HOME" ? (
       <>
-      <section className="hero-card">
-        <div>
-          <p className="eyebrow">{copy.eyebrow}</p>
-          <h1>{copy.title}</h1>
-          <p className="hero-text">{copy.subtitle}</p>
-        </div>
-
-        <div className="status-pill">
-          <span className={`status-dot status-dot--${status}`} />
-          {status}
-        </div>
-      </section>
-
-      {error ? <div className="alert-box alert-box--error">{error}</div> : null}
-
-      <section className="grid">
-        <article className="card">
-          <p className="card-label">{copy.telegramUser}</p>
-          <h2>{telegramUserLabel}</h2>
-          <p>
-            {copy.mode}: {telegramMiniApp.isTelegramMiniApp ? copy.telegram : copy.browser}
-          </p>
-          <p>
-            {copy.language}: {telegramMiniApp.user?.language_code ?? copy.notAvailable}
-          </p>
-        </article>
-
-        <article className="card">
-          <p className="card-label">{copy.backendUser}</p>
-          <h2>{backendUserLabel}</h2>
-          <p>
-            {copy.appLanguage}: {appLanguage ?? copy.notConnected}
-          </p>
-          <p>
-            {copy.alerts}: {alerts.length}
-          </p>
-        </article>
-      </section>
+      <HomePanel
+        copy={copy}
+        status={status}
+        error={error}
+        telegramUserLabel={telegramUserLabel}
+        backendUserLabel={backendUserLabel}
+        isTelegramMiniApp={telegramMiniApp.isTelegramMiniApp}
+        telegramLanguageCode={telegramMiniApp.user?.language_code}
+        appLanguage={appLanguage}
+        alertsCount={alerts.length}
+      />
 
       </>
       ) : null}
