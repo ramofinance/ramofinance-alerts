@@ -351,6 +351,7 @@ pre {
 @media (max-width: 640px) {
   .app-shell {
     padding: 14px;
+    padding-bottom: 90px;
   }
 
   .hero-card,
