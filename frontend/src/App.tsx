@@ -400,6 +400,19 @@ export default function App() {
         )}
       </section>
 
+      <section className="market-shortcuts">
+        {markets.slice(0, 5).map((market) => (
+          <button
+            key={market.id}
+            type="button"
+            className={market.id === activeMarket?.id ? "market-shortcut active" : "market-shortcut"}
+            onClick={() => setSelectedMarketId(market.id)}
+          >
+            {market.symbol}
+          </button>
+        ))}
+      </section>
+
       <LiveMarketChart
         market={activeMarket}
         alerts={alerts}

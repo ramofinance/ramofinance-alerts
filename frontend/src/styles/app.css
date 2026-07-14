@@ -376,3 +376,27 @@ pre {
     justify-content: space-between;
   }
 }
+
+
+.market-shortcuts {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin-bottom: 14px;
+  padding-bottom: 4px;
+}
+
+.market-shortcut {
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(56, 189, 248, 0.08);
+  color: #e0f2fe;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.market-shortcut.active {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+}
