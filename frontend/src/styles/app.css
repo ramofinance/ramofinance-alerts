@@ -436,6 +436,21 @@ pre {
   gap: 4px;
 }
 
+.alert-stats {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.alert-stats span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.12);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .tab-button.active {
   background: rgba(56, 189, 248, 0.18);
   color: #f8fafc;

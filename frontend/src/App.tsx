@@ -54,6 +54,12 @@ export default function App() {
     alertStatusFilter === "ALL" ? true : alert.status === alertStatusFilter
   );
 
+  const alertStats = {
+    active: alerts.filter((alert) => alert.status === "ACTIVE").length,
+    paused: alerts.filter((alert) => alert.status === "PAUSED").length,
+    triggered: alerts.filter((alert) => alert.status === "TRIGGERED").length
+  };
+
   const selectedMarket = markets.find((market) => market.id === selectedMarketId);
   const activeMarket = selectedMarket ?? filteredMarkets[0] ?? markets[0];
   const copy = getAppCopy(appLanguage);
@@ -546,6 +552,12 @@ export default function App() {
           <div>
             <p className="card-label">{copy.myAlerts}</p>
             <h2>{loading ? copy.loading : `${filteredAlerts.length} ${copy.alerts}`}</h2>
+
+            <div className="alert-stats">
+              <span>🟢 {alertStats.active}</span>
+              <span>⏸️ {alertStats.paused}</span>
+              <span>🔔 {alertStats.triggered}</span>
+            </div>
           </div>
 
           <div className="price-test-box">
