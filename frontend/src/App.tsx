@@ -352,6 +352,8 @@ export default function App() {
           </button>
         ))}
       </nav>
+      {activeTab === "HOME" ? (
+      <>
       <section className="hero-card">
         <div>
           <p className="eyebrow">{copy.eyebrow}</p>
@@ -390,6 +392,9 @@ export default function App() {
           </p>
         </article>
       </section>
+
+      </>
+      ) : null}
 
       {activeTab === "HOME" || activeTab === "CHART" ? (
       <section className="card">
