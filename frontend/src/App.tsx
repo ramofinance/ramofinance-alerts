@@ -337,10 +337,10 @@ export default function App() {
     <main className="app-shell" dir={appDirection}>
       <nav className="tab-bar">
         {[
-          ["HOME", "Home"],
-          ["CHART", "Chart"],
-          ["ALERTS", "Alerts"],
-          ["SETTINGS", "Settings"]
+          ["HOME", copy.tabs.home],
+          ["CHART", copy.tabs.chart],
+          ["ALERTS", copy.tabs.alerts],
+          ["SETTINGS", copy.tabs.settings]
         ].map(([key, label]) => (
           <button
             key={key}
