@@ -94,6 +94,12 @@ export function LiveMarketChart({
         secondsVisible: true,
         rightOffset: 8,
         barSpacing: 8
+      },
+      crosshair: {
+        mode: 1
+      },
+      localization: {
+        priceFormatter: (price: number) => price.toLocaleString()
       }
     });
 
