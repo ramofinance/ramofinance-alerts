@@ -56,6 +56,20 @@ export function useAlerts({
     triggered: alerts.filter((alert) => alert.status === "TRIGGERED").length
   };
 
+  const handleStartEditAlert = (alert: Alert) => {
+    setEditingAlertId(alert.id);
+    setEditAlertTitle(alert.title ?? "");
+    setEditAlertTargetPrice(alert.targetPrice);
+    setEditAlertDirection(alert.direction as AlertDirection);
+  };
+
+  const handleCancelEditAlert = () => {
+    setEditingAlertId(null);
+    setEditAlertTitle("");
+    setEditAlertTargetPrice("");
+    setEditAlertDirection("ABOVE");
+  };
+
   return {
     filteredAlerts,
     alertStats,
@@ -84,6 +98,8 @@ export function useAlerts({
     editAlertTargetPrice,
     setEditAlertTargetPrice,
     editAlertDirection,
-    setEditAlertDirection
+    setEditAlertDirection,
+    handleStartEditAlert,
+    handleCancelEditAlert
   };
 }

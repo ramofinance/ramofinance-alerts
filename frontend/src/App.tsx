@@ -60,7 +60,9 @@ export default function App() {
     editAlertTargetPrice,
     setEditAlertTargetPrice,
     editAlertDirection,
-    setEditAlertDirection
+    setEditAlertDirection,
+    handleStartEditAlert,
+    handleCancelEditAlert
   } = alertState;
 
   const filteredMarkets = markets.filter((market) => {
@@ -137,20 +139,6 @@ export default function App() {
     } catch (err) {
       setCreateAlertResult(err instanceof Error ? err.message : copy.createFailed);
     }
-  };
-
-  const handleStartEditAlert = (alert: Alert) => {
-    setEditingAlertId(alert.id);
-    setEditAlertTitle(alert.title ?? "");
-    setEditAlertTargetPrice(alert.targetPrice);
-    setEditAlertDirection(alert.direction as AlertDirection);
-  };
-
-  const handleCancelEditAlert = () => {
-    setEditingAlertId(null);
-    setEditAlertTitle("");
-    setEditAlertTargetPrice("");
-    setEditAlertDirection("ABOVE");
   };
 
   const handleSaveAlertUpdate = async (alertId: string) => {
