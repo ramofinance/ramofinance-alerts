@@ -4,9 +4,19 @@ import type { Alert, AlertDirection, AlertStatus } from "../types/api";
 
 type Props = {
   alerts: Alert[];
+  userId?: string;
+  activeMarket?: any;
+  copy?: any;
+  reload?: (userId?: string) => Promise<void>;
 };
 
-export function useAlerts({ alerts }: Props) {
+export function useAlerts({
+  alerts,
+  userId,
+  activeMarket,
+  copy,
+  reload
+}: Props) {
   const [newAlertTitle, setNewAlertTitle] = useState("");
   const [newAlertTargetPrice, setNewAlertTargetPrice] = useState("");
   const [newAlertDirection, setNewAlertDirection] =
