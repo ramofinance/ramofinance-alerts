@@ -107,31 +107,9 @@ export default function App() {
     setEditAlertDirection,
     handleCreateAlert,
     handleStartEditAlert,
-    handleCancelEditAlert
+    handleCancelEditAlert,
+    handleSaveAlertUpdate
   } = alertState;
-
-  const handleSaveAlertUpdate = async (alertId: string) => {
-    try {
-      setDeleteAlertResult(null);
-
-      if (!editAlertTargetPrice.trim() || Number.isNaN(Number(editAlertTargetPrice))) {
-        setDeleteAlertResult(copy.invalidTargetPrice);
-        return;
-      }
-
-      await updateAlert(alertId, {
-        title: editAlertTitle.trim() || null,
-        targetPrice: editAlertTargetPrice.trim(),
-        direction: editAlertDirection
-      });
-
-      setDeleteAlertResult(copy.updateSuccess);
-      handleCancelEditAlert();
-      await loadDashboardData(backendUser?.id);
-    } catch (err) {
-      setDeleteAlertResult(err instanceof Error ? err.message : copy.updateFailed);
-    }
-  };
 
   const handleDeleteAlert = async (alertId: string) => {
     try {

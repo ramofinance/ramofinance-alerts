@@ -111,6 +111,34 @@ export function useAlerts({
     setEditAlertDirection("ABOVE");
   };
 
+  const handleSaveAlertUpdate = async (alertId: string) => {
+    try {
+      setDeleteAlertResult(null);
+
+      if (
+        !editAlertTargetPrice.trim() ||
+        Number.isNaN(Number(editAlertTargetPrice))
+      ) {
+        setDeleteAlertResult(copy.invalidTargetPrice);
+        return;
+      }
+
+      await updateAlert(alertId, {
+        title: editAlertTitle.trim() || null,
+        targetPrice: editAlertTargetPrice.trim(),
+        direction: editAlertDirection
+      });
+
+      setDeleteAlertResult(copy.updateSuccess);
+      handleCancelEditAlert();
+      await reload(userId);
+    } catch (err) {
+      setDeleteAlertResult(
+        err instanceof Error ? err.message : copy.updateFailed
+      );
+    }
+  };
+
   return {
     filteredAlerts,
     alertStats,
@@ -142,6 +170,7 @@ export function useAlerts({
     setEditAlertDirection,
     handleCreateAlert,
     handleStartEditAlert,
-    handleCancelEditAlert
+    handleCancelEditAlert,
+    handleSaveAlertUpdate
   };
 }
