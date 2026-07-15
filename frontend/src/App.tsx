@@ -32,7 +32,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
   const [marketSearch, setMarketSearch] = useState("");
 
-  const alertState = useAlerts({ alerts });
+  const alertState = useAlerts({
+    alerts
+  });
 
   const {
     filteredAlerts,
