@@ -5,6 +5,7 @@ import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { useMarketPriceHistory } from "./hooks/useMarketPriceHistory";
+import { useDashboardRealtime } from "./hooks/useDashboardRealtime";
 import { AlertsList } from "./components/AlertsList";
 import { BottomTabs } from "./components/BottomTabs";
 import { CreateAlertCard } from "./components/CreateAlertCard";
@@ -116,6 +117,16 @@ export default function App() {
     handlePriceUpdate
   } = alertState;
 
+  useDashboardRealtime({
+    lastMessage,
+    userId: backendUser?.id,
+    activeMarketId: activeMarket?.id,
+    setMarkets,
+    setAlerts,
+    setPriceHistory,
+    reload: loadDashboardData
+  });
+
   useEffect(() => {
     const currentTelegramMiniApp = initializeTelegramMiniApp();
 
@@ -137,75 +148,6 @@ export default function App() {
 
     loadDashboardData();
   }, []);
-
-  useEffect(() => {
-    if (!lastMessage) {
-      return;
-    }
-
-    if (lastMessage.type === "price.updated") {
-      const payload = lastMessage.payload as {
-        market?: Market;
-        price?: number;
-      };
-
-      if (payload.market?.id) {
-        setMarkets((currentMarkets) =>
-          currentMarkets.map((market) =>
-            market.id === payload.market?.id ? { ...market, ...payload.market } : market
-          )
-        );
-
-        if (payload.market.id === activeMarket?.id) {
-          if (payload.price !== undefined) {
-            setPriceHistory((currentHistory) => [
-              ...currentHistory.slice(-119),
-              {
-                id: `${Date.now()}`,
-                marketId: payload.market!.id,
-                price: String(payload.price),
-                source: "websocket",
-                observedAt: new Date().toISOString(),
-                createdAt: new Date().toISOString()
-              }
-            ]);
-          }
-        }
-      }
-    }
-
-    if (lastMessage.type === "alert.created" || lastMessage.type === "alert.updated") {
-      const payload = lastMessage.payload as { alert?: Alert };
-
-      if (payload.alert?.userId === backendUser?.id) {
-        setAlerts((currentAlerts) => {
-          const exists = currentAlerts.some((alert) => alert.id === payload.alert?.id);
-
-          if (!exists && payload.alert) {
-            return [payload.alert, ...currentAlerts];
-          }
-
-          return currentAlerts.map((alert) =>
-            alert.id === payload.alert?.id && payload.alert ? payload.alert : alert
-          );
-        });
-      }
-    }
-
-    if (lastMessage.type === "alert.deleted") {
-      const payload = lastMessage.payload as { alert?: Alert };
-
-      if (payload.alert?.userId === backendUser?.id) {
-        setAlerts((currentAlerts) =>
-          currentAlerts.filter((alert) => alert.id !== payload.alert?.id)
-        );
-      }
-    }
-
-    if (lastMessage.type === "alert.triggered") {
-      void loadDashboardData(backendUser?.id);
-    }
-  }, [lastMessage, backendUser?.id]);
 
   const telegramUserLabel = telegramMiniApp.user?.username
     ? `@${telegramMiniApp.user.username}`
