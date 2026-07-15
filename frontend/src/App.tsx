@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { getAlerts } from "./api/alerts";
 import { getMarkets } from "./api/markets";
-import { getPriceHistory } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
+import { useMarketPriceHistory } from "./hooks/useMarketPriceHistory";
 import { AlertsList } from "./components/AlertsList";
 import { BottomTabs } from "./components/BottomTabs";
 import { CreateAlertCard } from "./components/CreateAlertCard";
@@ -15,14 +15,13 @@ import { MarketOverviewCard } from "./components/MarketOverviewCard";
 import { ChartPanel } from "./components/ChartPanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
-import type { Alert, Market, MarketPriceHistory, PreferredLanguage, User } from "./types/api";
+import type { Alert, Market, PreferredLanguage, User } from "./types/api";
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
   const [telegramMiniApp, setTelegramMiniApp] = useState(() => initializeTelegramMiniApp());
 
   const [markets, setMarkets] = useState<Market[]>([]);
-  const [priceHistory, setPriceHistory] = useState<MarketPriceHistory[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +48,8 @@ export default function App() {
 
   const selectedMarket = markets.find((market) => market.id === selectedMarketId);
   const activeMarket = selectedMarket ?? filteredMarkets[0] ?? markets[0];
+  const { priceHistory, setPriceHistory } =
+    useMarketPriceHistory(activeMarket?.symbol);
   const copy = getAppCopy(appLanguage);
   const appDirection = getAppDirection(appLanguage);
 
@@ -136,33 +137,6 @@ export default function App() {
 
     loadDashboardData();
   }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!activeMarket?.symbol) {
-      setPriceHistory([]);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    getPriceHistory(activeMarket.symbol, 120)
-      .then((result) => {
-        if (!cancelled) {
-          setPriceHistory(result.items);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setPriceHistory([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [activeMarket?.symbol]);
 
   useEffect(() => {
     if (!lastMessage) {
