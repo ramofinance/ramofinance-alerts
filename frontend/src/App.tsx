@@ -109,23 +109,9 @@ export default function App() {
     handleStartEditAlert,
     handleCancelEditAlert,
     handleSaveAlertUpdate,
-    handleDeleteAlert
+    handleDeleteAlert,
+    handleToggleAlertStatus
   } = alertState;
-
-  const handleToggleAlertStatus = async (alert: Alert) => {
-    try {
-      setDeleteAlertResult(null);
-
-      const nextStatus: AlertStatus = alert.status === "PAUSED" ? "ACTIVE" : "PAUSED";
-
-      await updateAlertStatus(alert.id, nextStatus);
-
-      setDeleteAlertResult(nextStatus === "PAUSED" ? copy.pauseSuccess : copy.resumeSuccess);
-      await loadDashboardData(backendUser?.id);
-    } catch (err) {
-      setDeleteAlertResult(err instanceof Error ? err.message : copy.statusUpdateFailed);
-    }
-  };
 
   const handlePriceUpdate = async () => {
     try {

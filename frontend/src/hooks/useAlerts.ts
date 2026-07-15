@@ -154,6 +154,27 @@ export function useAlerts({
     }
   };
 
+  const handleToggleAlertStatus = async (alert: Alert) => {
+    try {
+      setDeleteAlertResult(null);
+
+      const nextStatus: AlertStatus =
+        alert.status === "PAUSED" ? "ACTIVE" : "PAUSED";
+
+      await updateAlertStatus(alert.id, nextStatus);
+
+      setDeleteAlertResult(
+        nextStatus === "PAUSED" ? copy.pauseSuccess : copy.resumeSuccess
+      );
+
+      await reload(userId);
+    } catch (err) {
+      setDeleteAlertResult(
+        err instanceof Error ? err.message : copy.statusUpdateFailed
+      );
+    }
+  };
+
   return {
     filteredAlerts,
     alertStats,
@@ -187,6 +208,7 @@ export function useAlerts({
     handleStartEditAlert,
     handleCancelEditAlert,
     handleSaveAlertUpdate,
-    handleDeleteAlert
+    handleDeleteAlert,
+    handleToggleAlertStatus
   };
 }
