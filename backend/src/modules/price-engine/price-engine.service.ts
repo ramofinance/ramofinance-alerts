@@ -1,7 +1,7 @@
 import { AlertDirection } from "@prisma/client";
 import { AppError } from "../../utils/app-error";
 import { resolveTelegramLanguage, telegramText } from "../../telegram/telegram.i18n";
-import { sendTelegramMessage } from "../../telegram/telegram.service";
+import { sendTelegramMessage } from "../../telegram/telegram-api";
 import { logger } from "../../utils/logger";
 import { broadcastWebSocketEvent } from "../../websocket/websocket-broadcast";
 import { websocketEventTypes } from "../../websocket/websocket-events";
