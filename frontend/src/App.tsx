@@ -105,46 +105,10 @@ export default function App() {
     setEditAlertTargetPrice,
     editAlertDirection,
     setEditAlertDirection,
+    handleCreateAlert,
     handleStartEditAlert,
     handleCancelEditAlert
   } = alertState;
-
-  const handleCreateAlert = async () => {
-    try {
-      setCreateAlertResult(null);
-
-      if (!backendUser) {
-        setCreateAlertResult(copy.telegramNotConnected);
-        return;
-      }
-
-      if (!activeMarket) {
-        setCreateAlertResult(copy.noMarketAvailable);
-        return;
-      }
-
-      if (!newAlertTargetPrice.trim() || Number.isNaN(Number(newAlertTargetPrice))) {
-        setCreateAlertResult(copy.invalidTargetPrice);
-        return;
-      }
-
-      const cleanTitle =
-        newAlertTitle.trim() || `${activeMarket.symbol} ${copy.directions[newAlertDirection]}`;
-
-      const alert = await createAlert({
-        userId: backendUser.id,
-        marketId: activeMarket.id,
-        title: cleanTitle,
-        targetPrice: newAlertTargetPrice.trim(),
-        direction: newAlertDirection
-      });
-
-      setCreateAlertResult(`${copy.createSuccess}: ${alert.title ?? alert.id}`);
-      await loadDashboardData(backendUser.id);
-    } catch (err) {
-      setCreateAlertResult(err instanceof Error ? err.message : copy.createFailed);
-    }
-  };
 
   const handleSaveAlertUpdate = async (alertId: string) => {
     try {

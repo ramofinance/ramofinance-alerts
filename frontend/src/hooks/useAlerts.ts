@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { createAlert, deleteAlert, updateAlert, updateAlertStatus } from "../api/alerts";
-import type { Alert, AlertDirection, AlertStatus } from "../types/api";
+import { getAppCopy } from "../i18n/app-copy";
+import type { Alert, AlertDirection, AlertStatus, Market } from "../types/api";
 
 type Props = {
   alerts: Alert[];
   userId?: string;
-  activeMarket?: any;
-  copy?: any;
-  reload?: (userId?: string) => Promise<void>;
+  activeMarket?: Market;
+  copy: ReturnType<typeof getAppCopy>;
+  reload: (userId?: string) => Promise<void>;
 };
 
 export function useAlerts({
@@ -56,6 +57,46 @@ export function useAlerts({
     triggered: alerts.filter((alert) => alert.status === "TRIGGERED").length
   };
 
+  const handleCreateAlert = async () => {
+    try {
+      setCreateAlertResult(null);
+
+      if (!userId) {
+        setCreateAlertResult(copy.telegramNotConnected);
+        return;
+      }
+
+      if (!activeMarket) {
+        setCreateAlertResult(copy.noMarketAvailable);
+        return;
+      }
+
+      if (!newAlertTargetPrice.trim() || Number.isNaN(Number(newAlertTargetPrice))) {
+        setCreateAlertResult(copy.invalidTargetPrice);
+        return;
+      }
+
+      const cleanTitle =
+        newAlertTitle.trim() ||
+        `${activeMarket.symbol} ${copy.directions[newAlertDirection]}`;
+
+      const alert = await createAlert({
+        userId,
+        marketId: activeMarket.id,
+        title: cleanTitle,
+        targetPrice: newAlertTargetPrice.trim(),
+        direction: newAlertDirection
+      });
+
+      setCreateAlertResult(`${copy.createSuccess}: ${alert.title ?? alert.id}`);
+      await reload(userId);
+    } catch (err) {
+      setCreateAlertResult(
+        err instanceof Error ? err.message : copy.createFailed
+      );
+    }
+  };
+
   const handleStartEditAlert = (alert: Alert) => {
     setEditingAlertId(alert.id);
     setEditAlertTitle(alert.title ?? "");
@@ -99,6 +140,7 @@ export function useAlerts({
     setEditAlertTargetPrice,
     editAlertDirection,
     setEditAlertDirection,
+    handleCreateAlert,
     handleStartEditAlert,
     handleCancelEditAlert
   };
