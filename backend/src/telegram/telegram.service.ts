@@ -1,48 +1,15 @@
 import { PreferredLanguage } from "@prisma/client";
-import { env } from "../config/env";
 import { userService } from "../modules/users/user.service";
 import {
   answerTelegramCallbackQuery,
   sendTelegramMessage
 } from "./telegram-api";
 import { resolveTelegramLanguage, telegramText } from "./telegram.i18n";
+import {
+  buildLanguageReplyMarkup,
+  buildStartReplyMarkup
+} from "./telegram-markup";
 import type { TelegramUpdate } from "./telegram.types";
-
-const buildStartReplyMarkup = (language: PreferredLanguage) => {
-  if (!env.TELEGRAM_WEBAPP_URL) {
-    return undefined;
-  }
-
-  return {
-    inline_keyboard: [
-      [
-        {
-          text: telegramText.openAppButton(language),
-          web_app: {
-            url: env.TELEGRAM_WEBAPP_URL
-          }
-        }
-      ]
-    ]
-  };
-};
-
-const buildLanguageReplyMarkup = () => {
-  return {
-    inline_keyboard: [
-      [
-        {
-          text: "فارسی 🇮🇷",
-          callback_data: "language:FA"
-        },
-        {
-          text: "English 🇬🇧",
-          callback_data: "language:EN"
-        }
-      ]
-    ]
-  };
-};
 
 export const telegramService = {
   async processUpdate(update: TelegramUpdate) {
