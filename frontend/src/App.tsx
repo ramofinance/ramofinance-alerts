@@ -32,38 +32,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
   const [marketSearch, setMarketSearch] = useState("");
 
-  const alertState = useAlerts({
-    alerts
-  });
-
-  const {
-    filteredAlerts,
-    alertStats,
-    newAlertTitle,
-    setNewAlertTitle,
-    newAlertTargetPrice,
-    setNewAlertTargetPrice,
-    newAlertDirection,
-    setNewAlertDirection,
-    testPrice,
-    setTestPrice,
-    alertStatusFilter,
-    setAlertStatusFilter,
-    createAlertResult,
-    setCreateAlertResult,
-    deleteAlertResult,
-    setDeleteAlertResult,
-    editingAlertId,
-    setEditingAlertId,
-    editAlertTitle,
-    setEditAlertTitle,
-    editAlertTargetPrice,
-    setEditAlertTargetPrice,
-    editAlertDirection,
-    setEditAlertDirection,
-    handleStartEditAlert,
-    handleCancelEditAlert
-  } = alertState;
 
   const filteredMarkets = markets.filter((market) => {
     const query = marketSearch.trim().toLowerCase();
@@ -103,6 +71,43 @@ export default function App() {
       setLoading(false);
     }
   };
+
+  const alertState = useAlerts({
+    alerts,
+    userId: backendUser?.id,
+    activeMarket,
+    copy,
+    reload: loadDashboardData
+  });
+
+  const {
+    filteredAlerts,
+    alertStats,
+    newAlertTitle,
+    setNewAlertTitle,
+    newAlertTargetPrice,
+    setNewAlertTargetPrice,
+    newAlertDirection,
+    setNewAlertDirection,
+    testPrice,
+    setTestPrice,
+    alertStatusFilter,
+    setAlertStatusFilter,
+    createAlertResult,
+    setCreateAlertResult,
+    deleteAlertResult,
+    setDeleteAlertResult,
+    editingAlertId,
+    setEditingAlertId,
+    editAlertTitle,
+    setEditAlertTitle,
+    editAlertTargetPrice,
+    setEditAlertTargetPrice,
+    editAlertDirection,
+    setEditAlertDirection,
+    handleStartEditAlert,
+    handleCancelEditAlert
+  } = alertState;
 
   const handleCreateAlert = async () => {
     try {
