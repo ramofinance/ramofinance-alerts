@@ -4,12 +4,13 @@ import {
   answerTelegramCallbackQuery,
   sendTelegramMessage
 } from "./telegram-api";
-import { resolveTelegramLanguage, telegramText } from "./telegram.i18n";
+import { telegramText } from "./telegram.i18n";
 import {
   buildLanguageReplyMarkup,
   buildStartReplyMarkup
 } from "./telegram-markup";
 import type { TelegramUpdate } from "./telegram.types";
+import { upsertTelegramUserContext } from "./telegram-user-context";
 
 export const telegramService = {
   async processUpdate(update: TelegramUpdate) {
@@ -18,17 +19,8 @@ export const telegramService = {
     if (callbackQuery?.from) {
       const telegramUser = callbackQuery.from;
 
-      const user = await userService.upsertTelegramUser({
-        telegramId: String(telegramUser.id),
-        username: telegramUser.username,
-        firstName: telegramUser.first_name,
-        lastName: telegramUser.last_name,
-        languageCode: telegramUser.language_code
-      });
-
-      const language = resolveTelegramLanguage(
-        user.preferredLanguage,
-        telegramUser.language_code
+      const { user, language } = await upsertTelegramUserContext(
+        telegramUser
       );
 
       if (callbackQuery.data === "language:FA" || callbackQuery.data === "language:EN") {
@@ -92,17 +84,8 @@ export const telegramService = {
 
     const telegramUser = message.from;
 
-    const user = await userService.upsertTelegramUser({
-      telegramId: String(telegramUser.id),
-      username: telegramUser.username,
-      firstName: telegramUser.first_name,
-      lastName: telegramUser.last_name,
-      languageCode: telegramUser.language_code
-    });
-
-    const language = resolveTelegramLanguage(
-      user.preferredLanguage,
-      telegramUser.language_code
+    const { user, language } = await upsertTelegramUserContext(
+      telegramUser
     );
 
     if (message.text?.startsWith("/start")) {
