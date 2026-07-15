@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createAlert, deleteAlert, getAlerts, updateAlert, updateAlertStatus } from "./api/alerts";
+import { getAlerts } from "./api/alerts";
 import { getMarkets } from "./api/markets";
 import { getPriceHistory, updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
@@ -14,7 +14,7 @@ import { useAlerts } from "./hooks/useAlerts";
 import { HomePanel } from "./components/HomePanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
-import type { Alert, AlertDirection, AlertStatus, Market, PreferredLanguage, User, MarketPriceHistory } from "./types/api";
+import type { Alert, Market, MarketPriceHistory, PreferredLanguage, User } from "./types/api";
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
