@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAlerts } from "./api/alerts";
 import { getMarkets } from "./api/markets";
-import { getPriceHistory, updatePrice } from "./api/prices";
+import { getPriceHistory } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
@@ -26,7 +26,6 @@ export default function App() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [priceUpdateResult, setPriceUpdateResult] = useState<string | null>(null);
   const [backendUser, setBackendUser] = useState<User | null>(null);
   const [appLanguage, setAppLanguage] = useState<PreferredLanguage | null>(null);
   const [selectedMarketId, setSelectedMarketId] = useState("");
@@ -92,6 +91,7 @@ export default function App() {
     setNewAlertDirection,
     testPrice,
     setTestPrice,
+    priceUpdateResult,
     alertStatusFilter,
     setAlertStatusFilter,
     createAlertResult,
@@ -111,34 +111,9 @@ export default function App() {
     handleCancelEditAlert,
     handleSaveAlertUpdate,
     handleDeleteAlert,
-    handleToggleAlertStatus
+    handleToggleAlertStatus,
+    handlePriceUpdate
   } = alertState;
-
-  const handlePriceUpdate = async () => {
-    try {
-      setPriceUpdateResult(null);
-
-      if (!activeMarket) {
-        setPriceUpdateResult(copy.noMarketAvailable);
-        return;
-      }
-
-      if (!testPrice.trim() || Number.isNaN(Number(testPrice))) {
-        setPriceUpdateResult(copy.invalidTestPrice);
-        return;
-      }
-
-      const result = await updatePrice(activeMarket.symbol, testPrice.trim());
-
-      setPriceUpdateResult(
-        `${copy.priceUpdated}: ${result.market.symbol} = ${result.price}. ${copy.triggeredAlerts}: ${result.triggeredAlerts.length}`
-      );
-
-      await loadDashboardData(backendUser?.id);
-    } catch (err) {
-      setPriceUpdateResult(err instanceof Error ? err.message : copy.priceUpdateFailed);
-    }
-  };
 
   useEffect(() => {
     const currentTelegramMiniApp = initializeTelegramMiniApp();

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createAlert, deleteAlert, updateAlert, updateAlertStatus } from "../api/alerts";
+import { updatePrice } from "../api/prices";
 import { getAppCopy } from "../i18n/app-copy";
 import type { Alert, AlertDirection, AlertStatus, Market } from "../types/api";
 
@@ -24,6 +25,9 @@ export function useAlerts({
     useState<AlertDirection>("ABOVE");
 
   const [testPrice, setTestPrice] = useState("");
+  const [priceUpdateResult, setPriceUpdateResult] =
+    useState<string | null>(null);
+
   const [alertStatusFilter, setAlertStatusFilter] =
     useState<AlertStatus | "ALL">("ALL");
 
@@ -175,6 +179,37 @@ export function useAlerts({
     }
   };
 
+  const handlePriceUpdate = async () => {
+    try {
+      setPriceUpdateResult(null);
+
+      if (!activeMarket) {
+        setPriceUpdateResult(copy.noMarketAvailable);
+        return;
+      }
+
+      if (!testPrice.trim() || Number.isNaN(Number(testPrice))) {
+        setPriceUpdateResult(copy.invalidTestPrice);
+        return;
+      }
+
+      const result = await updatePrice(
+        activeMarket.symbol,
+        testPrice.trim()
+      );
+
+      setPriceUpdateResult(
+        `${copy.priceUpdated}: ${result.market.symbol} = ${result.price}. ${copy.triggeredAlerts}: ${result.triggeredAlerts.length}`
+      );
+
+      await reload(userId);
+    } catch (err) {
+      setPriceUpdateResult(
+        err instanceof Error ? err.message : copy.priceUpdateFailed
+      );
+    }
+  };
+
   return {
     filteredAlerts,
     alertStats,
@@ -188,6 +223,7 @@ export function useAlerts({
 
     testPrice,
     setTestPrice,
+    priceUpdateResult,
     alertStatusFilter,
     setAlertStatusFilter,
 
@@ -209,6 +245,7 @@ export function useAlerts({
     handleCancelEditAlert,
     handleSaveAlertUpdate,
     handleDeleteAlert,
-    handleToggleAlertStatus
+    handleToggleAlertStatus,
+    handlePriceUpdate
   };
 }
