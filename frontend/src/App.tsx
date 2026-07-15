@@ -5,7 +5,6 @@ import { getPriceHistory, updatePrice } from "./api/prices";
 import { getTelegramMe } from "./api/telegram";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
-import { LiveMarketChart } from "./components/LiveMarketChart";
 import { AlertsList } from "./components/AlertsList";
 import { BottomTabs } from "./components/BottomTabs";
 import { CreateAlertCard } from "./components/CreateAlertCard";
@@ -13,6 +12,7 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { useAlerts } from "./hooks/useAlerts";
 import { HomePanel } from "./components/HomePanel";
 import { MarketOverviewCard } from "./components/MarketOverviewCard";
+import { ChartPanel } from "./components/ChartPanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, Market, MarketPriceHistory, PreferredLanguage, User } from "./types/api";
@@ -295,29 +295,14 @@ export default function App() {
       ) : null}
 
       {activeTab === "CHART" ? (
-      <section>
-      <section className="market-shortcuts">
-        {markets.slice(0, 5).map((market) => (
-          <button
-            key={market.id}
-            type="button"
-            className={market.id === activeMarket?.id ? "market-shortcut active" : "market-shortcut"}
-            onClick={() => setSelectedMarketId(market.id)}
-          >
-            {market.symbol}
-          </button>
-        ))}
-      </section>
-
-      <LiveMarketChart
-        market={activeMarket}
-        alerts={alerts}
-        history={priceHistory}
-        directionLabels={copy.directions}
-        title={copy.liveChart}
-        emptyText={copy.noLatestPrice}
-      />
-      </section>
+        <ChartPanel
+          markets={markets}
+          activeMarket={activeMarket}
+          alerts={alerts}
+          history={priceHistory}
+          setSelectedMarketId={setSelectedMarketId}
+          copy={copy}
+        />
       ) : null}
 
       {activeTab === "ALERTS" ? (
