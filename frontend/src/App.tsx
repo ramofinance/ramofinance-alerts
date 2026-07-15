@@ -108,21 +108,9 @@ export default function App() {
     handleCreateAlert,
     handleStartEditAlert,
     handleCancelEditAlert,
-    handleSaveAlertUpdate
+    handleSaveAlertUpdate,
+    handleDeleteAlert
   } = alertState;
-
-  const handleDeleteAlert = async (alertId: string) => {
-    try {
-      setDeleteAlertResult(null);
-
-      await deleteAlert(alertId);
-
-      setDeleteAlertResult(copy.deleteSuccess);
-      await loadDashboardData(backendUser?.id);
-    } catch (err) {
-      setDeleteAlertResult(err instanceof Error ? err.message : copy.deleteFailed);
-    }
-  };
 
   const handleToggleAlertStatus = async (alert: Alert) => {
     try {

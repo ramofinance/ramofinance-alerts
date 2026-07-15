@@ -139,6 +139,21 @@ export function useAlerts({
     }
   };
 
+  const handleDeleteAlert = async (alertId: string) => {
+    try {
+      setDeleteAlertResult(null);
+
+      await deleteAlert(alertId);
+
+      setDeleteAlertResult(copy.deleteSuccess);
+      await reload(userId);
+    } catch (err) {
+      setDeleteAlertResult(
+        err instanceof Error ? err.message : copy.deleteFailed
+      );
+    }
+  };
+
   return {
     filteredAlerts,
     alertStats,
@@ -171,6 +186,7 @@ export function useAlerts({
     handleCreateAlert,
     handleStartEditAlert,
     handleCancelEditAlert,
-    handleSaveAlertUpdate
+    handleSaveAlertUpdate,
+    handleDeleteAlert
   };
 }
