@@ -12,6 +12,7 @@ import { CreateAlertCard } from "./components/CreateAlertCard";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { useAlerts } from "./hooks/useAlerts";
 import { HomePanel } from "./components/HomePanel";
+import { MarketOverviewCard } from "./components/MarketOverviewCard";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type { Alert, Market, MarketPriceHistory, PreferredLanguage, User } from "./types/api";
@@ -290,32 +291,7 @@ export default function App() {
       ) : null}
 
       {activeTab === "HOME" || activeTab === "CHART" ? (
-      <section className="card">
-        <div className="section-header">
-          <div>
-            <p className="card-label">{copy.market}</p>
-            <h2>{activeMarket?.symbol ?? copy.noMarket}</h2>
-          </div>
-          <span className="market-badge">{activeMarket?.type ?? copy.market}</span>
-        </div>
-
-        <p className="muted">{activeMarket?.name ?? copy.marketUnavailable}</p>
-
-        {activeMarket?.latestPrice ? (
-          <div className="latest-price-box">
-            <span>{copy.latestPrice}</span>
-            <strong>{activeMarket.latestPrice.price}</strong>
-            <small>
-              {copy.source}: {activeMarket.latestPrice.source}
-            </small>
-          </div>
-        ) : (
-          <div className="latest-price-box latest-price-box--empty">
-            <span>{copy.latestPrice}</span>
-            <strong>{copy.noLatestPrice}</strong>
-          </div>
-        )}
-      </section>
+        <MarketOverviewCard market={activeMarket} copy={copy} />
       ) : null}
 
       {activeTab === "CHART" ? (
