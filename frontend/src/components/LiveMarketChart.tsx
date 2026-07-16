@@ -73,31 +73,39 @@ export function LiveMarketChart({
     }
 
     const chart = createChart(containerRef.current, {
-      height: 260,
+      height: 300,
       layout: {
         background: { color: "transparent" },
-        textColor: "#94a3b8"
+        textColor: "#7f8da5"
       },
       grid: {
-        vertLines: { color: "rgba(148, 163, 184, 0.12)" },
-        horzLines: { color: "rgba(148, 163, 184, 0.12)" }
+        vertLines: { color: "rgba(148, 163, 184, 0.055)" },
+        horzLines: { color: "rgba(148, 163, 184, 0.07)" }
       },
       rightPriceScale: {
-        borderColor: "rgba(148, 163, 184, 0.2)",
+        borderColor: "rgba(148, 163, 184, 0.12)",
         scaleMargins: {
-          top: 0.15,
-          bottom: 0.15
+          top: 0.16,
+          bottom: 0.16
         }
       },
       timeScale: {
-        borderColor: "rgba(148, 163, 184, 0.2)",
+        borderColor: "rgba(148, 163, 184, 0.12)",
         timeVisible: true,
         secondsVisible: true,
         rightOffset: 8,
         barSpacing: 8
       },
       crosshair: {
-        mode: 1
+        mode: 1,
+        vertLine: {
+          color: "rgba(125, 211, 252, 0.34)",
+          labelBackgroundColor: "#17233a"
+        },
+        horzLine: {
+          color: "rgba(125, 211, 252, 0.34)",
+          labelBackgroundColor: "#17233a"
+        }
       },
       localization: {
         priceFormatter: (price: number) => price.toLocaleString()
@@ -105,7 +113,10 @@ export function LiveMarketChart({
     });
 
     const series = chart.addAreaSeries({
-      lineWidth: 2,
+      lineColor: "#38bdf8",
+      topColor: "rgba(56, 189, 248, 0.32)",
+      bottomColor: "rgba(56, 189, 248, 0.01)",
+      lineWidth: 3,
       priceLineVisible: false,
       lastValueVisible: true
     });
@@ -163,25 +174,86 @@ export function LiveMarketChart({
           axisLabelVisible: true,
           lineVisible: true,
           lineWidth: 2,
-          lineStyle: alert.direction.includes("DOWN") ? 2 : 0
+          lineStyle: alert.direction.includes("DOWN") ? 2 : 0,
+          color: alert.status === "PAUSED" ? "#f59e0b" : "#38bdf8"
         })
       );
   }, [alerts, directionLabels, market?.id]);
 
+  const marketAlertCount = alerts.filter(
+    (alert) =>
+      alert.marketId === market?.id &&
+      (alert.status === "ACTIVE" || alert.status === "PAUSED")
+  ).length;
+
   return (
     <section className="chart-card">
       <div className="chart-card-header">
-        <div>
-          <h2>{title}</h2>
-          <p>{market ? market.symbol : emptyText}</p>
+        <div className="chart-market-heading">
+          <div className="chart-market-icon" aria-hidden="true">
+            {market?.symbol.slice(0, 1) ?? "↗"}
+          </div>
+
+          <div>
+            <p className="card-label">{title}</p>
+            <div className="chart-symbol-row">
+              <h2>{market?.symbol ?? emptyText}</h2>
+
+              {market ? (
+                <span className="chart-market-type">{market.type}</span>
+              ) : null}
+            </div>
+
+            <p className="chart-market-name">
+              {market?.name ?? emptyText}
+            </p>
+          </div>
         </div>
-        {market?.latestPrice ? (
-          <strong className="chart-current-price">
-            {Number(market.latestPrice.price).toLocaleString()}
-          </strong>
-        ) : null}
+
+        <div className="chart-price-summary">
+          <span className="chart-live-label">
+            <i />
+            LIVE
+          </span>
+
+          {market?.latestPrice ? (
+            <strong className="chart-current-price">
+              {Number(market.latestPrice.price).toLocaleString()}
+            </strong>
+          ) : (
+            <strong className="chart-current-price chart-current-price--empty">
+              —
+            </strong>
+          )}
+
+          <small>
+            {market?.latestPrice?.source ?? emptyText}
+          </small>
+        </div>
       </div>
-      <div ref={containerRef} className="chart-container" />
+
+      <div className="chart-meta-row">
+        <span>
+          <i className="chart-meta-dot chart-meta-dot--price" />
+          {chartData.length} points
+        </span>
+
+        <span>
+          <i className="chart-meta-dot chart-meta-dot--alert" />
+          {marketAlertCount} alerts
+        </span>
+      </div>
+
+      <div className="chart-canvas-shell">
+        {chartData.length === 0 ? (
+          <div className="chart-empty-overlay">
+            <span aria-hidden="true">⌁</span>
+            <p>{emptyText}</p>
+          </div>
+        ) : null}
+
+        <div ref={containerRef} className="chart-container" />
+      </div>
     </section>
   );
 }
