@@ -34,39 +34,60 @@ type Props = {
 
 export function AlertsList(props: Props) {
   return (
-    <section className="card">
-      <div className="section-header">
-        <div>
-          <p className="card-label">{props.copy.myAlerts}</p>
-          <h2>
-            {props.loading
-              ? props.copy.loading
-              : `${props.filteredAlerts.length} ${props.copy.alerts}`}
-          </h2>
+    <section className="card alerts-card">
+      <div className="alerts-card-header">
+        <div className="section-title-group">
+          <span className="section-icon" aria-hidden="true">
+            🔔
+          </span>
 
-          <div className="alert-stats">
-            <span>🟢 {props.alertStats.active}</span>
-            <span>⏸️ {props.alertStats.paused}</span>
-            <span>🔔 {props.alertStats.triggered}</span>
+          <div>
+            <p className="card-label">{props.copy.myAlerts}</p>
+            <h2>
+              {props.loading
+                ? props.copy.loading
+                : `${props.filteredAlerts.length} ${props.copy.alerts}`}
+            </h2>
           </div>
         </div>
 
-        <div className="price-test-box">
-          <select
-            value={props.alertStatusFilter}
-            onChange={(e) =>
-              props.setAlertStatusFilter(e.target.value as AlertStatus | "ALL")
-            }
-          >
-            <option value="ALL">{props.copy.allStatuses}</option>
-            <option value="ACTIVE">{props.copy.statuses.ACTIVE}</option>
-            <option value="PAUSED">{props.copy.statuses.PAUSED}</option>
-            <option value="TRIGGERED">{props.copy.statuses.TRIGGERED}</option>
-          </select>
+        <div className="alert-stats">
+          <span className="alert-stat alert-stat--active">
+            <i />
+            {props.alertStats.active}
+          </span>
+          <span className="alert-stat alert-stat--paused">
+            <i />
+            {props.alertStats.paused}
+          </span>
+          <span className="alert-stat alert-stat--triggered">
+            <i />
+            {props.alertStats.triggered}
+          </span>
+        </div>
+      </div>
 
+      <div className="alerts-toolbar">
+        <select
+          value={props.alertStatusFilter}
+          onChange={(event) =>
+            props.setAlertStatusFilter(
+              event.target.value as AlertStatus | "ALL"
+            )
+          }
+        >
+          <option value="ALL">{props.copy.allStatuses}</option>
+          <option value="ACTIVE">{props.copy.statuses.ACTIVE}</option>
+          <option value="PAUSED">{props.copy.statuses.PAUSED}</option>
+          <option value="TRIGGERED">
+            {props.copy.statuses.TRIGGERED}
+          </option>
+        </select>
+
+        <div className="price-test-box">
           <input
             value={props.testPrice}
-            onChange={(e) => props.setTestPrice(e.target.value)}
+            onChange={(event) => props.setTestPrice(event.target.value)}
             placeholder={props.copy.testPricePlaceholder}
             inputMode="decimal"
           />
@@ -91,7 +112,10 @@ export function AlertsList(props: Props) {
 
       <div className="alerts-list">
         {props.filteredAlerts.length === 0 && !props.loading ? (
-          <p className="empty-state">{props.copy.noAlerts}</p>
+          <div className="empty-state alerts-empty-state">
+            <span aria-hidden="true">🔕</span>
+            <p>{props.copy.noAlerts}</p>
+          </div>
         ) : null}
 
         {props.filteredAlerts.map((alert) => {
@@ -99,86 +123,155 @@ export function AlertsList(props: Props) {
 
           if (editing) {
             return (
-              <article className="alert-item alert-item--editing" key={alert.id}>
-                <input
-                  value={props.editAlertTitle}
-                  onChange={(e) => props.setEditAlertTitle(e.target.value)}
-                />
+              <article
+                className="alert-item alert-item--editing"
+                key={alert.id}
+              >
+                <div className="alert-edit-form">
+                  <input
+                    value={props.editAlertTitle}
+                    onChange={(event) =>
+                      props.setEditAlertTitle(event.target.value)
+                    }
+                  />
 
-                <select
-                  value={props.editAlertDirection}
-                  onChange={(e) =>
-                    props.setEditAlertDirection(
-                      e.target.value as AlertDirection
-                    )
-                  }
-                >
-                  <option value="ABOVE">{props.copy.directions.ABOVE}</option>
-                  <option value="BELOW">{props.copy.directions.BELOW}</option>
-                  <option value="CROSSING_UP">
-                    {props.copy.directions.CROSSING_UP}
-                  </option>
-                  <option value="CROSSING_DOWN">
-                    {props.copy.directions.CROSSING_DOWN}
-                  </option>
-                </select>
+                  <div className="form-grid form-grid--two">
+                    <select
+                      value={props.editAlertDirection}
+                      onChange={(event) =>
+                        props.setEditAlertDirection(
+                          event.target.value as AlertDirection
+                        )
+                      }
+                    >
+                      <option value="ABOVE">
+                        {props.copy.directions.ABOVE}
+                      </option>
+                      <option value="BELOW">
+                        {props.copy.directions.BELOW}
+                      </option>
+                      <option value="CROSSING_UP">
+                        {props.copy.directions.CROSSING_UP}
+                      </option>
+                      <option value="CROSSING_DOWN">
+                        {props.copy.directions.CROSSING_DOWN}
+                      </option>
+                    </select>
 
-                <input
-                  value={props.editAlertTargetPrice}
-                  onChange={(e) =>
-                    props.setEditAlertTargetPrice(e.target.value)
-                  }
-                />
+                    <input
+                      value={props.editAlertTargetPrice}
+                      onChange={(event) =>
+                        props.setEditAlertTargetPrice(event.target.value)
+                      }
+                      inputMode="decimal"
+                    />
+                  </div>
 
-                <button onClick={() => props.handleSaveAlertUpdate(alert.id)}>
-                  {props.copy.save}
-                </button>
+                  <div className="alert-edit-actions">
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={() =>
+                        props.handleSaveAlertUpdate(alert.id)
+                      }
+                    >
+                      {props.copy.save}
+                    </button>
 
-                <button onClick={props.handleCancelEditAlert}>
-                  {props.copy.cancel}
-                </button>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={props.handleCancelEditAlert}
+                    >
+                      {props.copy.cancel}
+                    </button>
+                  </div>
+                </div>
               </article>
             );
           }
 
+          const marketSymbol =
+            alert.market?.symbol ?? alert.marketId;
+          const formattedTarget = Number(
+            alert.targetPrice
+          ).toLocaleString();
+
           return (
-            <article className="alert-item" key={alert.id}>
-              <div>
-                <h3>{alert.title ?? "Untitled alert"}</h3>
-                <p>
-                  {alert.market?.symbol ?? alert.marketId} ·{" "}
-                  {props.copy.directions[alert.direction as AlertDirection] ??
-                    alert.direction}{" "}
-                  · {alert.targetPrice}
-                </p>
+            <article
+              className={`alert-item alert-item--${alert.status.toLowerCase()}`}
+              key={alert.id}
+            >
+              <div className="alert-item-main">
+                <div className="alert-market-icon">
+                  {marketSymbol.slice(0, 1)}
+                </div>
+
+                <div className="alert-item-content">
+                  <div className="alert-title-row">
+                    <h3>{alert.title ?? marketSymbol}</h3>
+
+                    <span
+                      className={`alert-status alert-status--${alert.status.toLowerCase()}`}
+                    >
+                      <i />
+                      {props.copy.statuses[alert.status] ?? alert.status}
+                    </span>
+                  </div>
+
+                  <p className="alert-market-symbol">{marketSymbol}</p>
+
+                  <div className="alert-condition">
+                    <span>
+                      {props.copy.directions[
+                        alert.direction as AlertDirection
+                      ] ?? alert.direction}
+                    </span>
+
+                    <strong>{formattedTarget}</strong>
+                  </div>
+                </div>
               </div>
 
               <div className="alert-actions">
-                <span className="market-badge">
-                  {props.copy.statuses[alert.status] ?? alert.status}
-                </span>
-
                 {alert.status === "ACTIVE" ||
                 alert.status === "PAUSED" ? (
                   <>
-                    <button onClick={() => props.handleStartEditAlert(alert)}>
-                      {props.copy.edit}
+                    <button
+                      className="alert-action-button"
+                      type="button"
+                      onClick={() =>
+                        props.handleStartEditAlert(alert)
+                      }
+                    >
+                      ✎
+                      <span>{props.copy.edit}</span>
                     </button>
 
                     <button
+                      className="alert-action-button"
+                      type="button"
                       onClick={() =>
                         props.handleToggleAlertStatus(alert)
                       }
                     >
-                      {alert.status === "PAUSED"
-                        ? props.copy.resume
-                        : props.copy.pause}
+                      {alert.status === "PAUSED" ? "▶" : "Ⅱ"}
+                      <span>
+                        {alert.status === "PAUSED"
+                          ? props.copy.resume
+                          : props.copy.pause}
+                      </span>
                     </button>
                   </>
                 ) : null}
 
-                <button onClick={() => props.handleDeleteAlert(alert.id)}>
-                  {props.copy.delete}
+                <button
+                  className="alert-action-button alert-action-button--danger"
+                  type="button"
+                  onClick={() => props.handleDeleteAlert(alert.id)}
+                >
+                  ×
+                  <span>{props.copy.delete}</span>
                 </button>
               </div>
             </article>
