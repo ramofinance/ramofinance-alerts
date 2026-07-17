@@ -35,7 +35,7 @@ export function SettingsPanel({
           }
         >
           <i />
-          {hasRealtimeMessage ? "Realtime active" : "Waiting"}
+          {hasRealtimeMessage ? copy.realtimeActive : copy.waiting}
         </span>
       </section>
 
@@ -87,7 +87,7 @@ export function SettingsPanel({
 
             <span>
               <strong>{copy.debug}</strong>
-              <small>{hasRealtimeMessage ? "Latest WebSocket event" : copy.noMessage}</small>
+              <small>{hasRealtimeMessage ? copy.latestWebSocketEvent : copy.noMessage}</small>
             </span>
           </span>
 
