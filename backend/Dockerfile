@@ -10,7 +10,12 @@ COPY package.json package-lock.json tsconfig.base.json ./
 COPY backend/package.json ./backend/package.json
 COPY frontend/package.json ./frontend/package.json
 
-RUN npm ci
+RUN npm config set fetch-retries 10 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && npm config set fetch-timeout 1200000 \
+  && npm config set maxsockets 5 \
+  && npm ci --no-audit --no-fund
 
 COPY backend ./backend
 COPY database ./database
@@ -33,7 +38,12 @@ COPY backend/package.json ./backend/package.json
 COPY frontend/package.json ./frontend/package.json
 COPY database ./database
 
-RUN npm ci --omit=dev
+RUN npm config set fetch-retries 10 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && npm config set fetch-timeout 1200000 \
+  && npm config set maxsockets 5 \
+  && npm ci --omit=dev --no-audit --no-fund
 RUN ./node_modules/.bin/prisma generate --schema=database/prisma/schema.prisma
 RUN npm cache clean --force
 
