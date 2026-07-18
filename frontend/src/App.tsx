@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getAlerts } from "./api/alerts";
 import { getMarkets } from "./api/markets";
 import { getTelegramMe } from "./api/telegram";
+import { updateUserLanguage } from "./api/users";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { useMarketPriceHistory } from "./hooks/useMarketPriceHistory";
@@ -27,7 +28,15 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [backendUser, setBackendUser] = useState<User | null>(null);
-  const [appLanguage, setAppLanguage] = useState<PreferredLanguage | null>(null);
+  const [appLanguage, setAppLanguage] = useState<PreferredLanguage>(() => {
+    const savedLanguage = window.localStorage.getItem(
+      "ramofinance-app-language"
+    );
+
+    return savedLanguage === "FA" ? "FA" : "EN";
+  });
+  const [languageSaving, setLanguageSaving] = useState(false);
+  const [languageError, setLanguageError] = useState<string | null>(null);
   const [selectedMarketId, setSelectedMarketId] = useState("");
   const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
   const [marketSearch, setMarketSearch] = useState("");
@@ -127,6 +136,49 @@ export default function App() {
     reload: loadDashboardData
   });
 
+  const handleLanguageChange = async (
+    nextLanguage: PreferredLanguage
+  ) => {
+    if (nextLanguage === appLanguage || languageSaving) {
+      return;
+    }
+
+    const previousLanguage = appLanguage;
+
+    setAppLanguage(nextLanguage);
+    setLanguageError(null);
+    window.localStorage.setItem(
+      "ramofinance-app-language",
+      nextLanguage
+    );
+
+    if (!backendUser) {
+      return;
+    }
+
+    try {
+      setLanguageSaving(true);
+
+      const updatedUser = await updateUserLanguage(
+        backendUser.id,
+        nextLanguage
+      );
+
+      setBackendUser(updatedUser);
+    } catch {
+      setAppLanguage(previousLanguage);
+      window.localStorage.setItem(
+        "ramofinance-app-language",
+        previousLanguage
+      );
+      setLanguageError(
+        getAppCopy(previousLanguage).languageUpdateFailed
+      );
+    } finally {
+      setLanguageSaving(false);
+    }
+  };
+
   useEffect(() => {
     const currentTelegramMiniApp = initializeTelegramMiniApp();
 
@@ -137,6 +189,10 @@ export default function App() {
         .then(async (data) => {
           setBackendUser(data.user);
           setAppLanguage(data.language);
+          window.localStorage.setItem(
+            "ramofinance-app-language",
+            data.language
+          );
           await loadDashboardData(data.user.id);
         })
         .catch((err) => {
@@ -250,6 +306,10 @@ export default function App() {
         apiUrl={frontendEnv.apiUrl}
         websocketUrl={frontendEnv.websocketUrl}
         lastMessage={lastMessage}
+        appLanguage={appLanguage}
+        languageSaving={languageSaving}
+        languageError={languageError}
+        onLanguageChange={handleLanguageChange}
       />
       ) : null}
     </main>

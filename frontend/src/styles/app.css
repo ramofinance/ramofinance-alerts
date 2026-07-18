@@ -1587,6 +1587,114 @@ select:focus {
   box-shadow: 0 0 12px rgba(34, 197, 94, 0.65);
 }
 
+.settings-language-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.settings-language-copy {
+  display: flex;
+  min-width: 0;
+  gap: 12px;
+  align-items: center;
+}
+
+.settings-language-icon {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(
+    145deg,
+    rgba(168, 85, 247, 0.16),
+    rgba(99, 102, 241, 0.08)
+  );
+  color: #d8b4fe;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.settings-language-copy > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.settings-language-copy strong {
+  color: #f8fafc;
+  font-size: 14px;
+}
+
+.settings-language-copy small {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.settings-language-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(74px, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.48);
+}
+
+.settings-language-toggle button {
+  min-height: 36px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.settings-language-toggle button:hover:not(:disabled) {
+  color: #cbd5e1;
+}
+
+.settings-language-toggle button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.settings-language-toggle button.is-active {
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.18),
+    rgba(99, 102, 241, 0.2)
+  );
+  color: #e0f2fe;
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.12);
+}
+
+.settings-language-toggle button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.settings-language-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1744,6 +1852,14 @@ select:focus {
 }
 
 @media (max-width: 600px) {
+  .settings-language-card {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-language-toggle {
+    width: 100%;
+  }
+
   .settings-grid {
     grid-template-columns: 1fr;
   }
