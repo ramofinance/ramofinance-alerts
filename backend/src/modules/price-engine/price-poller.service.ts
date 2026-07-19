@@ -7,21 +7,36 @@ import { priceEngineService } from "./price-engine.service";
 let timer: NodeJS.Timeout | undefined;
 let isRunning = false;
 
-type BinanceTickerResponse = {
+type CoinPaprikaTicker = {
   symbol: string;
-  price: string;
+  quotes?: {
+    USD?: {
+      price?: number;
+    };
+  };
 };
 
-const fetchBinancePrice = async (symbol: string) => {
-  const response = await fetch(`https://data-api.binance.vision/api/v3/ticker/price?symbol=${symbol}`);
+const fetchCryptoPrices = async () => {
+  const response = await fetch(
+    "https://api.coinpaprika.com/v1/tickers?quotes=USD"
+  );
 
   if (!response.ok) {
-    throw new Error(`Binance price request failed for ${symbol}: ${response.status}`);
+    throw new Error(`CoinPaprika price request failed: ${response.status}`);
   }
 
-  const data = (await response.json()) as BinanceTickerResponse;
+  const tickers = (await response.json()) as CoinPaprikaTicker[];
+  const prices = new Map<string, string>();
 
-  return data.price;
+  for (const ticker of tickers) {
+    const price = ticker.quotes?.USD?.price;
+
+    if (typeof price === "number" && Number.isFinite(price) && price > 0) {
+      prices.set(`${ticker.symbol.toUpperCase()}USDT`, String(price));
+    }
+  }
+
+  return prices;
 };
 
 const runPricePollingTick = async () => {
@@ -32,27 +47,36 @@ const runPricePollingTick = async () => {
   isRunning = true;
 
   try {
-    const markets = await priceEngineRepository.findActiveMarketsByType(MarketType.CRYPTO);
+    const markets = await priceEngineRepository.findActiveMarketsByType(
+      MarketType.CRYPTO
+    );
+
+    const prices = await fetchCryptoPrices();
 
     for (const market of markets) {
-      try {
-        const price = await fetchBinancePrice(market.symbol);
+      const price = prices.get(market.symbol);
 
-        await priceEngineService.processPriceUpdate({
-          symbol: market.symbol,
-          price,
-          source: "binance"
-        });
-      } catch (error) {
+      if (!price) {
         logger.warn(
-          {
-            symbol: market.symbol,
-            error: error instanceof Error ? error.message : error
-          },
-          "Price polling failed for market"
+          { symbol: market.symbol },
+          "Price was not found in CoinPaprika response"
         );
+        continue;
       }
+
+      await priceEngineService.processPriceUpdate({
+        symbol: market.symbol,
+        price,
+        source: "coinpaprika"
+      });
     }
+  } catch (error) {
+    logger.warn(
+      {
+        error: error instanceof Error ? error.message : error
+      },
+      "Price polling failed"
+    );
   } finally {
     isRunning = false;
   }
