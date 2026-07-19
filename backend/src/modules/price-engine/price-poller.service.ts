@@ -13,7 +13,7 @@ type BinanceTickerResponse = {
 };
 
 const fetchBinancePrice = async (symbol: string) => {
-  const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+  const response = await fetch(`https://data-api.binance.vision/api/v3/ticker/price?symbol=${symbol}`);
 
   if (!response.ok) {
     throw new Error(`Binance price request failed for ${symbol}: ${response.status}`);
