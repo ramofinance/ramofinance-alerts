@@ -15,6 +15,11 @@ RUN npm config set fetch-retries 10 \
 
 COPY frontend ./frontend
 
+ARG VITE_API_URL
+ARG VITE_WS_URL
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_WS_URL=${VITE_WS_URL}
+
 RUN npm run build -w frontend
 
 FROM nginx:1.27-alpine
