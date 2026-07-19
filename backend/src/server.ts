@@ -6,9 +6,10 @@ import { startPricePolling, stopPricePolling } from "./modules/price-engine/pric
 import { setupWebSocketServer } from "./websocket/websocket-server";
 
 const app = createServer();
+const port = env.PORT ?? env.BACKEND_PORT;
 
-const server = app.listen(env.BACKEND_PORT, () => {
-  logger.info(`Backend running on port ${env.BACKEND_PORT}`);
+const server = app.listen(port, () => {
+  logger.info(`Backend running on port ${port}`);
 });
 
 setupWebSocketServer(server);
