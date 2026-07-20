@@ -1,4 +1,5 @@
 import type { RequestHandler } from "express";
+import { UserRole } from "@prisma/client";
 import { env } from "../config/env";
 import { AppError } from "../utils/app-error";
 import { userService } from "../modules/users/user.service";
@@ -57,7 +58,7 @@ export const telegramMeController: RequestHandler = async (req, res, next) => {
 
     const telegramUser = initData.user;
 
-    const user = await userService.upsertTelegramUser({
+    const user = await userService.recordMiniAppOpen({
       telegramId: String(telegramUser.id),
       username: telegramUser.username,
       firstName: telegramUser.first_name,
@@ -77,6 +78,52 @@ export const telegramMeController: RequestHandler = async (req, res, next) => {
         language,
         authDate: initData.authDate
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const telegramActivityController: RequestHandler = async (req, res, next) => {
+  try {
+    const initDataHeader = req.header("x-telegram-init-data") ?? "";
+    const initData = verifyTelegramMiniAppInitData(initDataHeader);
+
+    if (!initData.user?.id) {
+      throw new AppError("Telegram user is required", 401);
+    }
+
+    await userService.touchMiniAppActivity(String(initData.user.id));
+
+    res.json({
+      success: true
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const telegramAdminStatsController: RequestHandler = async (req, res, next) => {
+  try {
+    const initDataHeader = req.header("x-telegram-init-data") ?? "";
+    const initData = verifyTelegramMiniAppInitData(initDataHeader);
+
+    if (!initData.user?.id) {
+      throw new AppError("Telegram user is required", 401);
+    }
+
+    const user = await userService.getUserByTelegramId(String(initData.user.id));
+
+    if (user.role !== UserRole.ADMIN) {
+      throw new AppError("Admin access is required", 403);
+    }
+
+    const stats = await userService.getMiniAppStats();
+
+    res.json({
+      success: true,
+      data: stats
     });
   } catch (error) {
     next(error);

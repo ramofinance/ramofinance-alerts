@@ -57,6 +57,53 @@ export const userRepository = {
     });
   },
 
+  findByTelegramId(telegramId: string) {
+    return prisma.user.findUnique({
+      where: { telegramId }
+    });
+  },
+
+  touchLastSeenByTelegramId(telegramId: string) {
+    return prisma.user.update({
+      where: { telegramId },
+      data: {
+        lastSeenAt: new Date()
+      }
+    });
+  },
+
+  async getMiniAppStats() {
+    const activeSince = new Date(Date.now() - 2 * 60 * 1000);
+
+    const [totalUsers, totalOpens, activeNow] = await Promise.all([
+      prisma.user.count({
+        where: {
+          firstMiniAppOpenedAt: {
+            not: null
+          }
+        }
+      }),
+      prisma.user.aggregate({
+        _sum: {
+          miniAppOpenCount: true
+        }
+      }),
+      prisma.user.count({
+        where: {
+          lastSeenAt: {
+            gte: activeSince
+          }
+        }
+      })
+    ]);
+
+    return {
+      totalUsers,
+      totalOpens: totalOpens._sum.miniAppOpenCount ?? 0,
+      activeNow
+    };
+  },
+
   upsertByTelegramId(data: UpsertUserData) {
     return prisma.user.upsert({
       where: {
@@ -76,6 +123,38 @@ export const userRepository = {
         lastName: data.lastName,
         languageCode: data.languageCode,
         preferredLanguage: data.preferredLanguage
+      }
+    });
+  },
+
+  recordMiniAppOpen(data: UpsertUserData) {
+    const now = new Date();
+
+    return prisma.user.upsert({
+      where: {
+        telegramId: data.telegramId
+      },
+      update: {
+        username: data.username,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        languageCode: data.languageCode,
+        miniAppOpenCount: {
+          increment: 1
+        },
+        lastMiniAppOpenedAt: now,
+        lastSeenAt: now
+      },
+      create: {
+        telegramId: data.telegramId,
+        username: data.username,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        languageCode: data.languageCode,
+        miniAppOpenCount: 1,
+        firstMiniAppOpenedAt: now,
+        lastMiniAppOpenedAt: now,
+        lastSeenAt: now
       }
     });
   },

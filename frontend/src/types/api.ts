@@ -83,3 +83,9 @@ export type TelegramMe = {
   language: PreferredLanguage;
   authDate?: number;
 };
+
+export type MiniAppStats = {
+  totalUsers: number;
+  totalOpens: number;
+  activeNow: number;
+};

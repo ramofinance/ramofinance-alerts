@@ -1,4 +1,4 @@
-import type { PreferredLanguage } from "../types/api";
+import type { MiniAppStats, PreferredLanguage } from "../types/api";
 
 type Props = {
   copy: any;
@@ -7,6 +7,10 @@ type Props = {
   languageSaving: boolean;
   languageError: string | null;
   onLanguageChange: (language: PreferredLanguage) => void;
+  isAdmin: boolean;
+  adminStats: MiniAppStats | null;
+  adminStatsLoading: boolean;
+  adminStatsError: string | null;
 };
 
 export function SettingsPanel({
@@ -15,7 +19,11 @@ export function SettingsPanel({
   appLanguage,
   languageSaving,
   languageError,
-  onLanguageChange
+  onLanguageChange,
+  isAdmin,
+  adminStats,
+  adminStatsLoading,
+  adminStatsError
 }: Props) {
   const hasRealtimeMessage = Boolean(lastMessage);
 
@@ -86,6 +94,50 @@ export function SettingsPanel({
           <p className="settings-language-error">{languageError}</p>
         ) : null}
       </section>
+
+      {isAdmin ? (
+        <section className="card settings-language-card">
+          <div className="settings-language-copy">
+            <span className="settings-language-icon" aria-hidden="true">
+              ◉
+            </span>
+
+            <span>
+              <strong>{copy.adminStats}</strong>
+              <small>
+                {adminStatsLoading
+                  ? copy.statsLoading
+                  : adminStatsError ?? ""}
+              </small>
+            </span>
+          </div>
+
+          {adminStats ? (
+            <div className="settings-grid">
+              <article className="card settings-endpoint-card">
+                <div className="settings-endpoint-content">
+                  <span>{copy.totalUsers}</span>
+                  <strong>{adminStats.totalUsers}</strong>
+                </div>
+              </article>
+
+              <article className="card settings-endpoint-card">
+                <div className="settings-endpoint-content">
+                  <span>{copy.totalOpens}</span>
+                  <strong>{adminStats.totalOpens}</strong>
+                </div>
+              </article>
+
+              <article className="card settings-endpoint-card">
+                <div className="settings-endpoint-content">
+                  <span>{copy.activeNow}</span>
+                  <strong>{adminStats.activeNow}</strong>
+                </div>
+              </article>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
     </section>
   );
 }

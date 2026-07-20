@@ -64,6 +64,29 @@ export const userService = {
     return userRepository.upsertByTelegramId(input);
   },
 
+  async recordMiniAppOpen(input: UpsertTelegramUserInput) {
+    return userRepository.recordMiniAppOpen(input);
+  },
+
+  async getUserByTelegramId(telegramId: string) {
+    const user = await userRepository.findByTelegramId(telegramId);
+
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    return user;
+  },
+
+  async touchMiniAppActivity(telegramId: string) {
+    await this.getUserByTelegramId(telegramId);
+    return userRepository.touchLastSeenByTelegramId(telegramId);
+  },
+
+  async getMiniAppStats() {
+    return userRepository.getMiniAppStats();
+  },
+
   async setUserActive(id: string, isActive: boolean) {
     await this.getUserById(id);
     return userRepository.setActive(id, isActive);

@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { getAlerts } from "./api/alerts";
 import { getMarkets } from "./api/markets";
-import { getTelegramMe } from "./api/telegram";
+import {
+  getTelegramAdminStats,
+  getTelegramMe,
+  sendTelegramActivity
+} from "./api/telegram";
 import { updateUserLanguage } from "./api/users";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
@@ -17,7 +21,13 @@ import { MarketOverviewCard } from "./components/MarketOverviewCard";
 import { ChartPanel } from "./components/ChartPanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
-import type { Alert, Market, PreferredLanguage, User } from "./types/api";
+import type {
+  Alert,
+  Market,
+  MiniAppStats,
+  PreferredLanguage,
+  User
+} from "./types/api";
 
 export default function App() {
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
@@ -37,6 +47,9 @@ export default function App() {
   });
   const [languageSaving, setLanguageSaving] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
+  const [adminStats, setAdminStats] = useState<MiniAppStats | null>(null);
+  const [adminStatsLoading, setAdminStatsLoading] = useState(false);
+  const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
   const [selectedMarketId, setSelectedMarketId] = useState("");
   const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
   const [marketSearch, setMarketSearch] = useState("");
@@ -205,6 +218,70 @@ export default function App() {
     loadDashboardData();
   }, []);
 
+  useEffect(() => {
+    const initData = telegramMiniApp.initData;
+
+    if (!initData || !backendUser) {
+      return;
+    }
+
+    const sendActivity = () => {
+      void sendTelegramActivity(initData).catch(() => undefined);
+    };
+
+    sendActivity();
+
+    const timer = window.setInterval(sendActivity, 60000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [telegramMiniApp.initData, backendUser?.id]);
+
+  useEffect(() => {
+    const initData = telegramMiniApp.initData;
+
+    if (!initData || backendUser?.role !== "ADMIN") {
+      setAdminStats(null);
+      setAdminStatsError(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadAdminStats = async () => {
+      try {
+        setAdminStatsLoading(true);
+        setAdminStatsError(null);
+
+        const stats = await getTelegramAdminStats(initData);
+
+        if (!cancelled) {
+          setAdminStats(stats);
+        }
+      } catch {
+        if (!cancelled) {
+          setAdminStatsError(copy.statsLoadFailed ?? "Failed to load statistics");
+        }
+      } finally {
+        if (!cancelled) {
+          setAdminStatsLoading(false);
+        }
+      }
+    };
+
+    void loadAdminStats();
+
+    const timer = window.setInterval(() => {
+      void loadAdminStats();
+    }, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [telegramMiniApp.initData, backendUser?.role, appLanguage]);
+
   const telegramUserLabel = telegramMiniApp.user?.username
     ? `@${telegramMiniApp.user.username}`
     : telegramMiniApp.user?.first_name ?? copy.browser;
@@ -311,6 +388,10 @@ export default function App() {
         languageSaving={languageSaving}
         languageError={languageError}
         onLanguageChange={handleLanguageChange}
+        isAdmin={backendUser?.role === "ADMIN"}
+        adminStats={adminStats}
+        adminStatsLoading={adminStatsLoading}
+        adminStatsError={adminStatsError}
       />
       ) : null}
     </main>

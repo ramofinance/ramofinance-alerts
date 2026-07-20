@@ -57,15 +57,20 @@ model User {
   languageCode       String?
   preferredLanguage PreferredLanguage?
   role               UserRole @default(USER)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive             Boolean   @default(true)
+  miniAppOpenCount      Int       @default(0)
+  firstMiniAppOpenedAt  DateTime?
+  lastMiniAppOpenedAt   DateTime?
+  lastSeenAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   alerts        Alert[]
   subscriptions Subscription[]
 
   @@index([telegramId])
   @@index([username])
+  @@index([lastSeenAt])
 }
 
 model Market {

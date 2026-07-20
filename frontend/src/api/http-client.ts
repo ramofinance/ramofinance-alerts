@@ -40,12 +40,14 @@ export const apiGet = async <TData>(
 
 export const apiPost = async <TData, TBody extends object>(
   path: string,
-  body: TBody
+  body: TBody,
+  options?: RequestOptions
 ): Promise<TData> => {
   const response = await fetch(buildUrl(path), {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      ...options?.headers
     },
     body: JSON.stringify(body)
   });
