@@ -23,13 +23,15 @@ function toChartTime(value: string): Time {
   return Math.floor(new Date(value).getTime() / 1000) as Time;
 }
 
-type ChartTimeframe = "1m" | "5m" | "15m" | "1h";
+type ChartTimeframe = "1m" | "5m" | "15m" | "1h" | "4h" | "1D";
 
 const TIMEFRAME_SECONDS: Record<ChartTimeframe, number> = {
   "1m": 60,
   "5m": 300,
   "15m": 900,
-  "1h": 3600
+  "1h": 3600,
+  "4h": 14400,
+  "1D": 86400
 };
 
 function normalizeChartData(
@@ -254,7 +256,7 @@ export function LiveMarketChart({
       </div>
 
       <div className="chart-timeframes" aria-label="Chart timeframe">
-        {(["1m", "5m", "15m", "1h"] as ChartTimeframe[]).map((item) => (
+        {(["1m", "5m", "15m", "1h", "4h", "1D"] as ChartTimeframe[]).map((item) => (
           <button
             key={item}
             type="button"

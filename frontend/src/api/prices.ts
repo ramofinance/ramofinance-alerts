@@ -24,7 +24,7 @@ export type PriceHistoryResponse = {
   items: MarketPriceHistory[];
 };
 
-export const getPriceHistory = (symbol: string, limit = 120) => {
+export const getPriceHistory = (symbol: string, limit = 3000) => {
   return apiGet<PriceHistoryResponse>(
     `/api/prices/${encodeURIComponent(symbol)}/history?limit=${limit}`
   );

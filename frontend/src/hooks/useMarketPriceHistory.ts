@@ -16,7 +16,7 @@ export function useMarketPriceHistory(symbol?: string) {
       };
     }
 
-    getPriceHistory(symbol, 120)
+    getPriceHistory(symbol, 3000)
       .then((result) => {
         if (!cancelled) {
           setPriceHistory(result.items);

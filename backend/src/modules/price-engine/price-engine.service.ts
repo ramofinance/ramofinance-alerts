@@ -42,7 +42,7 @@ const shouldTriggerAlert = (
 export const priceEngineService = {
   async getPriceHistory(symbolInput: string, limitInput = 100) {
     const symbol = symbolInput.trim().toUpperCase();
-    const limit = Math.min(Math.max(limitInput, 1), 500);
+    const limit = Math.min(Math.max(limitInput, 1), 3000);
 
     if (!symbol) {
       throw new AppError("symbol is required", 400);

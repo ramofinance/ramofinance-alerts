@@ -13,7 +13,7 @@ const priceHistoryParamsSchema = z.object({
 });
 
 const priceHistoryQuerySchema = z.object({
-  limit: z.coerce.number().int().positive().max(500).optional()
+  limit: z.coerce.number().int().positive().max(3000).optional()
 });
 
 const parseOrThrow = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
