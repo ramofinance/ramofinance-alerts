@@ -52,6 +52,41 @@ const markets = [
     quoteAsset: "USD"
   },
   {
+    symbol: "USDJPY",
+    name: "US Dollar / Japanese Yen",
+    type: MarketType.FOREX,
+    baseAsset: "USD",
+    quoteAsset: "JPY"
+  },
+  {
+    symbol: "USDCHF",
+    name: "US Dollar / Swiss Franc",
+    type: MarketType.FOREX,
+    baseAsset: "USD",
+    quoteAsset: "CHF"
+  },
+  {
+    symbol: "AUDUSD",
+    name: "Australian Dollar / US Dollar",
+    type: MarketType.FOREX,
+    baseAsset: "AUD",
+    quoteAsset: "USD"
+  },
+  {
+    symbol: "USDCAD",
+    name: "US Dollar / Canadian Dollar",
+    type: MarketType.FOREX,
+    baseAsset: "USD",
+    quoteAsset: "CAD"
+  },
+  {
+    symbol: "NZDUSD",
+    name: "New Zealand Dollar / US Dollar",
+    type: MarketType.FOREX,
+    baseAsset: "NZD",
+    quoteAsset: "USD"
+  },
+  {
     symbol: "XAUUSD",
     name: "Gold / US Dollar",
     type: MarketType.COMMODITY,

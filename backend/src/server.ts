@@ -3,6 +3,7 @@ import { env } from "./config/env";
 import { prisma } from "./database/prisma";
 import { logger } from "./utils/logger";
 import { startPricePolling, stopPricePolling } from "./modules/price-engine/price-poller.service";
+import { startFinnhubStreaming, stopFinnhubStreaming } from "./modules/price-engine/finnhub-stream.service";
 import { setupWebSocketServer } from "./websocket/websocket-server";
 
 const app = createServer();
@@ -14,11 +15,13 @@ const server = app.listen(port, () => {
 
 setupWebSocketServer(server);
 startPricePolling();
+startFinnhubStreaming();
 
 const shutdown = async () => {
   logger.info("Shutting down backend server");
 
   stopPricePolling();
+  stopFinnhubStreaming();
 
   server.close(async () => {
     await prisma.$disconnect();

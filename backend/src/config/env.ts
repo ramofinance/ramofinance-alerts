@@ -32,6 +32,7 @@ const envSchema = z.object({
 
   WS_PORT: z.coerce.number().int().positive().default(4000),
 
+  FINNHUB_API_KEY: z.string().min(1).optional(),
   PRICE_POLLING_ENABLED: booleanFromEnv.default(false),
   PRICE_POLLING_INTERVAL_MS: z.coerce.number().int().positive().default(30000)
 });
