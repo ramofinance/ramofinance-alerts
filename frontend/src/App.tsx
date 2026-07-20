@@ -244,6 +244,9 @@ export default function App() {
       {activeTab === "CHART" ? (
         <ChartPanel
           markets={markets}
+          filteredMarkets={filteredMarkets}
+          marketSearch={marketSearch}
+          setMarketSearch={setMarketSearch}
           activeMarket={activeMarket}
           alerts={alerts}
           history={priceHistory}

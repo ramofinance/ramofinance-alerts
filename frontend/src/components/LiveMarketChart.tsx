@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createChart,
   type IChartApi,
@@ -23,12 +23,32 @@ function toChartTime(value: string): Time {
   return Math.floor(new Date(value).getTime() / 1000) as Time;
 }
 
-function normalizeChartData(items: LineData[]): LineData[] {
+type ChartTimeframe = "1m" | "5m" | "15m" | "1h";
+
+const TIMEFRAME_SECONDS: Record<ChartTimeframe, number> = {
+  "1m": 60,
+  "5m": 300,
+  "15m": 900,
+  "1h": 3600
+};
+
+function normalizeChartData(
+  items: LineData[],
+  timeframe: ChartTimeframe
+): LineData[] {
   const byTime = new Map<Time, LineData>();
+  const bucketSeconds = TIMEFRAME_SECONDS[timeframe];
 
   for (const item of items) {
     if (Number.isFinite(item.value)) {
-      byTime.set(item.time, item);
+      const bucketTime = (
+        Math.floor(Number(item.time) / bucketSeconds) * bucketSeconds
+      ) as Time;
+
+      byTime.set(bucketTime, {
+        time: bucketTime,
+        value: item.value
+      });
     }
   }
 
@@ -50,6 +70,7 @@ export function LiveMarketChart({
   const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
   const priceLinesRef = useRef<IPriceLine[]>([]);
   const hasFittedContentRef = useRef(false);
+  const [timeframe, setTimeframe] = useState<ChartTimeframe>("1m");
 
   const chartData = useMemo(() => {
     const points: LineData[] = history.map((item) => ({
@@ -64,8 +85,8 @@ export function LiveMarketChart({
       });
     }
 
-    return normalizeChartData(points);
-  }, [history, market?.latestPrice]);
+    return normalizeChartData(points, timeframe);
+  }, [history, market?.latestPrice, timeframe]);
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -230,6 +251,26 @@ export function LiveMarketChart({
             {market?.latestPrice?.source ?? emptyText}
           </small>
         </div>
+      </div>
+
+      <div className="chart-timeframes" aria-label="Chart timeframe">
+        {(["1m", "5m", "15m", "1h"] as ChartTimeframe[]).map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={
+              timeframe === item
+                ? "chart-timeframe active"
+                : "chart-timeframe"
+            }
+            onClick={() => {
+              setTimeframe(item);
+              hasFittedContentRef.current = false;
+            }}
+          >
+            {item}
+          </button>
+        ))}
       </div>
 
       <div className="chart-meta-row">

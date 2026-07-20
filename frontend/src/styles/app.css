@@ -1879,3 +1879,52 @@ select:focus {
     height: 8px;
   }
 }
+
+.chart-market-selector {
+  margin-bottom: 14px;
+}
+
+.chart-market-selector .form-grid {
+  gap: 12px;
+}
+
+.chart-timeframes {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 14px 0 10px;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.chart-timeframes::-webkit-scrollbar {
+  display: none;
+}
+
+.chart-timeframe {
+  min-width: 54px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #94a3b8;
+  font-weight: 800;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.chart-timeframe:active {
+  transform: scale(0.96);
+}
+
+.chart-timeframe.active {
+  border-color: var(--border-active);
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(99, 102, 241, 0.18));
+  color: #f8fafc;
+  box-shadow: 0 8px 24px rgba(14, 165, 233, 0.12);
+}
