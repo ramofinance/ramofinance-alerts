@@ -210,6 +210,7 @@ export default function App() {
         })
         .catch((err) => {
           setError(err instanceof Error ? err.message : copy.telegramUserFailed);
+          void loadDashboardData();
         });
 
       return;
