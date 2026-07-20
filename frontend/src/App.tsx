@@ -306,8 +306,6 @@ export default function App() {
       {activeTab === "SETTINGS" ? (
       <SettingsPanel
         copy={copy}
-        apiUrl={frontendEnv.apiUrl}
-        websocketUrl={frontendEnv.websocketUrl}
         lastMessage={lastMessage}
         appLanguage={appLanguage}
         languageSaving={languageSaving}
