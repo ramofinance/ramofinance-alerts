@@ -1,4 +1,5 @@
 import type { Alert, AlertDirection, AlertStatus } from "../types/api";
+import { formatPrice } from "../utils/formatPrice";
 
 type Props = {
   filteredAlerts: Alert[];
@@ -193,9 +194,7 @@ export function AlertsList(props: Props) {
 
           const marketSymbol =
             alert.market?.symbol ?? alert.marketId;
-          const formattedTarget = Number(
-            alert.targetPrice
-          ).toLocaleString();
+          const formattedTarget = formatPrice(alert.targetPrice);
 
           return (
             <article

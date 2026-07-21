@@ -1,5 +1,6 @@
 import { getAppCopy } from "../i18n/app-copy";
 import type { Market } from "../types/api";
+import { formatPrice } from "../utils/formatPrice";
 
 type Props = {
   market?: Market;
@@ -22,7 +23,7 @@ export function MarketOverviewCard({ market, copy }: Props) {
       {market?.latestPrice ? (
         <div className="latest-price-box">
           <span>{copy.latestPrice}</span>
-          <strong>{market.latestPrice.price}</strong>
+          <strong>{formatPrice(market.latestPrice.price)}</strong>
           <small>
             {copy.source}: {market.latestPrice.source}
           </small>

@@ -9,6 +9,7 @@ import {
 } from "lightweight-charts";
 
 import type { Alert, Market, MarketPriceHistory } from "../types/api";
+import { formatPrice } from "../utils/formatPrice";
 
 interface LiveMarketChartProps {
   market?: Market | null;
@@ -131,7 +132,7 @@ export function LiveMarketChart({
         }
       },
       localization: {
-        priceFormatter: (price: number) => price.toLocaleString()
+        priceFormatter: (price: number) => formatPrice(price)
       }
     });
 
@@ -193,7 +194,7 @@ export function LiveMarketChart({
       .map((alert) =>
         seriesRef.current!.createPriceLine({
           price: Number(alert.targetPrice),
-          title: `${directionLabels[alert.direction] ?? alert.direction} ${alert.targetPrice}`,
+          title: `${directionLabels[alert.direction] ?? alert.direction} ${formatPrice(alert.targetPrice)}`,
           axisLabelVisible: true,
           lineVisible: true,
           lineWidth: 2,
@@ -241,7 +242,7 @@ export function LiveMarketChart({
 
           {market?.latestPrice ? (
             <strong className="chart-current-price">
-              {Number(market.latestPrice.price).toLocaleString()}
+              {formatPrice(market.latestPrice.price)}
             </strong>
           ) : (
             <strong className="chart-current-price chart-current-price--empty">
