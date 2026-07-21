@@ -1475,7 +1475,7 @@ select:focus {
 .chart-canvas-shell {
   position: relative;
   overflow: hidden;
-  min-height: 300px;
+  min-height: 220px;
   border: 1px solid rgba(148, 163, 184, 0.08);
   border-radius: 18px;
   background:
@@ -1485,7 +1485,7 @@ select:focus {
 .chart-container {
   position: relative;
   z-index: 1;
-  min-height: 300px;
+  min-height: 220px;
 }
 
 .chart-empty-overlay {
@@ -2126,20 +2126,26 @@ select:focus {
 
 .tradingview-widget-container {
   width: 100%;
-  height: 680px;
+  height: 680px !important;
+  min-height: 680px;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 18px;
   background: #0f172a;
 }
 
-.tradingview-widget-container__widget {
-  width: 100%;
-  height: 100%;
+.tradingview-widget-container__widget,
+.tradingview-widget-container iframe {
+  width: 100% !important;
+  height: 680px !important;
+  min-height: 680px;
 }
 
 @media (max-width: 640px) {
-  .tradingview-widget-container {
-    height: 620px;
+  .tradingview-widget-container,
+  .tradingview-widget-container__widget,
+  .tradingview-widget-container iframe {
+    height: 620px !important;
+    min-height: 620px;
   }
 }
