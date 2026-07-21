@@ -15,6 +15,7 @@ import { AlertsList } from "./components/AlertsList";
 import { BottomTabs } from "./components/BottomTabs";
 import { CreateAlertCard } from "./components/CreateAlertCard";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { SplashScreen } from "./components/SplashScreen";
 import { useAlerts } from "./hooks/useAlerts";
 import { HomePanel } from "./components/HomePanel";
 import { MarketOverviewCard } from "./components/MarketOverviewCard";
@@ -50,6 +51,7 @@ export default function App() {
   const [adminStats, setAdminStats] = useState<MiniAppStats | null>(null);
   const [adminStatsLoading, setAdminStatsLoading] = useState(false);
   const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
+  const [splashVisible, setSplashVisible] = useState(true);
   const [selectedMarketId, setSelectedMarketId] = useState("");
   const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
   const [marketSearch, setMarketSearch] = useState("");
@@ -193,6 +195,14 @@ export default function App() {
   };
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSplashVisible(false);
+    }, 2750);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     const currentTelegramMiniApp = initializeTelegramMiniApp();
 
     setTelegramMiniApp(currentTelegramMiniApp);
@@ -293,6 +303,8 @@ export default function App() {
 
   return (
     <main className="app-shell" dir={appDirection}>
+        <SplashScreen visible={splashVisible} />
+
       <BottomTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
