@@ -1,4 +1,5 @@
 import { LiveMarketChart } from "./LiveMarketChart";
+import { TradingViewChart } from "./TradingViewChart";
 import { getAppCopy } from "../i18n/app-copy";
 import type { Alert, Market, MarketPriceHistory } from "../types/api";
 
@@ -78,6 +79,8 @@ export function ChartPanel({
           </button>
         ))}
       </section>
+
+      <TradingViewChart market={activeMarket} />
 
       <LiveMarketChart
         market={activeMarket}
