@@ -97,7 +97,7 @@ export function LiveMarketChart({
     }
 
     const chart = createChart(containerRef.current, {
-      height: 300,
+      height: 220,
       layout: {
         background: { color: "transparent" },
         textColor: "#7f8da5"
