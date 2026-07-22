@@ -65,8 +65,9 @@ model User {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  alerts        Alert[]
-  subscriptions Subscription[]
+  alerts          Alert[]
+  subscriptions   Subscription[]
+  favoriteMarkets UserMarketFavorite[]
 
   @@index([telegramId])
   @@index([username])
@@ -84,12 +85,26 @@ model Market {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  alerts Alert[]
-  latestPrice MarketPrice?
-  priceHistory MarketPriceHistory[]
+  alerts        Alert[]
+  latestPrice   MarketPrice?
+  priceHistory  MarketPriceHistory[]
+  favoritedBy   UserMarketFavorite[]
 
   @@index([symbol])
   @@index([type])
+}
+
+model UserMarketFavorite {
+  userId    String
+  marketId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  @@id([userId, marketId])
+  @@index([marketId])
+  @@index([userId, createdAt])
 }
 
 model MarketPrice {

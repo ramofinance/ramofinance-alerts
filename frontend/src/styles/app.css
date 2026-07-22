@@ -2149,3 +2149,67 @@ select:focus {
     min-height: 620px;
   }
 }
+
+.favorite-market-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.favorite-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid rgba(250, 204, 21, 0.24);
+  border-radius: 13px;
+  background: rgba(250, 204, 21, 0.07);
+  color: #fde68a;
+  font-weight: 800;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.favorite-toggle span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.favorite-toggle.is-favorite {
+  border-color: rgba(250, 204, 21, 0.55);
+  background: rgba(250, 204, 21, 0.15);
+  color: #fef08a;
+}
+
+.favorite-toggle:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.favorite-toggle:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.market-favorites-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 2px 2px 9px;
+  color: #fde68a;
+  font-size: 13px;
+}
+
+.market-favorites-empty {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 13px;
+  color: #64748b;
+  font-size: 12px;
+  text-align: center;
+}

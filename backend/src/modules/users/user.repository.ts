@@ -171,5 +171,51 @@ export const userRepository = {
       where: { id },
       data: { preferredLanguage }
     });
+  },
+
+  findMarketById(id: string) {
+    return prisma.market.findUnique({
+      where: { id }
+    });
+  },
+
+  listFavoriteMarkets(userId: string) {
+    return prisma.userMarketFavorite.findMany({
+      where: { userId },
+      include: {
+        market: true
+      },
+      orderBy: {
+        createdAt: "asc"
+      }
+    });
+  },
+
+  addFavoriteMarket(userId: string, marketId: string) {
+    return prisma.userMarketFavorite.upsert({
+      where: {
+        userId_marketId: {
+          userId,
+          marketId
+        }
+      },
+      update: {},
+      create: {
+        userId,
+        marketId
+      },
+      include: {
+        market: true
+      }
+    });
+  },
+
+  removeFavoriteMarket(userId: string, marketId: string) {
+    return prisma.userMarketFavorite.deleteMany({
+      where: {
+        userId,
+        marketId
+      }
+    });
   }
 };

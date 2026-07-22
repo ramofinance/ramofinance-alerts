@@ -6,7 +6,12 @@ import {
   getTelegramMe,
   sendTelegramActivity
 } from "./api/telegram";
-import { updateUserLanguage } from "./api/users";
+import {
+  addUserFavoriteMarket,
+  getUserFavoriteMarkets,
+  removeUserFavoriteMarket,
+  updateUserLanguage
+} from "./api/users";
 import { frontendEnv } from "./config/env";
 import { useWebSocket } from "./hooks/use-websocket";
 import { useMarketPriceHistory } from "./hooks/useMarketPriceHistory";
@@ -55,6 +60,9 @@ export default function App() {
   const [selectedMarketId, setSelectedMarketId] = useState("");
   const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
   const [marketSearch, setMarketSearch] = useState("");
+  const [favoriteMarkets, setFavoriteMarkets] = useState<Market[]>([]);
+  const [favoriteSavingMarketId, setFavoriteSavingMarketId] =
+    useState<string | null>(null);
 
 
   const filteredMarkets = markets.filter((market) => {
@@ -95,14 +103,20 @@ export default function App() {
       setLoading(true);
       setError(null);
 
-      const [marketsResponse, alertsResponse] = await Promise.all([
+      const [
+        marketsResponse,
+        alertsResponse,
+        favoriteMarketsResponse
+      ] = await Promise.all([
         getMarkets(),
-        getAlerts(userId ? { userId } : undefined)
+        getAlerts(userId ? { userId } : undefined),
+        userId ? getUserFavoriteMarkets(userId) : Promise.resolve([])
       ]);
 
       setMarkets(marketsResponse.items);
       setSelectedMarketId((currentMarketId) => currentMarketId || marketsResponse.items[0]?.id || "");
       setAlerts(alertsResponse.items);
+      setFavoriteMarkets(favoriteMarketsResponse);
     } catch (err) {
       setError(err instanceof Error ? err.message : copy.loadFailed);
     } finally {
@@ -203,6 +217,47 @@ export default function App() {
       );
     } finally {
       setLanguageSaving(false);
+    }
+  };
+
+  const handleToggleFavorite = async (marketId: string) => {
+    if (!backendUser || favoriteSavingMarketId) {
+      return;
+    }
+
+    const isFavorite = favoriteMarkets.some(
+      (market) => market.id === marketId
+    );
+
+    try {
+      setFavoriteSavingMarketId(marketId);
+      setError(null);
+
+      if (isFavorite) {
+        await removeUserFavoriteMarket(backendUser.id, marketId);
+        setFavoriteMarkets((current) =>
+          current.filter((market) => market.id !== marketId)
+        );
+      } else {
+        const market = await addUserFavoriteMarket(
+          backendUser.id,
+          marketId
+        );
+
+        setFavoriteMarkets((current) =>
+          current.some((item) => item.id === market.id)
+            ? current
+            : [...current, market]
+        );
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : copy.favoriteUpdateFailed
+      );
+    } finally {
+      setFavoriteSavingMarketId(null);
     }
   };
 
@@ -347,6 +402,9 @@ export default function App() {
         <ChartPanel
           markets={markets}
           filteredMarkets={filteredMarkets}
+          favoriteMarkets={favoriteMarkets}
+          favoriteSavingMarketId={favoriteSavingMarketId}
+          onToggleFavorite={handleToggleFavorite}
           marketSearch={marketSearch}
           setMarketSearch={setMarketSearch}
           activeMarket={activeMarket}

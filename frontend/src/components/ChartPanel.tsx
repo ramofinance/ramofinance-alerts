@@ -6,26 +6,35 @@ import type { Alert, Market, MarketPriceHistory } from "../types/api";
 type Props = {
   markets: Market[];
   filteredMarkets: Market[];
+  favoriteMarkets: Market[];
+  favoriteSavingMarketId: string | null;
   marketSearch: string;
   setMarketSearch: (value: string) => void;
   activeMarket?: Market;
   alerts: Alert[];
   history: MarketPriceHistory[];
   setSelectedMarketId: (marketId: string) => void;
+  onToggleFavorite: (marketId: string) => void;
   copy: ReturnType<typeof getAppCopy>;
 };
 
 export function ChartPanel({
-  markets,
   filteredMarkets,
+  favoriteMarkets,
+  favoriteSavingMarketId,
   marketSearch,
   setMarketSearch,
   activeMarket,
   alerts,
   history,
   setSelectedMarketId,
+  onToggleFavorite,
   copy
 }: Props) {
+  const activeMarketIsFavorite = favoriteMarkets.some(
+    (market) => market.id === activeMarket?.id
+  );
+
   return (
     <section>
       <section className="card chart-market-selector">
@@ -61,23 +70,65 @@ export function ChartPanel({
             </select>
           </label>
         </div>
-      </section>
 
-      <section className="market-shortcuts">
-        {markets.slice(0, 5).map((market) => (
+        <div className="favorite-market-actions">
           <button
-            key={market.id}
             type="button"
             className={
-              market.id === activeMarket?.id
-                ? "market-shortcut active"
-                : "market-shortcut"
+              activeMarketIsFavorite
+                ? "favorite-toggle is-favorite"
+                : "favorite-toggle"
             }
-            onClick={() => setSelectedMarketId(market.id)}
+            aria-pressed={activeMarketIsFavorite}
+            disabled={
+              !activeMarket ||
+              favoriteSavingMarketId === activeMarket.id
+            }
+            onClick={() => {
+              if (activeMarket) {
+                onToggleFavorite(activeMarket.id);
+              }
+            }}
           >
-            {market.symbol}
+            <span aria-hidden="true">
+              {activeMarketIsFavorite ? "★" : "☆"}
+            </span>
+            {activeMarketIsFavorite
+              ? copy.removeFavorite
+              : copy.addFavorite}
           </button>
-        ))}
+        </div>
+      </section>
+
+      <div className="market-favorites-header">
+        <span aria-hidden="true">★</span>
+        <strong>{copy.favorites}</strong>
+      </div>
+
+      <section className="market-shortcuts">
+        {favoriteMarkets.length === 0 ? (
+          <span className="market-favorites-empty">
+            {copy.noFavorites}
+          </span>
+        ) : (
+          favoriteMarkets.map((market) => (
+            <button
+              key={market.id}
+              type="button"
+              className={
+                market.id === activeMarket?.id
+                  ? "market-shortcut active"
+                  : "market-shortcut"
+              }
+              onClick={() => {
+                setMarketSearch("");
+                setSelectedMarketId(market.id);
+              }}
+            >
+              {market.symbol}
+            </button>
+          ))
+        )}
       </section>
 
       <TradingViewChart market={activeMarket} />

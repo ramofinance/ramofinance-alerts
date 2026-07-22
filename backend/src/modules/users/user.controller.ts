@@ -110,3 +110,60 @@ export const setUserPreferredLanguageController: RequestHandler = async (req, re
     next(error);
   }
 };
+
+export const listUserFavoriteMarketsController: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const markets = await userService.listFavoriteMarkets(req.params.id);
+
+    res.json({
+      success: true,
+      data: markets
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const addUserFavoriteMarketController: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const market = await userService.addFavoriteMarket(
+      req.params.id,
+      req.params.marketId
+    );
+
+    res.status(201).json({
+      success: true,
+      data: market
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeUserFavoriteMarketController: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    await userService.removeFavoriteMarket(
+      req.params.id,
+      req.params.marketId
+    );
+
+    res.json({
+      success: true,
+      data: null
+    });
+  } catch (error) {
+    next(error);
+  }
+};

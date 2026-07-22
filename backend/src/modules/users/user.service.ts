@@ -95,5 +95,34 @@ export const userService = {
   async setUserPreferredLanguage(id: string, preferredLanguage: PreferredLanguage) {
     await this.getUserById(id);
     return userRepository.setPreferredLanguage(id, preferredLanguage);
+  },
+
+  async listFavoriteMarkets(userId: string) {
+    await this.getUserById(userId);
+    const favorites = await userRepository.listFavoriteMarkets(userId);
+    return favorites.map((favorite) => favorite.market);
+  },
+
+  async addFavoriteMarket(userId: string, marketId: string) {
+    const [user, market] = await Promise.all([
+      userRepository.findById(userId),
+      userRepository.findMarketById(marketId)
+    ]);
+
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+
+    if (!market || !market.isActive) {
+      throw new AppError("Market not found", 404);
+    }
+
+    const favorite = await userRepository.addFavoriteMarket(userId, marketId);
+    return favorite.market;
+  },
+
+  async removeFavoriteMarket(userId: string, marketId: string) {
+    await this.getUserById(userId);
+    await userRepository.removeFavoriteMarket(userId, marketId);
   }
 };

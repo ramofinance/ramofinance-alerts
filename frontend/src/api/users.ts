@@ -1,5 +1,5 @@
-import { apiPatch } from "./http-client";
-import type { PreferredLanguage, User } from "../types/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "./http-client";
+import type { Market, PreferredLanguage, User } from "../types/api";
 
 export const updateUserLanguage = (
   userId: string,
@@ -8,5 +8,28 @@ export const updateUserLanguage = (
   return apiPatch<User, { preferredLanguage: PreferredLanguage }>(
     `/api/users/${userId}/language`,
     { preferredLanguage }
+  );
+};
+
+export const getUserFavoriteMarkets = (userId: string) => {
+  return apiGet<Market[]>(`/api/users/${userId}/favorites`);
+};
+
+export const addUserFavoriteMarket = (
+  userId: string,
+  marketId: string
+) => {
+  return apiPost<Market, Record<string, never>>(
+    `/api/users/${userId}/favorites/${marketId}`,
+    {}
+  );
+};
+
+export const removeUserFavoriteMarket = (
+  userId: string,
+  marketId: string
+) => {
+  return apiDelete<null>(
+    `/api/users/${userId}/favorites/${marketId}`
   );
 };
