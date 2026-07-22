@@ -1,8 +1,7 @@
 import { AlertDirection } from "@prisma/client";
 import { AppError } from "../../utils/app-error";
 import { resolveTelegramLanguage, telegramText } from "../../telegram/telegram.i18n";
-import { sendTelegramMessage } from "../../telegram/telegram-api";
-import { logger } from "../../utils/logger";
+import { scheduleTelegramAlertNotifications } from "../notifications/telegram-alert-notification.service";
 import { broadcastWebSocketEvent } from "../../websocket/websocket-broadcast";
 import { websocketEventTypes } from "../../websocket/websocket-events";
 import { priceEngineRepository } from "./price-engine.repository";
@@ -134,27 +133,22 @@ export const priceEngineService = {
             triggeredAlert.user.languageCode ?? undefined
           );
 
-          const telegramResult = await sendTelegramMessage(
-            triggeredAlert.user.telegramId,
-            telegramText.alertTriggeredMessage(language, {
+          await scheduleTelegramAlertNotifications({
+            alertId: triggeredAlert.id,
+            userId: triggeredAlert.user.id,
+            telegramId: triggeredAlert.user.telegramId,
+            repeatCount:
+              triggeredAlert.user.alertNotificationRepeatCount,
+            intervalSeconds:
+              triggeredAlert.user.alertNotificationIntervalSeconds,
+            message: telegramText.alertTriggeredMessage(language, {
               symbol: triggeredAlert.market.symbol,
               direction: triggeredAlert.direction,
               targetPrice: triggeredAlert.targetPrice.toString(),
               currentPrice,
               title: triggeredAlert.title
             })
-          );
-
-          if (!telegramResult.sent) {
-            logger.warn(
-              {
-                alertId: triggeredAlert.id,
-                telegramId: triggeredAlert.user.telegramId,
-                reason: telegramResult.reason
-              },
-              "Telegram alert notification was not sent"
-            );
-          }
+          });
         }
 
         triggeredAlerts.push(triggeredAlert);

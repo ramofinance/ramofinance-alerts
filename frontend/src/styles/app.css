@@ -2213,3 +2213,50 @@ select:focus {
   font-size: 12px;
   text-align: center;
 }
+
+.settings-notification-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, auto);
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.settings-notification-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.settings-notification-controls label {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-notification-controls label > span {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.settings-notification-controls select {
+  min-height: 42px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.settings-notification-controls select:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+@media (max-width: 600px) {
+  .settings-notification-card {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-notification-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

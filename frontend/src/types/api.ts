@@ -60,6 +60,11 @@ export type Alert = {
 
 export type PreferredLanguage = "FA" | "EN";
 
+export type AlertNotificationSettings = {
+  repeatCount: number;
+  intervalSeconds: 30 | 60 | 120 | 300 | 600;
+};
+
 export type AlertDirection = "ABOVE" | "BELOW" | "CROSSING_UP" | "CROSSING_DOWN";
 
 export type AlertStatus = "ACTIVE" | "TRIGGERED" | "PAUSED" | "CANCELLED" | "EXPIRED";
@@ -74,6 +79,8 @@ export type User = {
   preferredLanguage: PreferredLanguage | null;
   role: string;
   isActive: boolean;
+  alertNotificationRepeatCount: number;
+  alertNotificationIntervalSeconds: number;
   createdAt: string;
   updatedAt: string;
 };

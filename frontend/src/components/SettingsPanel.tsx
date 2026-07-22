@@ -1,4 +1,8 @@
-import type { MiniAppStats, PreferredLanguage } from "../types/api";
+import type {
+  AlertNotificationSettings,
+  MiniAppStats,
+  PreferredLanguage
+} from "../types/api";
 
 type Props = {
   copy: any;
@@ -7,6 +11,14 @@ type Props = {
   languageSaving: boolean;
   languageError: string | null;
   onLanguageChange: (language: PreferredLanguage) => void;
+  notificationRepeatCount: number;
+  notificationIntervalSeconds: number;
+  notificationSettingsSaving: boolean;
+  notificationSettingsError: string | null;
+  notificationSettingsEnabled: boolean;
+  onNotificationSettingsChange: (
+    settings: AlertNotificationSettings
+  ) => void;
   isAdmin: boolean;
   adminStats: MiniAppStats | null;
   adminStatsLoading: boolean;
@@ -20,6 +32,12 @@ export function SettingsPanel({
   languageSaving,
   languageError,
   onLanguageChange,
+  notificationRepeatCount,
+  notificationIntervalSeconds,
+  notificationSettingsSaving,
+  notificationSettingsError,
+  notificationSettingsEnabled,
+  onNotificationSettingsChange,
   isAdmin,
   adminStats,
   adminStatsLoading,
@@ -92,6 +110,88 @@ export function SettingsPanel({
 
         {languageError ? (
           <p className="settings-language-error">{languageError}</p>
+        ) : null}
+      </section>
+
+      <section className="card settings-notification-card">
+        <div className="settings-language-copy">
+          <span className="settings-language-icon" aria-hidden="true">
+            🔔
+          </span>
+
+          <span>
+            <strong>{copy.notificationSettings}</strong>
+            <small>{copy.notificationSettingsHint}</small>
+          </span>
+        </div>
+
+        <div className="settings-notification-controls">
+          <label>
+            <span>{copy.notificationRepeatCount}</span>
+            <select
+              value={notificationRepeatCount}
+              disabled={
+                !notificationSettingsEnabled ||
+                notificationSettingsSaving
+              }
+              onChange={(event) =>
+                onNotificationSettingsChange({
+                  repeatCount: Number(event.target.value),
+                  intervalSeconds:
+                    notificationIntervalSeconds as
+                      | 30
+                      | 60
+                      | 120
+                      | 300
+                      | 600
+                })
+              }
+            >
+              {[1, 2, 3, 4, 5].map((count) => (
+                <option value={count} key={count}>
+                  {copy.notificationCountOptions[count]}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span>{copy.notificationInterval}</span>
+            <select
+              value={notificationIntervalSeconds}
+              disabled={
+                !notificationSettingsEnabled ||
+                notificationSettingsSaving ||
+                notificationRepeatCount === 1
+              }
+              onChange={(event) =>
+                onNotificationSettingsChange({
+                  repeatCount: notificationRepeatCount,
+                  intervalSeconds: Number(
+                    event.target.value
+                  ) as 30 | 60 | 120 | 300 | 600
+                })
+              }
+            >
+              {[30, 60, 120, 300, 600].map((seconds) => (
+                <option value={seconds} key={seconds}>
+                  {copy.notificationIntervalOptions[seconds]}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {notificationSettingsError ? (
+          <p className="settings-language-error">
+            {notificationSettingsError}
+          </p>
+        ) : null}
+
+        {!notificationSettingsEnabled ? (
+          <p className="settings-language-error">
+            {copy.notificationSettingsNotConnected}
+          </p>
         ) : null}
       </section>
 

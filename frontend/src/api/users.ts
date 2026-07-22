@@ -1,5 +1,10 @@
 import { apiDelete, apiGet, apiPatch, apiPost } from "./http-client";
-import type { Market, PreferredLanguage, User } from "../types/api";
+import type {
+  AlertNotificationSettings,
+  Market,
+  PreferredLanguage,
+  User
+} from "../types/api";
 
 export const updateUserLanguage = (
   userId: string,
@@ -31,5 +36,15 @@ export const removeUserFavoriteMarket = (
 ) => {
   return apiDelete<null>(
     `/api/users/${userId}/favorites/${marketId}`
+  );
+};
+
+export const updateUserAlertNotificationSettings = (
+  userId: string,
+  settings: AlertNotificationSettings
+) => {
+  return apiPatch<User, AlertNotificationSettings>(
+    `/api/users/${userId}/notification-settings`,
+    settings
   );
 };

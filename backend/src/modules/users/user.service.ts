@@ -10,6 +10,11 @@ type ListUsersInput = {
   limit?: number;
 };
 
+type AlertNotificationSettingsInput = {
+  repeatCount: number;
+  intervalSeconds: 30 | 60 | 120 | 300 | 600;
+};
+
 type UpsertTelegramUserInput = {
   telegramId: string;
   username?: string;
@@ -95,6 +100,19 @@ export const userService = {
   async setUserPreferredLanguage(id: string, preferredLanguage: PreferredLanguage) {
     await this.getUserById(id);
     return userRepository.setPreferredLanguage(id, preferredLanguage);
+  },
+
+  async setAlertNotificationSettings(
+    userId: string,
+    input: AlertNotificationSettingsInput
+  ) {
+    await this.getUserById(userId);
+
+    return userRepository.setAlertNotificationSettings(
+      userId,
+      input.repeatCount,
+      input.intervalSeconds
+    );
   },
 
   async listFavoriteMarkets(userId: string) {

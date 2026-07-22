@@ -48,6 +48,13 @@ enum PreferredLanguage {
   EN
 }
 
+enum TelegramNotificationStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
 model User {
   id           String   @id @default(uuid())
   telegramId   String?  @unique
@@ -61,13 +68,16 @@ model User {
   miniAppOpenCount      Int       @default(0)
   firstMiniAppOpenedAt  DateTime?
   lastMiniAppOpenedAt   DateTime?
-  lastSeenAt            DateTime?
-  createdAt             DateTime  @default(now())
+  lastSeenAt                      DateTime?
+  alertNotificationRepeatCount    Int       @default(1)
+  alertNotificationIntervalSeconds Int      @default(60)
+  createdAt                       DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   alerts          Alert[]
   subscriptions   Subscription[]
-  favoriteMarkets UserMarketFavorite[]
+  favoriteMarkets  UserMarketFavorite[]
+  notificationJobs TelegramAlertNotification[]
 
   @@index([telegramId])
   @@index([username])
@@ -149,13 +159,39 @@ model Alert {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  user             User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market           Market                      @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  notificationJobs TelegramAlertNotification[]
 
   @@index([userId])
   @@index([marketId])
   @@index([status])
   @@index([direction])
+}
+
+model TelegramAlertNotification {
+  id          String                     @id @default(uuid())
+  alertId     String
+  userId      String
+  telegramId  String
+  message     String
+  sequence    Int
+  totalCount  Int
+  scheduledAt DateTime
+  status      TelegramNotificationStatus @default(PENDING)
+  attempts    Int                        @default(0)
+  lastError   String?
+  lockedAt    DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([alertId, sequence])
+  @@index([status, scheduledAt])
+  @@index([userId])
 }
 
 model Line {

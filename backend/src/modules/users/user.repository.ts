@@ -173,6 +173,20 @@ export const userRepository = {
     });
   },
 
+  setAlertNotificationSettings(
+    id: string,
+    repeatCount: number,
+    intervalSeconds: number
+  ) {
+    return prisma.user.update({
+      where: { id },
+      data: {
+        alertNotificationRepeatCount: repeatCount,
+        alertNotificationIntervalSeconds: intervalSeconds
+      }
+    });
+  },
+
   findMarketById(id: string) {
     return prisma.market.findUnique({
       where: { id }

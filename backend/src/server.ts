@@ -5,6 +5,10 @@ import { logger } from "./utils/logger";
 import { startPricePolling, stopPricePolling } from "./modules/price-engine/price-poller.service";
 import { startFinnhubStreaming, stopFinnhubStreaming } from "./modules/price-engine/finnhub-stream.service";
 import { setupWebSocketServer } from "./websocket/websocket-server";
+import {
+  startTelegramAlertNotificationWorker,
+  stopTelegramAlertNotificationWorker
+} from "./modules/notifications/telegram-alert-notification.service";
 
 const app = createServer();
 const port = env.PORT ?? env.BACKEND_PORT;
@@ -16,12 +20,14 @@ const server = app.listen(port, () => {
 setupWebSocketServer(server);
 startPricePolling();
 startFinnhubStreaming();
+startTelegramAlertNotificationWorker();
 
 const shutdown = async () => {
   logger.info("Shutting down backend server");
 
   stopPricePolling();
   stopFinnhubStreaming();
+  stopTelegramAlertNotificationWorker();
 
   server.close(async () => {
     await prisma.$disconnect();

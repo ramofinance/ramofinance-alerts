@@ -10,6 +10,7 @@ import {
   addUserFavoriteMarket,
   getUserFavoriteMarkets,
   removeUserFavoriteMarket,
+  updateUserAlertNotificationSettings,
   updateUserLanguage
 } from "./api/users";
 import { frontendEnv } from "./config/env";
@@ -29,6 +30,7 @@ import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type {
   Alert,
+  AlertNotificationSettings,
   Market,
   MiniAppStats,
   PreferredLanguage,
@@ -53,6 +55,10 @@ export default function App() {
   });
   const [languageSaving, setLanguageSaving] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
+  const [notificationSettingsSaving, setNotificationSettingsSaving] =
+    useState(false);
+  const [notificationSettingsError, setNotificationSettingsError] =
+    useState<string | null>(null);
   const [adminStats, setAdminStats] = useState<MiniAppStats | null>(null);
   const [adminStatsLoading, setAdminStatsLoading] = useState(false);
   const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
@@ -258,6 +264,33 @@ export default function App() {
       );
     } finally {
       setFavoriteSavingMarketId(null);
+    }
+  };
+
+  const handleAlertNotificationSettingsChange = async (
+    settings: AlertNotificationSettings
+  ) => {
+    if (!backendUser || notificationSettingsSaving) {
+      return;
+    }
+
+    try {
+      setNotificationSettingsSaving(true);
+      setNotificationSettingsError(null);
+
+      const updatedUser =
+        await updateUserAlertNotificationSettings(
+          backendUser.id,
+          settings
+        );
+
+      setBackendUser(updatedUser);
+    } catch {
+      setNotificationSettingsError(
+        copy.notificationSettingsUpdateFailed
+      );
+    } finally {
+      setNotificationSettingsSaving(false);
     }
   };
 
@@ -471,6 +504,18 @@ export default function App() {
         languageSaving={languageSaving}
         languageError={languageError}
         onLanguageChange={handleLanguageChange}
+        notificationRepeatCount={
+          backendUser?.alertNotificationRepeatCount ?? 1
+        }
+        notificationIntervalSeconds={
+          backendUser?.alertNotificationIntervalSeconds ?? 60
+        }
+        notificationSettingsSaving={notificationSettingsSaving}
+        notificationSettingsError={notificationSettingsError}
+        notificationSettingsEnabled={Boolean(backendUser)}
+        onNotificationSettingsChange={
+          handleAlertNotificationSettingsChange
+        }
         isAdmin={backendUser?.role === "ADMIN"}
         adminStats={adminStats}
         adminStatsLoading={adminStatsLoading}

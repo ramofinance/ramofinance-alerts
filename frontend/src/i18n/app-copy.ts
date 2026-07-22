@@ -27,6 +27,29 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
       statsLoading: "در حال دریافت آمار...",
       statsLoadFailed: "دریافت آمار ناموفق بود",
       languageUpdateFailed: "ذخیره تغییر زبان ناموفق بود",
+      notificationSettings: "تنظیمات اعلان هشدار",
+      notificationSettingsHint:
+        "تعداد پیام‌های تلگرام و فاصله تکرار آن‌ها را مشخص کنید.",
+      notificationRepeatCount: "تعداد پیام",
+      notificationInterval: "فاصله تکرار",
+      notificationSettingsUpdateFailed:
+        "ذخیره تنظیمات اعلان ناموفق بود",
+      notificationSettingsNotConnected:
+        "برای ذخیره تنظیمات، Mini App را داخل تلگرام باز کنید.",
+      notificationCountOptions: {
+        1: "۱ پیام",
+        2: "۲ پیام",
+        3: "۳ پیام",
+        4: "۴ پیام",
+        5: "۵ پیام"
+      },
+      notificationIntervalOptions: {
+        30: "۳۰ ثانیه",
+        60: "۱ دقیقه",
+        120: "۲ دقیقه",
+        300: "۵ دقیقه",
+        600: "۱۰ دقیقه"
+      },
       notAvailable: "در دسترس نیست",
       notConnected: "متصل نیست",
       alerts: "هشدارها",
@@ -130,6 +153,29 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
     persianLanguage: "فارسی",
     englishLanguage: "English",
     languageUpdateFailed: "Failed to save language",
+    notificationSettings: "Alert Notifications",
+    notificationSettingsHint:
+      "Choose how many Telegram messages are sent and their repeat interval.",
+    notificationRepeatCount: "Message count",
+    notificationInterval: "Repeat interval",
+    notificationSettingsUpdateFailed:
+      "Failed to save notification settings",
+    notificationSettingsNotConnected:
+      "Open the Mini App inside Telegram to save these settings.",
+    notificationCountOptions: {
+      1: "1 message",
+      2: "2 messages",
+      3: "3 messages",
+      4: "4 messages",
+      5: "5 messages"
+    },
+    notificationIntervalOptions: {
+      30: "30 seconds",
+      60: "1 minute",
+      120: "2 minutes",
+      300: "5 minutes",
+      600: "10 minutes"
+    },
     notAvailable: "Not available",
     notConnected: "Not connected",
     alerts: "Alerts",

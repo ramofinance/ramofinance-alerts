@@ -29,6 +29,17 @@ const setUserPreferredLanguageSchema = z.object({
   preferredLanguage: z.nativeEnum(PreferredLanguage)
 });
 
+const setUserAlertNotificationSettingsSchema = z.object({
+  repeatCount: z.number().int().min(1).max(5),
+  intervalSeconds: z.union([
+    z.literal(30),
+    z.literal(60),
+    z.literal(120),
+    z.literal(300),
+    z.literal(600)
+  ])
+});
+
 const parseOrThrow = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
   const result = schema.safeParse(data);
 
@@ -162,6 +173,31 @@ export const removeUserFavoriteMarketController: RequestHandler = async (
     res.json({
       success: true,
       data: null
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const setUserAlertNotificationSettingsController: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const input = parseOrThrow(
+      setUserAlertNotificationSettingsSchema,
+      req.body
+    );
+
+    const user = await userService.setAlertNotificationSettings(
+      req.params.id,
+      input
+    );
+
+    res.json({
+      success: true,
+      data: user
     });
   } catch (error) {
     next(error);
