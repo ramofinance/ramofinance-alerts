@@ -71,6 +71,18 @@ export default function App() {
   });
 
 
+  useEffect(() => {
+    const firstFilteredMarket = filteredMarkets[0];
+
+    if (
+      marketSearch.trim() &&
+      firstFilteredMarket &&
+      !filteredMarkets.some((market) => market.id === selectedMarketId)
+    ) {
+      setSelectedMarketId(firstFilteredMarket.id);
+    }
+  }, [marketSearch, selectedMarketId, filteredMarkets]);
+
   const selectedMarket = markets.find((market) => market.id === selectedMarketId);
   const activeMarket = selectedMarket ?? filteredMarkets[0] ?? markets[0];
   const { priceHistory, setPriceHistory } =
