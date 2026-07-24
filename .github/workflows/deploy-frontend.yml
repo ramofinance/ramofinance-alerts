@@ -35,8 +35,8 @@ jobs:
       - name: Build frontend
         env:
           VITE_BASE_PATH: /ramofinance-alerts/
-          VITE_API_URL: https://ramofinance-backend.onrender.com
-          VITE_WS_URL: wss://ramofinance-backend.onrender.com/ws
+          VITE_API_URL: https://ramofinance-miniapp-backend.onrender.com
+          VITE_WS_URL: wss://ramofinance-miniapp-backend.onrender.com/ws
         run: npm run build -w frontend
 
       - name: Setup Pages
