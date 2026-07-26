@@ -2260,3 +2260,35 @@ select:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.signal-card {
+  border-color: rgba(245, 158, 11, 0.38);
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(245, 158, 11, 0.2),
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(34, 197, 94, 0.08),
+      transparent 45%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(28, 32, 44, 0.98),
+      rgba(10, 18, 30, 0.98)
+    );
+}
+
+.signal-card__badge {
+  border-color: rgba(245, 158, 11, 0.42);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+}
+
+.signal-card__button {
+  color: #111827;
+  background: linear-gradient(135deg, #fcd34d, #d97706);
+  box-shadow: 0 12px 28px rgba(245, 158, 11, 0.2);
+}

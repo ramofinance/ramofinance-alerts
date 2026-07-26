@@ -53,6 +53,13 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
       notAvailable: "در دسترس نیست",
       notConnected: "متصل نیست",
       alerts: "هشدارها",
+      signalsBadge: "سیگنال رایگان طلا",
+      signalsTitle: "کانال سیگنال راموفایننس",
+      signalsDescription:
+        "تحلیل‌ها و سیگنال‌های رایگان بازار طلا را مستقیم در تلگرام دریافت کنید.",
+      signalsDisclaimer:
+        "مسئولیت بررسی شرایط بازار و مدیریت سرمایه بر عهده معامله‌گر است.",
+      signalsButton: "عضویت در کانال",
       investmentBadge: "فرصت سرمایه‌گذاری",
       investmentTitle: "سرمایه‌گذاری با راموفایننس",
       investmentDescription: "ثبت‌نام، مشاهده طرح‌ها و پیگیری پرداخت سود از طریق بات سرمایه‌گذاری.",
@@ -179,6 +186,13 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
     notAvailable: "Not available",
     notConnected: "Not connected",
     alerts: "Alerts",
+    signalsBadge: "Free Gold Signals",
+    signalsTitle: "RAMOFINANCE Signals Channel",
+    signalsDescription:
+      "Receive free gold market analysis and trading signals directly on Telegram.",
+    signalsDisclaimer:
+      "Traders are responsible for reviewing market conditions and managing risk.",
+    signalsButton: "Join Channel",
     investmentBadge: "Investment Opportunity",
     investmentTitle: "Invest with RAMOFINANCE",
     investmentDescription: "Register, explore investment plans and track profit payments through our investment bot.",

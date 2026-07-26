@@ -62,6 +62,26 @@ export function HomePanel({
         </article>
       </section>
 
+      <section className="investment-card signal-card">
+        <div className="investment-card__content">
+          <span className="investment-card__badge signal-card__badge">
+            {copy.signalsBadge}
+          </span>
+          <h2>{copy.signalsTitle}</h2>
+          <p>{copy.signalsDescription}</p>
+          <small>{copy.signalsDisclaimer}</small>
+        </div>
+
+        <a
+          className="investment-card__button signal-card__button"
+          href="https://t.me/ramofinance_signals"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {copy.signalsButton}
+        </a>
+      </section>
+
       <section className="investment-card">
         <div className="investment-card__content">
           <span className="investment-card__badge">{copy.investmentBadge}</span>
