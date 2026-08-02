@@ -50,10 +50,15 @@ export const priceEngineRepository = {
     });
   },
 
-  findMarketPriceHistory(marketId: string, limit = 100) {
+  findMarketPriceHistory(
+    marketId: string,
+    limit = 100,
+    source?: string
+  ) {
     return prisma.marketPriceHistory.findMany({
       where: {
-        marketId
+        marketId,
+        ...(source ? { source } : {})
       },
       orderBy: {
         observedAt: "desc"

@@ -1,4 +1,4 @@
-import { AlertDirection } from "@prisma/client";
+import { AlertDirection, MarketType } from "@prisma/client";
 import { AppError } from "../../utils/app-error";
 import { resolveTelegramLanguage, telegramText } from "../../telegram/telegram.i18n";
 import { scheduleTelegramAlertNotifications } from "../notifications/telegram-alert-notification.service";
@@ -53,7 +53,16 @@ export const priceEngineService = {
       throw new AppError("Market not found", 404);
     }
 
-    const items = await priceEngineRepository.findMarketPriceHistory(market.id, limit);
+    const historySource =
+      market.type === MarketType.CRYPTO
+        ? market.latestPrice?.source
+        : undefined;
+
+    const items = await priceEngineRepository.findMarketPriceHistory(
+      market.id,
+      limit,
+      historySource
+    );
 
     return {
       market,
