@@ -7,36 +7,69 @@ import { priceEngineService } from "./price-engine.service";
 let timer: NodeJS.Timeout | undefined;
 let isRunning = false;
 
-type CoinPaprikaTicker = {
+type BinanceTicker = {
   symbol: string;
-  quotes?: {
-    USD?: {
-      price?: number;
-    };
-  };
+  price: string;
 };
 
-const fetchCryptoPrices = async () => {
-  const response = await fetch(
-    "https://api.coinpaprika.com/v1/tickers?quotes=USD"
-  );
+const BINANCE_PRICE_ENDPOINTS = [
+  "https://data-api.binance.vision/api/v3/ticker/price",
+  "https://api.binance.com/api/v3/ticker/price"
+] as const;
 
-  if (!response.ok) {
-    throw new Error(`CoinPaprika price request failed: ${response.status}`);
+const fetchCryptoPrices = async (symbols: string[]) => {
+  if (symbols.length === 0) {
+    return new Map<string, string>();
   }
 
-  const tickers = (await response.json()) as CoinPaprikaTicker[];
-  const prices = new Map<string, string>();
+  let lastError: unknown;
 
-  for (const ticker of tickers) {
-    const price = ticker.quotes?.USD?.price;
+  for (const endpoint of BINANCE_PRICE_ENDPOINTS) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
 
-    if (typeof price === "number" && Number.isFinite(price) && price > 0) {
-      prices.set(`${ticker.symbol.toUpperCase()}USDT`, String(price));
+    try {
+      const url = new URL(endpoint);
+      url.searchParams.set("symbols", JSON.stringify(symbols));
+      url.searchParams.set("symbolStatus", "TRADING");
+
+      const response = await fetch(url, {
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Binance price request failed: ${response.status}`
+        );
+      }
+
+      const tickers = (await response.json()) as BinanceTicker[];
+      const prices = new Map<string, string>();
+
+      for (const ticker of tickers) {
+        const symbol = ticker.symbol?.toUpperCase();
+        const numericPrice = Number(ticker.price);
+
+        if (
+          symbol &&
+          Number.isFinite(numericPrice) &&
+          numericPrice > 0
+        ) {
+          prices.set(symbol, ticker.price);
+        }
+      }
+
+      return prices;
+    } catch (error) {
+      lastError = error;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 
-  return prices;
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("All Binance price endpoints failed");
 };
 
 const runPricePollingTick = async () => {
@@ -51,15 +84,19 @@ const runPricePollingTick = async () => {
       MarketType.CRYPTO
     );
 
-    const prices = await fetchCryptoPrices();
+    const symbols = markets.map((market) =>
+      market.symbol.toUpperCase()
+    );
+
+    const prices = await fetchCryptoPrices(symbols);
 
     for (const market of markets) {
-      const price = prices.get(market.symbol);
+      const price = prices.get(market.symbol.toUpperCase());
 
       if (!price) {
         logger.warn(
           { symbol: market.symbol },
-          "Price was not found in CoinPaprika response"
+          "Price was not found in Binance response"
         );
         continue;
       }
@@ -67,7 +104,7 @@ const runPricePollingTick = async () => {
       await priceEngineService.processPriceUpdate({
         symbol: market.symbol,
         price,
-        source: "coinpaprika"
+        source: "binance"
       });
     }
   } catch (error) {
@@ -94,7 +131,8 @@ export const startPricePolling = () => {
 
   logger.info(
     {
-      intervalMs: env.PRICE_POLLING_INTERVAL_MS
+      intervalMs: env.PRICE_POLLING_INTERVAL_MS,
+      source: "binance"
     },
     "Starting price polling"
   );
