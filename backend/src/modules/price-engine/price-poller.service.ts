@@ -6,6 +6,10 @@ import { priceEngineService } from "./price-engine.service";
 
 let timer: NodeJS.Timeout | undefined;
 let isRunning = false;
+let pollingTickCount = 0;
+
+const PRICE_HISTORY_RETENTION_PER_MARKET = 3000;
+const PRICE_HISTORY_CLEANUP_INTERVAL_TICKS = 120;
 
 type MexcTicker = {
   symbol: string;
@@ -94,6 +98,41 @@ const runPricePollingTick = async () => {
         );
       }
     });
+
+    pollingTickCount += 1;
+
+    const shouldCleanupHistory =
+      pollingTickCount === 1 ||
+      pollingTickCount % PRICE_HISTORY_CLEANUP_INTERVAL_TICKS === 0;
+
+    if (shouldCleanupHistory) {
+      const allActiveMarkets =
+        await priceEngineRepository.findActiveMarkets();
+
+      const cleanupResults = await Promise.allSettled(
+        allActiveMarkets.map((market) =>
+          priceEngineRepository.pruneMarketPriceHistory(
+            market.id,
+            PRICE_HISTORY_RETENTION_PER_MARKET
+          )
+        )
+      );
+
+      cleanupResults.forEach((result, index) => {
+        if (result.status === "rejected") {
+          logger.warn(
+            {
+              symbol: allActiveMarkets[index]?.symbol,
+              error:
+                result.reason instanceof Error
+                  ? result.reason.message
+                  : result.reason
+            },
+            "Price history cleanup failed"
+          );
+        }
+      });
+    }
   } catch (error) {
     logger.warn(
       {

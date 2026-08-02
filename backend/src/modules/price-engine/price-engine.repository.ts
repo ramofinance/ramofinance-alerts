@@ -38,6 +38,34 @@ export const priceEngineRepository = {
     });
   },
 
+  pruneMarketPriceHistory(marketId: string, keep = 3000) {
+    return prisma.$executeRaw`
+      WITH stale_rows AS (
+        SELECT "id"
+        FROM "MarketPriceHistory"
+        WHERE "marketId" = ${marketId}
+        ORDER BY "observedAt" DESC, "id" DESC
+        OFFSET ${keep}
+      )
+      DELETE FROM "MarketPriceHistory"
+      WHERE "id" IN (
+        SELECT "id"
+        FROM stale_rows
+      )
+    `;
+  },
+
+  findActiveMarkets() {
+    return prisma.market.findMany({
+      where: {
+        isActive: true
+      },
+      orderBy: {
+        symbol: "asc"
+      }
+    });
+  },
+
   findActiveMarketsByType(type: MarketType) {
     return prisma.market.findMany({
       where: {
