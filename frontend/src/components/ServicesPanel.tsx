@@ -2,9 +2,11 @@ type Props = {
   copy: any;
   openCryptoFlow: () => void;
   openAlerts: () => void;
+  openRadar: () => void;
+  radarEnabled: boolean;
 };
 
-export function ServicesPanel({ copy, openCryptoFlow, openAlerts }: Props) {
+export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, radarEnabled }: Props) {
   return (
     <section className="services-screen">
       <header className="services-hero">
@@ -26,6 +28,12 @@ export function ServicesPanel({ copy, openCryptoFlow, openAlerts }: Props) {
           </div>
           <span className="service-card__action">{copy.openService}</span>
         </button>
+
+        {radarEnabled ? <button className="service-card service-card--radar" type="button" onClick={openRadar}>
+          <span className="service-card__icon" aria-hidden="true">🔎</span>
+          <div><strong>{copy.radarTitle}</strong><p>{copy.radarServiceDescription}</p></div>
+          <span className="service-card__action">{copy.openService}</span>
+        </button> : null}
 
         <button
           className="service-card service-card--alerts"

@@ -12,6 +12,7 @@ import { subscriptionRoutes } from "./modules/subscriptions/subscription.routes"
 import { telegramRoutes } from "./telegram/telegram.routes";
 import { userRoutes } from "./modules/users/user.routes";
 import { healthRoutes } from "./routes/health.routes";
+import { radarRoutes } from "./modules/radar/radar.routes";
 import { env } from "./config/env";
 
 export const createServer = () => {
@@ -44,6 +45,7 @@ export const createServer = () => {
     app.use(subscriptionRoutes);
   }
   app.use(userRoutes);
+  app.use(radarRoutes);
   app.use(telegramRoutes);
 
   app.use(notFoundHandler);

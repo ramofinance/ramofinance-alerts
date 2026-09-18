@@ -38,7 +38,11 @@ const envSchema = z.object({
 
   FINNHUB_API_KEY: z.string().min(1).optional(),
   PRICE_POLLING_ENABLED: booleanFromEnv.default(false),
-  PRICE_POLLING_INTERVAL_MS: z.coerce.number().int().positive().default(30000)
+  PRICE_POLLING_INTERVAL_MS: z.coerce.number().int().positive().default(30000),
+  RADAR_ENABLED: booleanFromEnv.default(true),
+  RADAR_PUBLIC_ENABLED: booleanFromEnv.default(false),
+  RADAR_SCAN_INTERVAL_MS: z.coerce.number().int().positive().default(120000),
+  RADAR_SIGNAL_THRESHOLD: z.coerce.number().int().min(50).max(100).default(68)
 }).superRefine((values, context) => {
   if (values.NODE_ENV !== "production") {
     return;

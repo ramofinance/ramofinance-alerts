@@ -77,6 +77,8 @@ model User {
   lastSeenAt                      DateTime?
   alertNotificationRepeatCount    Int       @default(1)
   alertNotificationIntervalSeconds Int      @default(60)
+  radarNotificationsEnabled       Boolean   @default(false)
+  radarMinimumScore               Int       @default(75)
   createdAt                       DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -84,10 +86,59 @@ model User {
   subscriptions   Subscription[]
   favoriteMarkets  UserMarketFavorite[]
   notificationJobs TelegramAlertNotification[]
+  radarNotifications RadarNotification[]
 
   @@index([telegramId])
   @@index([username])
   @@index([lastSeenAt])
+}
+
+model RadarSignal {
+  id                 String   @id @default(uuid())
+  symbol             String
+  score              Int
+  direction          String
+  price              Decimal
+  marketCap          Decimal?
+  volume24h          Decimal?
+  turnover24h        Float?
+  priceChange24h     Float?
+  volumeAcceleration Float?
+  tradeCount24h      Int?
+  sourceSummary      String
+  reasons            Json
+  cooldownKey        String   @unique
+  detectedAt         DateTime @default(now())
+  createdAt          DateTime @default(now())
+
+  notifications RadarNotification[]
+
+  @@index([detectedAt])
+  @@index([score, detectedAt])
+  @@index([symbol, detectedAt])
+}
+
+model RadarNotification {
+  id          String                     @id @default(uuid())
+  signalId    String
+  userId      String
+  telegramId  String
+  message     String
+  status      TelegramNotificationStatus @default(PENDING)
+  attempts    Int                        @default(0)
+  lastError   String?
+  scheduledAt DateTime                   @default(now())
+  lockedAt    DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime                   @default(now())
+  updatedAt   DateTime                   @updatedAt
+
+  signal RadarSignal @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([signalId, userId])
+  @@index([status, scheduledAt])
+  @@index([userId])
 }
 
 model Market {

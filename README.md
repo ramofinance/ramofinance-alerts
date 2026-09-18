@@ -4,6 +4,17 @@ Telegram Mini App hub that brings CryptoFlow market intelligence and realtime
 price alerts together behind one bot. The current release is fully available
 without plans, payments, trials, or user-facing billing messages.
 
+## Abnormal Activity Radar (private preview)
+
+- Live Binance activity plus CoinGecko market-cap and volume context
+- 15-minute volume acceleration, 24-hour turnover, price movement and trade-count score
+- Telegram delivery continues while the Mini App is closed
+- Four-hour per-symbol cooldown and a persisted retry queue reduce duplicate/noisy alerts
+- `RADAR_PUBLIC_ENABLED=false` keeps the feature visible to admins only during testing
+- Users explicitly opt in and choose a minimum score; all features remain free
+
+Render applies the included Prisma migration automatically through the existing start command.
+
 ## Stack
 
 - Monorepo with npm workspaces

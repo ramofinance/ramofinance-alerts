@@ -28,6 +28,8 @@ import { MarketOverviewCard } from "./components/MarketOverviewCard";
 import { ChartPanel } from "./components/ChartPanel";
 import { ServicesPanel } from "./components/ServicesPanel";
 import { CryptoFlowPanel } from "./components/CryptoFlowPanel";
+import { RadarPanel } from "./components/RadarPanel";
+import { getRadarStatus } from "./api/radar";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp, useTelegramBackButton } from "./services/telegram-mini-app";
 import type {
@@ -40,7 +42,7 @@ import type {
 } from "./types/api";
 
 export default function App() {
-  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW";
+  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR";
   const startsInAlerts = new URLSearchParams(window.location.search).get("service") === "alerts";
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
   const [telegramMiniApp, setTelegramMiniApp] = useState(() => initializeTelegramMiniApp());
@@ -76,6 +78,7 @@ export default function App() {
   const [favoriteMarkets, setFavoriteMarkets] = useState<Market[]>([]);
   const [favoriteSavingMarketId, setFavoriteSavingMarketId] =
     useState<string | null>(null);
+  const [radarEnabled, setRadarEnabled] = useState(false);
 
 
   const filteredMarkets = markets.filter((market) => {
@@ -112,7 +115,7 @@ export default function App() {
   const appDirection = getAppDirection(appLanguage);
 
   useEffect(() => useTelegramBackButton(
-    activeTab === "CRYPTOFLOW" || activeModule === "alerts",
+    activeTab === "CRYPTOFLOW" || activeTab === "RADAR" || activeModule === "alerts",
     () => {
       setActiveModule("hub");
       setActiveTab("SERVICES");
@@ -349,6 +352,8 @@ export default function App() {
             data.language
           );
           await loadDashboardData(data.user.id);
+          const radarStatus = await getRadarStatus().catch(() => null);
+          setRadarEnabled(Boolean(radarStatus?.enabled));
         })
         .catch((err) => {
           setError(err instanceof Error ? err.message : copy.telegramUserFailed);
@@ -437,7 +442,7 @@ export default function App() {
     <main className="app-shell" dir={appDirection}>
         <SplashScreen visible={splashVisible} />
 
-      {activeTab !== "CRYPTOFLOW" ? (
+      {activeTab !== "CRYPTOFLOW" && activeTab !== "RADAR" ? (
         <BottomTabs
           activeTab={activeTab}
           setActiveTab={(tab) => tab === "SERVICES" ? openServices() : setActiveTab(tab)}
@@ -450,6 +455,8 @@ export default function App() {
           copy={copy}
           openCryptoFlow={() => setActiveTab("CRYPTOFLOW")}
           openAlerts={openAlertsService}
+          openRadar={() => setActiveTab("RADAR")}
+          radarEnabled={radarEnabled}
         />
       ) : null}
       {activeTab === "CRYPTOFLOW" ? (
@@ -457,6 +464,14 @@ export default function App() {
           copy={copy}
           src={cryptoFlowFrameUrl}
           onBack={openServices}
+        />
+      ) : null}
+      {activeTab === "RADAR" && backendUser ? (
+        <RadarPanel
+          copy={copy}
+          user={backendUser}
+          onBack={openServices}
+          onUserUpdated={setBackendUser}
         />
       ) : null}
       {activeTab === "HOME" ? (

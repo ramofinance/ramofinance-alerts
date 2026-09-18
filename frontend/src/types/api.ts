@@ -81,8 +81,18 @@ export type User = {
   isActive: boolean;
   alertNotificationRepeatCount: number;
   alertNotificationIntervalSeconds: number;
+  radarNotificationsEnabled: boolean;
+  radarMinimumScore: number;
   createdAt: string;
   updatedAt: string;
+};
+
+export type RadarStatus = { enabled: boolean; public: boolean; scanIntervalSeconds: number };
+export type RadarSignal = {
+  id: string; symbol: string; score: number; direction: string; price: string;
+  marketCap: string | null; volume24h: string | null; turnover24h: number | null;
+  priceChange24h: number | null; volumeAcceleration: number | null; tradeCount24h: number | null;
+  sourceSummary: string; reasons: string[]; detectedAt: string;
 };
 
 export type TelegramMe = {

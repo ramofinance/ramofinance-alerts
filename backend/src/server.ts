@@ -9,6 +9,7 @@ import {
   startTelegramAlertNotificationWorker,
   stopTelegramAlertNotificationWorker
 } from "./modules/notifications/telegram-alert-notification.service";
+import { startRadarWorkers, stopRadarWorkers } from "./modules/radar/radar.service";
 
 const app = createServer();
 const port = env.PORT ?? env.BACKEND_PORT;
@@ -21,6 +22,7 @@ setupWebSocketServer(server);
 startPricePolling();
 startFinnhubStreaming();
 startTelegramAlertNotificationWorker();
+startRadarWorkers();
 
 const shutdown = async () => {
   logger.info("Shutting down backend server");
@@ -28,6 +30,7 @@ const shutdown = async () => {
   stopPricePolling();
   stopFinnhubStreaming();
   stopTelegramAlertNotificationWorker();
+  stopRadarWorkers();
 
   server.close(async () => {
     await prisma.$disconnect();
