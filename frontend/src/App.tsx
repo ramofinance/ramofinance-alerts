@@ -352,8 +352,12 @@ export default function App() {
             data.language
           );
           await loadDashboardData(data.user.id);
-          const radarStatus = await getRadarStatus().catch(() => null);
-          setRadarEnabled(Boolean(radarStatus?.enabled));
+          const radarStatus = data.radarStatus ?? await getRadarStatus().catch(() => null);
+          setRadarEnabled(Boolean(
+            radarStatus?.enabled ||
+            data.user.role === "ADMIN" ||
+            data.user.radarPreviewAccess
+          ));
         })
         .catch((err) => {
           setError(err instanceof Error ? err.message : copy.telegramUserFailed);
@@ -365,6 +369,18 @@ export default function App() {
 
     loadDashboardData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== "SERVICES" || !telegramMiniApp.initData || !backendUser) {
+      return;
+    }
+
+    void getRadarStatus()
+      .then((status) => setRadarEnabled(Boolean(status.enabled)))
+      .catch(() => setRadarEnabled(
+        backendUser.role === "ADMIN" || backendUser.radarPreviewAccess
+      ));
+  }, [activeTab, telegramMiniApp.initData, backendUser?.id, backendUser?.role, backendUser?.radarPreviewAccess]);
 
   useEffect(() => {
     const initData = telegramMiniApp.initData;

@@ -7,6 +7,7 @@ import { verifyTelegramMiniAppInitData } from "./telegram-mini-app-auth";
 import { resolveTelegramLanguage } from "./telegram.i18n";
 import { telegramService } from "./telegram.service";
 import type { TelegramUpdate } from "./telegram.types";
+import { radarService } from "../modules/radar/radar.service";
 
 export const telegramWebhookController: RequestHandler = async (req, res, next) => {
   try {
@@ -76,7 +77,8 @@ export const telegramMeController: RequestHandler = async (req, res, next) => {
       data: {
         user,
         language,
-        authDate: initData.authDate
+        authDate: initData.authDate,
+        radarStatus: radarService.status(user)
       }
     });
   } catch (error) {

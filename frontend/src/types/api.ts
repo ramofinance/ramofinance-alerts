@@ -83,6 +83,7 @@ export type User = {
   alertNotificationIntervalSeconds: number;
   radarNotificationsEnabled: boolean;
   radarMinimumScore: number;
+  radarPreviewAccess: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -99,6 +100,7 @@ export type TelegramMe = {
   user: User;
   language: PreferredLanguage;
   authDate?: number;
+  radarStatus?: RadarStatus;
 };
 
 export type MiniAppStats = {

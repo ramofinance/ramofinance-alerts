@@ -18,3 +18,7 @@ While `RADAR_PUBLIC_ENABLED=false`, Radar data and notifications are limited to 
 ## Data sources
 
 The scanner continues to use direct Binance and CoinGecko market data. External Telegram channels are not ingested in this release.
+
+## v3.2.1 visibility fix
+
+Radar availability is now returned with the authenticated Telegram user and refreshed whenever the Services tab is opened. This prevents an approved preview user from remaining hidden behind a stale initial status request.
