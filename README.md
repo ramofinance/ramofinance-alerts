@@ -12,6 +12,8 @@ without plans, payments, trials, or user-facing billing messages.
 - Four-hour per-symbol cooldown and a persisted retry queue reduce duplicate/noisy alerts
 - `RADAR_PUBLIC_ENABLED=false` keeps the feature visible to admins only during testing
 - Users explicitly opt in and choose a minimum score; all features remain free
+- Telegram radar notifications require at least 15% 24h volume-to-market-cap turnover
+- `ramoadmin` is automatically promoted when that Telegram username starts or opens the app
 
 Render applies the included Prisma migration automatically through the existing start command.
 

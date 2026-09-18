@@ -16,6 +16,7 @@ export type UpsertUserData = {
   lastName?: string;
   languageCode?: string;
   preferredLanguage?: PreferredLanguage | null;
+  role?: UserRole;
 };
 
 const buildUserWhere = (
@@ -141,7 +142,8 @@ export const userRepository = {
         firstName: data.firstName,
         lastName: data.lastName,
         languageCode: data.languageCode,
-        preferredLanguage: data.preferredLanguage
+        preferredLanguage: data.preferredLanguage,
+        role: data.role
       },
       create: {
         telegramId: data.telegramId,
@@ -149,7 +151,8 @@ export const userRepository = {
         firstName: data.firstName,
         lastName: data.lastName,
         languageCode: data.languageCode,
-        preferredLanguage: data.preferredLanguage
+        preferredLanguage: data.preferredLanguage,
+        role: data.role
       }
     });
   },
@@ -166,6 +169,7 @@ export const userRepository = {
         firstName: data.firstName,
         lastName: data.lastName,
         languageCode: data.languageCode,
+        role: data.role,
         miniAppOpenCount: {
           increment: 1
         },
@@ -178,6 +182,7 @@ export const userRepository = {
         firstName: data.firstName,
         lastName: data.lastName,
         languageCode: data.languageCode,
+        role: data.role,
         miniAppOpenCount: 1,
         firstMiniAppOpenedAt: now,
         lastMiniAppOpenedAt: now,

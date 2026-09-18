@@ -27,6 +27,7 @@ const envSchema = z.object({
   TELEGRAM_BOT_USERNAME: z.string().default("ramofinancebot"),
   TELEGRAM_WEBAPP_URL: z.string().optional(),
   TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
+  TELEGRAM_ADMIN_USERNAMES: z.string().default("ramoadmin"),
 
   CRYPTOFLOW_URL: z.string().url().default("https://cryptoflow.ramo-fin-group.workers.dev/"),
   ALLOWED_ORIGINS: z.string().default(""),

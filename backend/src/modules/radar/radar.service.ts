@@ -10,6 +10,7 @@ const BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines";
 const COINGECKO_MARKETS_URL = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false";
 const REQUEST_TIMEOUT_MS = 15_000;
 const SIGNAL_COOLDOWN_MS = 4 * 60 * 60 * 1000;
+const MIN_NOTIFICATION_TURNOVER = 0.15;
 const WORKER_INTERVAL_MS = 10_000;
 const RETRY_DELAY_MS = 60_000;
 const MAX_ATTEMPTS = 3;
@@ -202,6 +203,10 @@ const formatSignalMessage = (signal: any, language: string) => {
 };
 
 const queueSignalNotifications = async (signal: any) => {
+  if (signal.turnover24h == null || signal.turnover24h < MIN_NOTIFICATION_TURNOVER) {
+    return;
+  }
+
   const users = await prisma.user.findMany({
     where: {
       isActive: true,
@@ -350,6 +355,7 @@ export const radarService = {
       const recentSignals = await prisma.radarSignal.findMany({
         where: {
           score: { gte: minimumScore },
+          turnover24h: { gte: MIN_NOTIFICATION_TURNOVER },
           detectedAt: { gte: new Date(Date.now() - SIGNAL_COOLDOWN_MS) }
         },
         orderBy: { score: "desc" },
@@ -380,7 +386,10 @@ export const radarService = {
   async sendTest(userId: string) {
     const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
     if (!user.telegramId) throw new Error("Telegram user is not connected");
-    const signal = await prisma.radarSignal.findFirst({ orderBy: { detectedAt: "desc" } });
+    const signal = await prisma.radarSignal.findFirst({
+      where: { turnover24h: { gte: MIN_NOTIFICATION_TURNOVER } },
+      orderBy: { detectedAt: "desc" }
+    });
     const demo = signal ?? { symbol: "DEMOUSDT", score: 82, price: new Prisma.Decimal("1.245"), marketCap: new Prisma.Decimal("100000000"), turnover24h: 0.2, priceChange24h: 6.4, volumeAcceleration: 3.7 };
     const result = await sendTelegramMessage(user.telegramId, formatSignalMessage(demo, resolveTelegramLanguage(user.preferredLanguage, user.languageCode ?? undefined)), env.TELEGRAM_WEBAPP_URL ? {
       inline_keyboard: [[{ text: "Open RAMO Finance", web_app: { url: env.TELEGRAM_WEBAPP_URL } }]]

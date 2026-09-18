@@ -9,6 +9,8 @@
 - Background delivery while the Mini App is closed
 - Persistent delivery queue, retry logic and four-hour symbol cooldown
 - Persian, English, Arabic, Spanish and Chinese Telegram alert messages
+- Telegram delivery requires at least 15% 24h volume-to-market-cap turnover
+- `@ramoadmin` is promoted automatically when the account starts the bot or opens the Mini App
 
 ## Private test
 

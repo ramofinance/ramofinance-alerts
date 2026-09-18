@@ -1,6 +1,7 @@
 import { PreferredLanguage, UserRole } from "@prisma/client";
 import { AppError } from "../../utils/app-error";
 import { userRepository } from "./user.repository";
+import { env } from "../../config/env";
 
 type ListUsersInput = {
   search?: string;
@@ -23,6 +24,19 @@ type UpsertTelegramUserInput = {
   languageCode?: string;
   preferredLanguage?: PreferredLanguage | null;
 };
+
+const adminUsernames = new Set(
+  env.TELEGRAM_ADMIN_USERNAMES.split(",")
+    .map((value) => value.trim().replace(/^@/, "").toLowerCase())
+    .filter(Boolean)
+);
+
+const withConfiguredAdminRole = (input: UpsertTelegramUserInput) => ({
+  ...input,
+  role: input.username && adminUsernames.has(input.username.toLowerCase())
+    ? UserRole.ADMIN
+    : undefined
+});
 
 export const userService = {
   async listUsers(input: ListUsersInput) {
@@ -66,11 +80,11 @@ export const userService = {
   },
 
   async upsertTelegramUser(input: UpsertTelegramUserInput) {
-    return userRepository.upsertByTelegramId(input);
+    return userRepository.upsertByTelegramId(withConfiguredAdminRole(input));
   },
 
   async recordMiniAppOpen(input: UpsertTelegramUserInput) {
-    return userRepository.recordMiniAppOpen(input);
+    return userRepository.recordMiniAppOpen(withConfiguredAdminRole(input));
   },
 
   async recordBotStart(telegramId: string, firstBotStartedAt?: Date | null) {
