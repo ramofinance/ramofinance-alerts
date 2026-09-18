@@ -5,7 +5,7 @@ import { AppError } from "../../utils/app-error";
 import { alertService } from "./alert.service";
 
 const createAlertSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().uuid().optional(),
   marketId: z.string().uuid(),
   title: z.string().trim().min(1).max(120).optional(),
   targetPrice: z.string().trim().min(1),
@@ -33,7 +33,10 @@ const updateAlertSchema = z
   });
 
 const updateAlertStatusSchema = z.object({
-  status: z.nativeEnum(AlertStatus)
+  status: z.union([
+    z.literal(AlertStatus.ACTIVE),
+    z.literal(AlertStatus.PAUSED)
+  ])
 });
 
 const parseOrThrow = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
@@ -49,7 +52,10 @@ const parseOrThrow = <T>(schema: z.ZodSchema<T>, data: unknown): T => {
 export const createAlertController: RequestHandler = async (req, res, next) => {
   try {
     const input = parseOrThrow(createAlertSchema, req.body);
-    const alert = await alertService.createAlert(input);
+    const alert = await alertService.createAlert({
+      ...input,
+      userId: res.locals.authUser.id
+    });
 
     res.status(201).json({
       success: true,
@@ -63,7 +69,10 @@ export const createAlertController: RequestHandler = async (req, res, next) => {
 export const listAlertsController: RequestHandler = async (req, res, next) => {
   try {
     const input = parseOrThrow(listAlertsSchema, req.query);
-    const result = await alertService.listAlerts(input);
+    const result = await alertService.listAlerts({
+      ...input,
+      userId: res.locals.authUser.id
+    });
 
     res.json({
       success: true,
@@ -76,7 +85,10 @@ export const listAlertsController: RequestHandler = async (req, res, next) => {
 
 export const getAlertByIdController: RequestHandler = async (req, res, next) => {
   try {
-    const alert = await alertService.getAlertById(req.params.id);
+    const alert = await alertService.getAlertById(
+      String(req.params.id),
+      res.locals.authUser.id
+    );
 
     res.json({
       success: true,
@@ -90,7 +102,11 @@ export const getAlertByIdController: RequestHandler = async (req, res, next) => 
 export const updateAlertController: RequestHandler = async (req, res, next) => {
   try {
     const input = parseOrThrow(updateAlertSchema, req.body);
-    const alert = await alertService.updateAlert(req.params.id, input);
+    const alert = await alertService.updateAlert(
+      String(req.params.id),
+      res.locals.authUser.id,
+      input
+    );
 
     res.json({
       success: true,
@@ -104,7 +120,11 @@ export const updateAlertController: RequestHandler = async (req, res, next) => {
 export const updateAlertStatusController: RequestHandler = async (req, res, next) => {
   try {
     const input = parseOrThrow(updateAlertStatusSchema, req.body);
-    const alert = await alertService.updateAlertStatus(req.params.id, input.status);
+    const alert = await alertService.updateAlertStatus(
+      String(req.params.id),
+      res.locals.authUser.id,
+      input.status
+    );
 
     res.json({
       success: true,
@@ -117,7 +137,7 @@ export const updateAlertStatusController: RequestHandler = async (req, res, next
 
 export const deleteAlertController: RequestHandler = async (req, res, next) => {
   try {
-    await alertService.deleteAlert(req.params.id);
+    await alertService.deleteAlert(String(req.params.id), res.locals.authUser.id);
 
     res.json({
       success: true,

@@ -38,7 +38,7 @@ export const listMarketsController: RequestHandler = async (req, res, next) => {
 
 export const getMarketByIdController: RequestHandler = async (req, res, next) => {
   try {
-    const market = await marketService.getMarketById(req.params.id);
+    const market = await marketService.getMarketById(String(req.params.id));
 
     res.json({
       success: true,

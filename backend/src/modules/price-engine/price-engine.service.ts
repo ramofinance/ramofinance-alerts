@@ -130,12 +130,6 @@ export const priceEngineService = {
       ) {
         const triggeredAlert = await priceEngineRepository.triggerAlert(alert.id);
 
-        broadcastWebSocketEvent(websocketEventTypes.ALERT_TRIGGERED, {
-          alert: triggeredAlert,
-          price: currentPrice,
-          previousPrice
-        });
-
         if (triggeredAlert.user.telegramId) {
           const language = resolveTelegramLanguage(
             triggeredAlert.user.preferredLanguage,

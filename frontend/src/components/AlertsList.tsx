@@ -31,6 +31,7 @@ type Props = {
   handleStartEditAlert: (alert: Alert) => void;
   handleToggleAlertStatus: (alert: Alert) => void;
   handleDeleteAlert: (id: string) => void;
+  isAdmin: boolean;
 };
 
 export function AlertsList(props: Props) {
@@ -85,7 +86,7 @@ export function AlertsList(props: Props) {
           </option>
         </select>
 
-        <div className="price-test-box">
+        {props.isAdmin ? <div className="price-test-box">
           <input
             value={props.testPrice}
             onChange={(event) => props.setTestPrice(event.target.value)}
@@ -100,10 +101,10 @@ export function AlertsList(props: Props) {
           >
             {props.copy.testPrice}
           </button>
-        </div>
+        </div> : null}
       </div>
 
-      {props.priceUpdateResult ? (
+      {props.isAdmin && props.priceUpdateResult ? (
         <div className="alert-box">{props.priceUpdateResult}</div>
       ) : null}
 

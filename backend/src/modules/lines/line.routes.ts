@@ -6,8 +6,11 @@ import {
   listLinesController,
   updateLineController
 } from "./line.controller";
+import { requireAdmin, requireTelegramAuth } from "../../middleware/telegram-auth";
 
 export const lineRoutes = Router();
+
+lineRoutes.use("/api/lines", requireTelegramAuth, requireAdmin);
 
 lineRoutes.get("/api/lines", listLinesController);
 lineRoutes.post("/api/lines", createLineController);

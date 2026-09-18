@@ -1,7 +1,5 @@
 import { AlertDirection, AlertStatus } from "@prisma/client";
 import { AppError } from "../../utils/app-error";
-import { broadcastWebSocketEvent } from "../../websocket/websocket-broadcast";
-import { websocketEventTypes } from "../../websocket/websocket-events";
 import { alertRepository } from "./alert.repository";
 
 type CreateAlertInput = {
@@ -72,10 +70,6 @@ export const alertService = {
       expiresAt
     });
 
-    broadcastWebSocketEvent(websocketEventTypes.ALERT_CREATED, {
-      alert
-    });
-
     return alert;
   },
 
@@ -109,18 +103,18 @@ export const alertService = {
     };
   },
 
-  async getAlertById(id: string) {
+  async getAlertById(id: string, userId?: string) {
     const alert = await alertRepository.findById(id);
 
-    if (!alert) {
+    if (!alert || (userId && alert.userId !== userId)) {
       throw new AppError("Alert not found", 404);
     }
 
     return alert;
   },
 
-  async updateAlert(id: string, input: UpdateAlertInput) {
-    await this.getAlertById(id);
+  async updateAlert(id: string, userId: string, input: UpdateAlertInput) {
+    await this.getAlertById(id, userId);
 
     if (input.targetPrice !== undefined) {
       const targetPrice = Number(input.targetPrice);
@@ -148,37 +142,19 @@ export const alertService = {
       expiresAt
     });
 
-    broadcastWebSocketEvent(websocketEventTypes.ALERT_UPDATED, {
-      alert
-    });
-
     return alert;
   },
 
-  async updateAlertStatus(id: string, status: AlertStatus) {
-    await this.getAlertById(id);
+  async updateAlertStatus(id: string, userId: string, status: AlertStatus) {
+    await this.getAlertById(id, userId);
 
     const alert = await alertRepository.updateStatus(id, status);
 
-    broadcastWebSocketEvent(websocketEventTypes.ALERT_UPDATED, {
-      alert
-    });
-
-    if (status === AlertStatus.TRIGGERED) {
-      broadcastWebSocketEvent(websocketEventTypes.ALERT_TRIGGERED, {
-        alert
-      });
-    }
-
     return alert;
   },
 
-  async deleteAlert(id: string) {
-    const alert = await this.getAlertById(id);
+  async deleteAlert(id: string, userId: string) {
+    await this.getAlertById(id, userId);
     await alertRepository.delete(id);
-
-    broadcastWebSocketEvent(websocketEventTypes.ALERT_DELETED, {
-      alert
-    });
   }
 };

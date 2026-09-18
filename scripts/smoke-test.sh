@@ -35,13 +35,20 @@ echo "----- markets api -----"
 curl -fsS "$BACKEND_URL/api/markets"
 echo
 
-echo "----- price update api -----"
-curl -fsS -X POST "$BACKEND_URL/api/prices/update" \
+echo "----- protected price update api -----"
+status_code="$(curl -sS -o /tmp/ramofinance-price-update-response.json -w '%{http_code}' -X POST "$BACKEND_URL/api/prices/update" \
   -H "Content-Type: application/json" \
   -d '{
     "symbol": "XAUUSD",
     "price": "2400"
-  }'
-echo
+  }')"
+
+if [[ "$status_code" != "401" ]]; then
+  echo "expected unauthenticated price update to return 401, received $status_code"
+  cat /tmp/ramofinance-price-update-response.json
+  exit 1
+fi
+
+echo "protected endpoint correctly returned 401"
 
 echo "smoke test passed"

@@ -8,6 +8,8 @@ export type TelegramMiniAppInitData = {
   authDate?: number;
 };
 
+const MAX_INIT_DATA_AGE_SECONDS = 24 * 60 * 60;
+
 const safeCompareHex = (left: string, right: string) => {
   const leftBuffer = Buffer.from(left, "hex");
   const rightBuffer = Buffer.from(right, "hex");
@@ -59,8 +61,24 @@ export const verifyTelegramMiniAppInitData = (
   const userRaw = params.get("user");
   const authDateRaw = params.get("auth_date");
 
-  return {
-    user: userRaw ? (JSON.parse(userRaw) as TelegramUser) : undefined,
-    authDate: authDateRaw ? Number(authDateRaw) : undefined
-  };
+  if (!authDateRaw || !Number.isFinite(Number(authDateRaw))) {
+    throw new AppError("Telegram auth date is required", 401);
+  }
+
+  const authDate = Number(authDateRaw);
+  const ageSeconds = Math.floor(Date.now() / 1000) - authDate;
+
+  if (ageSeconds < -60 || ageSeconds > MAX_INIT_DATA_AGE_SECONDS) {
+    throw new AppError("Telegram authentication has expired", 401);
+  }
+
+  let user: TelegramUser | undefined;
+
+  try {
+    user = userRaw ? (JSON.parse(userRaw) as TelegramUser) : undefined;
+  } catch {
+    throw new AppError("Invalid Telegram user data", 401);
+  }
+
+  return { user, authDate };
 };

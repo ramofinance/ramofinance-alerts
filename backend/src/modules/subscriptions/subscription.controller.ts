@@ -71,7 +71,7 @@ export const listSubscriptionsController: RequestHandler = async (req, res, next
 
 export const getSubscriptionByIdController: RequestHandler = async (req, res, next) => {
   try {
-    const subscription = await subscriptionService.getSubscriptionById(req.params.id);
+    const subscription = await subscriptionService.getSubscriptionById(String(req.params.id));
 
     res.json({
       success: true,
@@ -85,7 +85,7 @@ export const getSubscriptionByIdController: RequestHandler = async (req, res, ne
 export const updateSubscriptionController: RequestHandler = async (req, res, next) => {
   try {
     const input = parseOrThrow(updateSubscriptionSchema, req.body);
-    const subscription = await subscriptionService.updateSubscription(req.params.id, input);
+    const subscription = await subscriptionService.updateSubscription(String(req.params.id), input);
 
     res.json({
       success: true,
@@ -98,7 +98,7 @@ export const updateSubscriptionController: RequestHandler = async (req, res, nex
 
 export const deleteSubscriptionController: RequestHandler = async (req, res, next) => {
   try {
-    await subscriptionService.deleteSubscription(req.params.id);
+    await subscriptionService.deleteSubscription(String(req.params.id));
 
     res.json({
       success: true,

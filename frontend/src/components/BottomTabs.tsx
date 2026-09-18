@@ -1,10 +1,11 @@
-type TabKey = "HOME" | "CHART" | "ALERTS" | "SETTINGS";
+type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS";
 
 type Props = {
   activeTab: TabKey;
   setActiveTab: (tab: TabKey) => void;
   copy: {
     tabs: {
+      services: string;
       home: string;
       chart: string;
       alerts: string;
@@ -15,6 +16,7 @@ type Props = {
 
 export function BottomTabs({ activeTab, setActiveTab, copy }: Props) {
   const tabs: [TabKey, string, string][] = [
+    ["SERVICES", "▦", copy.tabs.services],
     ["HOME", "🏠", copy.tabs.home],
     ["CHART", "📈", copy.tabs.chart],
     ["ALERTS", "🔔", copy.tabs.alerts],

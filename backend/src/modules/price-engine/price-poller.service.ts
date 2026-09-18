@@ -19,15 +19,12 @@ type MexcTicker = {
 const MEXC_PRICE_ENDPOINT =
   "https://api.mexc.com/api/v3/ticker/price";
 
-const fetchMexcPrice = async (symbol: string) => {
+const fetchMexcPrices = async () => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
 
   try {
-    const url = new URL(MEXC_PRICE_ENDPOINT);
-    url.searchParams.set("symbol", symbol);
-
-    const response = await fetch(url, {
+    const response = await fetch(MEXC_PRICE_ENDPOINT, {
       signal: controller.signal,
       headers: {
         Accept: "application/json"
@@ -36,22 +33,16 @@ const fetchMexcPrice = async (symbol: string) => {
 
     if (!response.ok) {
       throw new Error(
-        `MEXC price request failed for ${symbol}: ${response.status}`
+        `MEXC price request failed: ${response.status}`
       );
     }
 
-    const ticker = (await response.json()) as MexcTicker;
-    const numericPrice = Number(ticker.price);
-
-    if (
-      ticker.symbol?.toUpperCase() !== symbol ||
-      !Number.isFinite(numericPrice) ||
-      numericPrice <= 0
-    ) {
-      throw new Error(`Invalid MEXC price response for ${symbol}`);
-    }
-
-    return ticker.price;
+    const tickers = (await response.json()) as MexcTicker[];
+    return new Map(
+      tickers
+        .filter((ticker) => Number.isFinite(Number(ticker.price)) && Number(ticker.price) > 0)
+        .map((ticker) => [ticker.symbol.toUpperCase(), ticker.price])
+    );
   } finally {
     clearTimeout(timeout);
   }
@@ -68,11 +59,16 @@ const runPricePollingTick = async () => {
     const markets = await priceEngineRepository.findActiveMarketsByType(
       MarketType.CRYPTO
     );
+    const prices = await fetchMexcPrices();
 
     const results = await Promise.allSettled(
       markets.map(async (market) => {
         const symbol = market.symbol.toUpperCase();
-        const price = await fetchMexcPrice(symbol);
+        const price = prices.get(symbol);
+
+        if (!price) {
+          throw new Error(`MEXC price is unavailable for ${symbol}`);
+        }
 
         await priceEngineService.processPriceUpdate({
           symbol: market.symbol,

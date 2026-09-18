@@ -26,6 +26,7 @@ import { useAlerts } from "./hooks/useAlerts";
 import { HomePanel } from "./components/HomePanel";
 import { MarketOverviewCard } from "./components/MarketOverviewCard";
 import { ChartPanel } from "./components/ChartPanel";
+import { ServicesPanel } from "./components/ServicesPanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
 import type {
@@ -64,7 +65,11 @@ export default function App() {
   const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
   const [splashVisible, setSplashVisible] = useState(true);
   const [selectedMarketId, setSelectedMarketId] = useState("");
-  const [activeTab, setActiveTab] = useState<"HOME" | "CHART" | "ALERTS" | "SETTINGS">("HOME");
+  const [activeTab, setActiveTab] = useState<"SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS">(() =>
+    new URLSearchParams(window.location.search).get("service") === "alerts"
+      ? "ALERTS"
+      : "SERVICES"
+  );
   const [marketSearch, setMarketSearch] = useState("");
   const [favoriteMarkets, setFavoriteMarkets] = useState<Market[]>([]);
   const [favoriteSavingMarketId, setFavoriteSavingMarketId] =
@@ -115,7 +120,7 @@ export default function App() {
         favoriteMarketsResponse
       ] = await Promise.all([
         getMarkets(),
-        getAlerts(userId ? { userId } : undefined),
+        userId ? getAlerts({ userId }) : Promise.resolve({ items: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } }),
         userId ? getUserFavoriteMarkets(userId) : Promise.resolve([])
       ]);
 
@@ -410,6 +415,13 @@ export default function App() {
         setActiveTab={setActiveTab}
         copy={copy}
       />
+      {activeTab === "SERVICES" ? (
+        <ServicesPanel
+          copy={copy}
+          cryptoFlowUrl={frontendEnv.cryptoFlowUrl}
+          openAlerts={() => setActiveTab("ALERTS")}
+        />
+      ) : null}
       {activeTab === "HOME" ? (
       <>
       <HomePanel
@@ -491,6 +503,7 @@ export default function App() {
         handleStartEditAlert={handleStartEditAlert}
         handleToggleAlertStatus={handleToggleAlertStatus}
         handleDeleteAlert={handleDeleteAlert}
+        isAdmin={backendUser?.role === "ADMIN"}
       />
 
       </>

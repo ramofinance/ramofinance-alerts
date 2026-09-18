@@ -66,7 +66,7 @@ export const listUsersController: RequestHandler = async (req, res, next) => {
 
 export const getUserByIdController: RequestHandler = async (req, res, next) => {
   try {
-    const user = await userService.getUserById(req.params.id);
+    const user = await userService.getUserById(String(req.params.id));
 
     res.json({
       success: true,
@@ -94,7 +94,7 @@ export const upsertTelegramUserController: RequestHandler = async (req, res, nex
 export const setUserActiveController: RequestHandler = async (req, res, next) => {
   try {
     const input = parseOrThrow(setUserActiveSchema, req.body);
-    const user = await userService.setUserActive(req.params.id, input.isActive);
+    const user = await userService.setUserActive(String(req.params.id), input.isActive);
 
     res.json({
       success: true,
@@ -109,7 +109,7 @@ export const setUserPreferredLanguageController: RequestHandler = async (req, re
   try {
     const input = parseOrThrow(setUserPreferredLanguageSchema, req.body);
     const user = await userService.setUserPreferredLanguage(
-      req.params.id,
+      String(req.params.id),
       input.preferredLanguage
     );
 
@@ -128,7 +128,7 @@ export const listUserFavoriteMarketsController: RequestHandler = async (
   next
 ) => {
   try {
-    const markets = await userService.listFavoriteMarkets(req.params.id);
+    const markets = await userService.listFavoriteMarkets(String(req.params.id));
 
     res.json({
       success: true,
@@ -146,8 +146,8 @@ export const addUserFavoriteMarketController: RequestHandler = async (
 ) => {
   try {
     const market = await userService.addFavoriteMarket(
-      req.params.id,
-      req.params.marketId
+      String(req.params.id),
+      String(req.params.marketId)
     );
 
     res.status(201).json({
@@ -166,8 +166,8 @@ export const removeUserFavoriteMarketController: RequestHandler = async (
 ) => {
   try {
     await userService.removeFavoriteMarket(
-      req.params.id,
-      req.params.marketId
+      String(req.params.id),
+      String(req.params.marketId)
     );
 
     res.json({
@@ -191,7 +191,7 @@ export const setUserAlertNotificationSettingsController: RequestHandler = async 
     );
 
     const user = await userService.setAlertNotificationSettings(
-      req.params.id,
+      String(req.params.id),
       input
     );
 

@@ -12,6 +12,14 @@ const buildUrl = (path: string) => {
   return `${frontendEnv.apiUrl}${path}`;
 };
 
+const telegramHeaders = (): Record<string, string> => {
+  const initData = window.Telegram?.WebApp?.initData;
+
+  return initData
+    ? { "X-Telegram-Init-Data": initData }
+    : {};
+};
+
 const parseApiResponse = async <TData>(response: Response): Promise<TData> => {
   const json = (await response.json()) as ApiResponse<TData> | ApiErrorResponse;
 
@@ -32,7 +40,10 @@ export const apiGet = async <TData>(
   options?: RequestOptions
 ): Promise<TData> => {
   const response = await fetch(buildUrl(path), {
-    headers: options?.headers
+    headers: {
+      ...telegramHeaders(),
+      ...options?.headers
+    }
   });
 
   return parseApiResponse<TData>(response);
@@ -47,6 +58,7 @@ export const apiPost = async <TData, TBody extends object>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...telegramHeaders(),
       ...options?.headers
     },
     body: JSON.stringify(body)
@@ -62,7 +74,8 @@ export const apiPatch = async <TData, TBody extends object>(
   const response = await fetch(buildUrl(path), {
     method: "PATCH",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      ...telegramHeaders()
     },
     body: JSON.stringify(body)
   });
@@ -73,7 +86,8 @@ export const apiPatch = async <TData, TBody extends object>(
 
 export const apiDelete = async <TData>(path: string): Promise<TData> => {
   const response = await fetch(buildUrl(path), {
-    method: "DELETE"
+    method: "DELETE",
+    headers: telegramHeaders()
   });
 
   return parseApiResponse<TData>(response);

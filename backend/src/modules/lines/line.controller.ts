@@ -73,7 +73,7 @@ export const listLinesController: RequestHandler = async (req, res, next) => {
 
 export const getLineByIdController: RequestHandler = async (req, res, next) => {
   try {
-    const line = await lineService.getLineById(req.params.id);
+    const line = await lineService.getLineById(String(req.params.id));
 
     res.json({
       success: true,
@@ -87,7 +87,7 @@ export const getLineByIdController: RequestHandler = async (req, res, next) => {
 export const updateLineController: RequestHandler = async (req, res, next) => {
   try {
     const input = parseOrThrow(updateLineSchema, req.body);
-    const line = await lineService.updateLine(req.params.id, input);
+    const line = await lineService.updateLine(String(req.params.id), input);
 
     res.json({
       success: true,
@@ -100,7 +100,7 @@ export const updateLineController: RequestHandler = async (req, res, next) => {
 
 export const deleteLineController: RequestHandler = async (req, res, next) => {
   try {
-    await lineService.deleteLine(req.params.id);
+    await lineService.deleteLine(String(req.params.id));
 
     res.json({
       success: true,

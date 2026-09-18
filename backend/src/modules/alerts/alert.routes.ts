@@ -7,8 +7,11 @@ import {
   updateAlertController,
   updateAlertStatusController
 } from "./alert.controller";
+import { requireTelegramAuth } from "../../middleware/telegram-auth";
 
 export const alertRoutes = Router();
+
+alertRoutes.use("/api/alerts", requireTelegramAuth);
 
 alertRoutes.get("/api/alerts", listAlertsController);
 alertRoutes.post("/api/alerts", createAlertController);

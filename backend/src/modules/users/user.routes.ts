@@ -10,18 +10,25 @@ import {
   setUserPreferredLanguageController,
   upsertTelegramUserController
 } from "./user.controller";
+import {
+  requireAdmin,
+  requireSelfOrAdmin,
+  requireTelegramAuth
+} from "../../middleware/telegram-auth";
 
 export const userRoutes = Router();
 
-userRoutes.get("/api/users", listUsersController);
-userRoutes.post("/api/users/telegram", upsertTelegramUserController);
-userRoutes.get("/api/users/:id/favorites", listUserFavoriteMarketsController);
-userRoutes.post("/api/users/:id/favorites/:marketId", addUserFavoriteMarketController);
-userRoutes.delete("/api/users/:id/favorites/:marketId", removeUserFavoriteMarketController);
+userRoutes.use("/api/users", requireTelegramAuth);
+userRoutes.get("/api/users", requireAdmin, listUsersController);
+userRoutes.post("/api/users/telegram", requireAdmin, upsertTelegramUserController);
+userRoutes.get("/api/users/:id/favorites", requireSelfOrAdmin, listUserFavoriteMarketsController);
+userRoutes.post("/api/users/:id/favorites/:marketId", requireSelfOrAdmin, addUserFavoriteMarketController);
+userRoutes.delete("/api/users/:id/favorites/:marketId", requireSelfOrAdmin, removeUserFavoriteMarketController);
 userRoutes.patch(
   "/api/users/:id/notification-settings",
+  requireSelfOrAdmin,
   setUserAlertNotificationSettingsController
 );
-userRoutes.get("/api/users/:id", getUserByIdController);
-userRoutes.patch("/api/users/:id/active", setUserActiveController);
-userRoutes.patch("/api/users/:id/language", setUserPreferredLanguageController);
+userRoutes.get("/api/users/:id", requireSelfOrAdmin, getUserByIdController);
+userRoutes.patch("/api/users/:id/active", requireAdmin, setUserActiveController);
+userRoutes.patch("/api/users/:id/language", requireSelfOrAdmin, setUserPreferredLanguageController);

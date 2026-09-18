@@ -7,13 +7,24 @@ export const buildStartReplyMarkup = (language: PreferredLanguage) => {
     return undefined;
   }
 
+  const alertsUrl = new URL(env.TELEGRAM_WEBAPP_URL);
+  alertsUrl.searchParams.set("service", "alerts");
+
   return {
     inline_keyboard: [
       [
         {
-          text: telegramText.openAppButton(language),
+          text: telegramText.openCryptoFlowButton(language),
           web_app: {
-            url: env.TELEGRAM_WEBAPP_URL
+            url: env.CRYPTOFLOW_URL
+          }
+        }
+      ],
+      [
+        {
+          text: telegramText.openAlertsButton(language),
+          web_app: {
+            url: alertsUrl.toString()
           }
         }
       ]

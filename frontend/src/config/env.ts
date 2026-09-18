@@ -18,5 +18,8 @@ const getDefaultWebSocketUrl = () => {
 
 export const frontendEnv = {
   apiUrl: import.meta.env.VITE_API_URL || getBackendPublicBaseUrl(),
-  websocketUrl: import.meta.env.VITE_WS_URL || getDefaultWebSocketUrl()
+  websocketUrl: import.meta.env.VITE_WS_URL || getDefaultWebSocketUrl(),
+  cryptoFlowUrl:
+    import.meta.env.VITE_CRYPTOFLOW_URL ||
+    "https://cryptoflow.ramo-fin-group.workers.dev/"
 };

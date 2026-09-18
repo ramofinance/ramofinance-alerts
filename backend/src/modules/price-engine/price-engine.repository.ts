@@ -99,7 +99,14 @@ export const priceEngineRepository = {
     return prisma.alert.findMany({
       where: {
         marketId,
-        status: AlertStatus.ACTIVE
+        status: AlertStatus.ACTIVE,
+        user: {
+          isActive: true
+        },
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: new Date() } }
+        ]
       },
       include: {
         user: true,

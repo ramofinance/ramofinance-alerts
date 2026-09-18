@@ -1,5 +1,11 @@
 import { PreferredLanguage } from "@prisma/client";
 
+const escapeHtml = (value: string) => value
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;");
+
 export const resolveTelegramLanguage = (
   preferredLanguage?: PreferredLanguage | null,
   telegramLanguageCode?: string
@@ -20,9 +26,11 @@ export const telegramText = {
     if (language === PreferredLanguage.FA) {
       return [
         "سلام 👋",
-        "به <b>RAMOFINANCE Alerts</b> خوش اومدی.",
+        "به <b>RAMO FINANCE</b> خوش اومدی.",
         "",
-        "اینجا می‌تونی برای بازارهای مالی هشدار قیمت بسازی و وضعیتشون رو realtime ببینی.",
+        "یکی از خدمات زیر را انتخاب کن:",
+        "📊 CryptoFlow برای تحلیل جریان بازار",
+        "🔔 Price Alerts برای ساخت هشدار قیمت",
         "",
         "زبان فعلی: فارسی",
         "برای تغییر زبان بنویس: /language"
@@ -30,9 +38,11 @@ export const telegramText = {
     }
 
     return [
-      "Welcome to <b>RAMOFINANCE Alerts</b> 👋",
+      "Welcome to <b>RAMO FINANCE</b> 👋",
       "",
-      "Create realtime alerts for financial markets and track them live.",
+      "Choose a service:",
+      "📊 CryptoFlow for market-flow intelligence",
+      "🔔 Price Alerts for Telegram price notifications",
       "",
       "Current language: English",
       "To change language, send: /language"
@@ -63,12 +73,20 @@ export const telegramText = {
     return "Message received. Use /start to get started or /language to change language.";
   },
 
-  openAppButton(language: PreferredLanguage) {
+  openCryptoFlowButton(language: PreferredLanguage) {
     if (language === PreferredLanguage.FA) {
-      return "باز کردن RAMOFINANCE Alerts";
+      return "📊 کریپتوفلو";
     }
 
-    return "Open RAMOFINANCE Alerts";
+    return "📊 Open CryptoFlow";
+  },
+
+  openAlertsButton(language: PreferredLanguage) {
+    if (language === PreferredLanguage.FA) {
+      return "🔔 هشدار قیمت";
+    }
+
+    return "🔔 Price Alerts";
   },
 
   alertTriggeredMessage(
@@ -81,12 +99,15 @@ export const telegramText = {
       title?: string | null;
     }
   ) {
+    const symbol = escapeHtml(input.symbol);
+    const title = escapeHtml(input.title ?? (language === PreferredLanguage.FA ? "بدون عنوان" : "Untitled"));
+
     if (language === PreferredLanguage.FA) {
       return [
         "🚨 هشدار فعال شد",
         "",
-        `بازار: <b>${input.symbol}</b>`,
-        `عنوان: ${input.title ?? "بدون عنوان"}`,
+        `بازار: <b>${symbol}</b>`,
+        `عنوان: ${title}`,
         `شرط: ${input.direction} ${input.targetPrice}`,
         `قیمت فعلی: ${input.currentPrice}`
       ].join("\n");
@@ -95,8 +116,8 @@ export const telegramText = {
     return [
       "🚨 Alert triggered",
       "",
-      `Market: <b>${input.symbol}</b>`,
-      `Title: ${input.title ?? "Untitled"}`,
+      `Market: <b>${symbol}</b>`,
+      `Title: ${title}`,
       `Condition: ${input.direction} ${input.targetPrice}`,
       `Current price: ${input.currentPrice}`
     ].join("\n");
