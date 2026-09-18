@@ -73,6 +73,10 @@ export const userService = {
     return userRepository.recordMiniAppOpen(input);
   },
 
+  async recordBotStart(telegramId: string, firstBotStartedAt?: Date | null) {
+    return userRepository.recordBotStart(telegramId, firstBotStartedAt);
+  },
+
   async getUserByTelegramId(telegramId: string) {
     const user = await userRepository.findByTelegramId(telegramId);
 

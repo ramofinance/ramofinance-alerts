@@ -92,6 +92,8 @@ export type TelegramMe = {
 };
 
 export type MiniAppStats = {
+  uniqueBotStarters: number;
+  totalBotStarts: number;
   totalUsers: number;
   totalOpens: number;
   activeNow: number;

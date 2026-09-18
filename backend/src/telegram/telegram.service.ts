@@ -34,6 +34,11 @@ export const telegramService = {
     );
 
     if (message.text?.startsWith("/start")) {
+      await userService.recordBotStart(
+        String(telegramUser.id),
+        user.firstBotStartedAt
+      );
+
       const sendResult = await sendTelegramMessage(
         message.chat.id,
         telegramText.startMessage(language),

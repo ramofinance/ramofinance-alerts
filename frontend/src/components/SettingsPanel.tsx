@@ -246,6 +246,20 @@ export function SettingsPanel({
             <div className="settings-grid">
               <article className="card settings-endpoint-card">
                 <div className="settings-endpoint-content">
+                  <span>{copy.uniqueBotStarters}</span>
+                  <strong>{adminStats.uniqueBotStarters}</strong>
+                </div>
+              </article>
+
+              <article className="card settings-endpoint-card">
+                <div className="settings-endpoint-content">
+                  <span>{copy.totalBotStarts}</span>
+                  <strong>{adminStats.totalBotStarts}</strong>
+                </div>
+              </article>
+
+              <article className="card settings-endpoint-card">
+                <div className="settings-endpoint-content">
                   <span>{copy.totalUsers}</span>
                   <strong>{adminStats.totalUsers}</strong>
                 </div>

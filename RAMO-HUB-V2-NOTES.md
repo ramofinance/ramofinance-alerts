@@ -24,3 +24,13 @@ After deployment, change the Telegram bot display name in BotFather to `RAMO Fin
 3. Open Price Alerts and confirm its service navigation appears.
 4. Open CryptoFlow and confirm the in-app back button returns to Services.
 5. Switch through all five languages in Settings.
+
+## v2.1 analytics and language correction
+
+- Admin statistics now separate unique bot starters, total `/start` commands,
+  unique Mini App users, Mini App opens, and users active in the last two minutes.
+- Bot-start counters begin when this migration is deployed; historical `/start`
+  events cannot be reconstructed reliably.
+- Existing saved language choices are reset once during this migration so the
+  current Telegram language is detected again. Any later manual language choice
+  remains saved normally.

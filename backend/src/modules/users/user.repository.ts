@@ -75,7 +75,19 @@ export const userRepository = {
   async getMiniAppStats() {
     const activeSince = new Date(Date.now() - 2 * 60 * 1000);
 
-    const [totalUsers, totalOpens, activeNow] = await Promise.all([
+    const [uniqueBotStarters, botStarts, totalUsers, totalOpens, activeNow] = await Promise.all([
+      prisma.user.count({
+        where: {
+          firstBotStartedAt: {
+            not: null
+          }
+        }
+      }),
+      prisma.user.aggregate({
+        _sum: {
+          botStartCount: true
+        }
+      }),
       prisma.user.count({
         where: {
           firstMiniAppOpenedAt: {
@@ -98,10 +110,25 @@ export const userRepository = {
     ]);
 
     return {
+      uniqueBotStarters,
+      totalBotStarts: botStarts._sum.botStartCount ?? 0,
       totalUsers,
       totalOpens: totalOpens._sum.miniAppOpenCount ?? 0,
       activeNow
     };
+  },
+
+  recordBotStart(telegramId: string, firstBotStartedAt?: Date | null) {
+    const now = new Date();
+
+    return prisma.user.update({
+      where: { telegramId },
+      data: {
+        botStartCount: { increment: 1 },
+        firstBotStartedAt: firstBotStartedAt ?? now,
+        lastBotStartedAt: now
+      }
+    });
   },
 
   upsertByTelegramId(data: UpsertUserData) {
