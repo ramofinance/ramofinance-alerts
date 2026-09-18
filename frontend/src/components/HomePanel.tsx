@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { frontendEnv } from "../config/env";
 
 type Props = {
   copy: any;
@@ -134,43 +135,47 @@ export function HomePanel({
 
       {error ? <div className="alert-box alert-box--error">{error}</div> : null}
 
-      <section className="investment-card signal-card">
-        <div className="investment-card__content">
-          <span className="investment-card__badge signal-card__badge">
-            {copy.signalsBadge}
-          </span>
-          <h2>{copy.signalsTitle}</h2>
-          <p>{copy.signalsDescription}</p>
-          <small>{copy.signalsDisclaimer}</small>
-        </div>
+      {frontendEnv.upcomingServicesEnabled ? (
+        <>
+          <section className="investment-card signal-card">
+            <div className="investment-card__content">
+              <span className="investment-card__badge signal-card__badge">
+                {copy.signalsBadge}
+              </span>
+              <h2>{copy.signalsTitle}</h2>
+              <p>{copy.signalsDescription}</p>
+              <small>{copy.signalsDisclaimer}</small>
+            </div>
 
-        <a
-          className="investment-card__button signal-card__button"
-          href="https://t.me/ramofinance_signals"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {copy.signalsButton}
-        </a>
-      </section>
+            <a
+              className="investment-card__button signal-card__button"
+              href="https://t.me/ramofinance_signals"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {copy.signalsButton}
+            </a>
+          </section>
 
-      <section className="investment-card">
-        <div className="investment-card__content">
-          <span className="investment-card__badge">{copy.investmentBadge}</span>
-          <h2>{copy.investmentTitle}</h2>
-          <p>{copy.investmentDescription}</p>
-          <small>{copy.investmentDisclaimer}</small>
-        </div>
+          <section className="investment-card">
+            <div className="investment-card__content">
+              <span className="investment-card__badge">{copy.investmentBadge}</span>
+              <h2>{copy.investmentTitle}</h2>
+              <p>{copy.investmentDescription}</p>
+              <small>{copy.investmentDisclaimer}</small>
+            </div>
 
-        <a
-          className="investment-card__button"
-          href="https://t.me/ramofinancebot"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {copy.investmentButton}
-        </a>
-      </section>
+            <a
+              className="investment-card__button"
+              href="https://t.me/ramofinancebot"
+              target="_blank"
+              rel="noreferrer"
+            >
+              {copy.investmentButton}
+            </a>
+          </section>
+        </>
+      ) : null}
     </>
   );
 }

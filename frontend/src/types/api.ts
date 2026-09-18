@@ -58,7 +58,7 @@ export type Alert = {
 };
 
 
-export type PreferredLanguage = "FA" | "EN";
+export type PreferredLanguage = "FA" | "EN" | "AR" | "ES" | "ZH";
 
 export type AlertNotificationSettings = {
   repeatCount: number;

@@ -17,11 +17,19 @@ export const handleTelegramCallbackQuery = async (
     telegramUser
   );
 
-  if (callbackQuery.data === "language:FA" || callbackQuery.data === "language:EN") {
-    const preferredLanguage =
-      callbackQuery.data === "language:FA"
-        ? PreferredLanguage.FA
-        : PreferredLanguage.EN;
+  const languageByCallback: Partial<Record<string, PreferredLanguage>> = {
+    "language:FA": PreferredLanguage.FA,
+    "language:EN": PreferredLanguage.EN,
+    "language:AR": PreferredLanguage.AR,
+    "language:ES": PreferredLanguage.ES,
+    "language:ZH": PreferredLanguage.ZH
+  };
+  const callbackLanguage = callbackQuery.data
+    ? languageByCallback[callbackQuery.data]
+    : undefined;
+
+  if (callbackLanguage) {
+    const preferredLanguage = callbackLanguage;
 
     const updatedUser = await userService.setUserPreferredLanguage(
       user.id,

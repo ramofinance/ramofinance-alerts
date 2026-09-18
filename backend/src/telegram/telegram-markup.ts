@@ -3,48 +3,25 @@ import { env } from "../config/env";
 import { telegramText } from "./telegram.i18n";
 
 export const buildStartReplyMarkup = (language: PreferredLanguage) => {
-  if (!env.TELEGRAM_WEBAPP_URL) {
-    return undefined;
-  }
-
-  const alertsUrl = new URL(env.TELEGRAM_WEBAPP_URL);
-  alertsUrl.searchParams.set("service", "alerts");
-
+  if (!env.TELEGRAM_WEBAPP_URL) return undefined;
   return {
-    inline_keyboard: [
-      [
-        {
-          text: telegramText.openCryptoFlowButton(language),
-          web_app: {
-            url: env.CRYPTOFLOW_URL
-          }
-        }
-      ],
-      [
-        {
-          text: telegramText.openAlertsButton(language),
-          web_app: {
-            url: alertsUrl.toString()
-          }
-        }
-      ]
-    ]
+    inline_keyboard: [[{
+      text: telegramText.openHubButton(language),
+      web_app: { url: env.TELEGRAM_WEBAPP_URL }
+    }]]
   };
 };
 
-export const buildLanguageReplyMarkup = () => {
-  return {
-    inline_keyboard: [
-      [
-        {
-          text: "فارسی 🇮🇷",
-          callback_data: "language:FA"
-        },
-        {
-          text: "English 🇬🇧",
-          callback_data: "language:EN"
-        }
-      ]
-    ]
-  };
-};
+export const buildLanguageReplyMarkup = () => ({
+  inline_keyboard: [
+    [
+      { text: "فارسی 🇮🇷", callback_data: "language:FA" },
+      { text: "English 🇬🇧", callback_data: "language:EN" }
+    ],
+    [
+      { text: "العربية", callback_data: "language:AR" },
+      { text: "Español", callback_data: "language:ES" }
+    ],
+    [{ text: "简体中文", callback_data: "language:ZH" }]
+  ]
+});

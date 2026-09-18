@@ -46,6 +46,9 @@ enum SubscriptionStatus {
 enum PreferredLanguage {
   FA
   EN
+  AR
+  ES
+  ZH
 }
 
 enum TelegramNotificationStatus {

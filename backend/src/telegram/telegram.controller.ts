@@ -33,14 +33,14 @@ export const telegramStatusController: RequestHandler = (_req, res) => {
   res.json({
     success: true,
     data: {
-      appName: "RAMOFINANCE Alerts",
+      appName: "RAMO Finance",
       botUsername: env.TELEGRAM_BOT_USERNAME,
       hasBotToken: Boolean(env.TELEGRAM_BOT_TOKEN),
       hasWebAppUrl: Boolean(env.TELEGRAM_WEBAPP_URL),
       hasWebhookSecret: Boolean(env.TELEGRAM_WEBHOOK_SECRET),
-      supportedLanguages: ["FA", "EN"],
+      supportedLanguages: ["FA", "EN", "AR", "ES", "ZH"],
       defaultFallbackLanguage: "EN",
-      persianAutoDetect: true,
+      telegramLanguageAutoDetect: true,
       userCanChangeLanguage: true
     }
   });

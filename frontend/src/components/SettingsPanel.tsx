@@ -106,6 +106,36 @@ export function SettingsPanel({
           >
             {copy.englishLanguage}
           </button>
+
+          <button
+            type="button"
+            className={appLanguage === "AR" ? "is-active" : ""}
+            aria-pressed={appLanguage === "AR"}
+            disabled={languageSaving}
+            onClick={() => onLanguageChange("AR")}
+          >
+            {copy.arabicLanguage}
+          </button>
+
+          <button
+            type="button"
+            className={appLanguage === "ES" ? "is-active" : ""}
+            aria-pressed={appLanguage === "ES"}
+            disabled={languageSaving}
+            onClick={() => onLanguageChange("ES")}
+          >
+            {copy.spanishLanguage}
+          </button>
+
+          <button
+            type="button"
+            className={appLanguage === "ZH" ? "is-active" : ""}
+            aria-pressed={appLanguage === "ZH"}
+            disabled={languageSaving}
+            onClick={() => onLanguageChange("ZH")}
+          >
+            {copy.chineseLanguage}
+          </button>
         </div>
 
         {languageError ? (

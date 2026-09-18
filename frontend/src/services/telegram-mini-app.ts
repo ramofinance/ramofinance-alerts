@@ -14,6 +14,12 @@ type TelegramWebApp = {
   ready?: () => void;
   expand?: () => void;
   colorScheme?: "light" | "dark";
+  BackButton?: {
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
+  };
 };
 
 declare global {
@@ -35,5 +41,28 @@ export const initializeTelegramMiniApp = () => {
     initData: webApp?.initData ?? "",
     user: webApp?.initDataUnsafe?.user,
     colorScheme: webApp?.colorScheme ?? "light"
+  };
+};
+
+export const useTelegramBackButton = (
+  visible: boolean,
+  onBack: () => void
+) => {
+  const backButton = window.Telegram?.WebApp?.BackButton;
+
+  if (!backButton) {
+    return () => undefined;
+  }
+
+  if (visible) {
+    backButton.onClick(onBack);
+    backButton.show();
+  } else {
+    backButton.hide();
+  }
+
+  return () => {
+    backButton.offClick(onBack);
+    backButton.hide();
   };
 };

@@ -37,7 +37,7 @@ export const setupWebSocketServer = (server: HttpServer) => {
     socket.send(
       serializeWebSocketEvent(
         createWebSocketEvent(websocketEventTypes.CONNECTION_READY, {
-          message: "RAMOFINANCE Alerts WebSocket connected"
+          message: "RAMO Finance WebSocket connected"
         })
       )
     );

@@ -1,0 +1,3 @@
+ALTER TYPE "PreferredLanguage" ADD VALUE IF NOT EXISTS 'AR';
+ALTER TYPE "PreferredLanguage" ADD VALUE IF NOT EXISTS 'ES';
+ALTER TYPE "PreferredLanguage" ADD VALUE IF NOT EXISTS 'ZH';

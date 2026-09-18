@@ -65,9 +65,17 @@ export const telegramService = {
       };
     }
 
-    if (message.text === "/fa" || message.text === "/en") {
-      const preferredLanguage =
-        message.text === "/fa" ? PreferredLanguage.FA : PreferredLanguage.EN;
+    const languageCommands: Partial<Record<string, PreferredLanguage>> = {
+      "/fa": PreferredLanguage.FA,
+      "/en": PreferredLanguage.EN,
+      "/ar": PreferredLanguage.AR,
+      "/es": PreferredLanguage.ES,
+      "/zh": PreferredLanguage.ZH
+    };
+    const commandLanguage = message.text ? languageCommands[message.text] : undefined;
+
+    if (commandLanguage) {
+      const preferredLanguage = commandLanguage;
 
       const updatedUser = await userService.setUserPreferredLanguage(
         user.id,

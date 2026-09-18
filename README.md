@@ -24,9 +24,11 @@ without plans, payments, trials, or user-facing billing messages.
 ## Product entry points
 
 - **Services:** the default Mini App screen with separate CryptoFlow and Price Alerts choices.
-- **CryptoFlow:** opens the URL configured with `CRYPTOFLOW_URL` / `VITE_CRYPTOFLOW_URL`.
+- **CryptoFlow:** opens inside the RAMO Finance shell, with an in-app and Telegram back button.
 - **Price Alerts:** opens the native alert creation and management experience.
-- **Telegram `/start`:** presents the same two services as Web App buttons.
+- **Telegram `/start`:** presents one generic RAMO Finance Web App button; service selection happens inside the hub.
+
+The interface and bot support Persian, English, Arabic, Spanish, and Simplified Chinese.
 
 The dormant billing code is available for a later release, but remains
 unmounted and invisible while `BILLING_ENABLED=false`.

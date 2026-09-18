@@ -26,11 +26,11 @@
 
 1. Configure the bot Web App URL to the deployed frontend HTTPS URL.
 2. Register the backend webhook with the same `TELEGRAM_WEBHOOK_SECRET` used by the server.
-3. Run `/start` and verify both buttons open inside Telegram:
-   - CryptoFlow
-   - Price Alerts
-4. Confirm a new alert belongs only to the signed-in Telegram user.
-5. Confirm a triggered alert is delivered by the bot.
+3. Run `/start` and verify the single `RAMO Finance` button opens the Services hub.
+4. Open CryptoFlow and verify both the visible back button and Telegram BackButton return to Services.
+5. Open Price Alerts and verify its own navigation appears only inside that service.
+6. Confirm a new alert belongs only to the signed-in Telegram user.
+7. Confirm a triggered alert is delivered by the bot.
 
 ## Security verification
 

@@ -27,8 +27,9 @@ import { HomePanel } from "./components/HomePanel";
 import { MarketOverviewCard } from "./components/MarketOverviewCard";
 import { ChartPanel } from "./components/ChartPanel";
 import { ServicesPanel } from "./components/ServicesPanel";
+import { CryptoFlowPanel } from "./components/CryptoFlowPanel";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
-import { initializeTelegramMiniApp } from "./services/telegram-mini-app";
+import { initializeTelegramMiniApp, useTelegramBackButton } from "./services/telegram-mini-app";
 import type {
   Alert,
   AlertNotificationSettings,
@@ -39,6 +40,8 @@ import type {
 } from "./types/api";
 
 export default function App() {
+  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW";
+  const startsInAlerts = new URLSearchParams(window.location.search).get("service") === "alerts";
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
   const [telegramMiniApp, setTelegramMiniApp] = useState(() => initializeTelegramMiniApp());
 
@@ -52,7 +55,9 @@ export default function App() {
       "ramofinance-app-language"
     );
 
-    return savedLanguage === "FA" ? "FA" : "EN";
+    return ["FA", "EN", "AR", "ES", "ZH"].includes(savedLanguage ?? "")
+      ? savedLanguage as PreferredLanguage
+      : "EN";
   });
   const [languageSaving, setLanguageSaving] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
@@ -65,11 +70,8 @@ export default function App() {
   const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
   const [splashVisible, setSplashVisible] = useState(true);
   const [selectedMarketId, setSelectedMarketId] = useState("");
-  const [activeTab, setActiveTab] = useState<"SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS">(() =>
-    new URLSearchParams(window.location.search).get("service") === "alerts"
-      ? "ALERTS"
-      : "SERVICES"
-  );
+  const [activeTab, setActiveTab] = useState<TabKey>(() => startsInAlerts ? "ALERTS" : "SERVICES");
+  const [activeModule, setActiveModule] = useState<"hub" | "alerts">(() => startsInAlerts ? "alerts" : "hub");
   const [marketSearch, setMarketSearch] = useState("");
   const [favoriteMarkets, setFavoriteMarkets] = useState<Market[]>([]);
   const [favoriteSavingMarketId, setFavoriteSavingMarketId] =
@@ -108,6 +110,31 @@ export default function App() {
     useMarketPriceHistory(activeMarket?.symbol);
   const copy = getAppCopy(appLanguage);
   const appDirection = getAppDirection(appLanguage);
+
+  useEffect(() => useTelegramBackButton(
+    activeTab === "CRYPTOFLOW" || activeModule === "alerts",
+    () => {
+      setActiveModule("hub");
+      setActiveTab("SERVICES");
+    }
+  ), [activeTab, activeModule]);
+
+  const openAlertsService = () => {
+    setActiveModule("alerts");
+    setActiveTab("HOME");
+  };
+
+  const openServices = () => {
+    setActiveModule("hub");
+    setActiveTab("SERVICES");
+  };
+
+  const cryptoFlowFrameUrl = (() => {
+    const url = new URL(frontendEnv.cryptoFlowUrl);
+    url.searchParams.set("embed", "ramo-finance");
+    url.searchParams.set("lang", appLanguage.toLowerCase());
+    return url.toString();
+  })();
 
   const loadDashboardData = async (userId?: string) => {
     try {
@@ -410,16 +437,26 @@ export default function App() {
     <main className="app-shell" dir={appDirection}>
         <SplashScreen visible={splashVisible} />
 
-      <BottomTabs
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        copy={copy}
-      />
+      {activeTab !== "CRYPTOFLOW" ? (
+        <BottomTabs
+          activeTab={activeTab}
+          setActiveTab={(tab) => tab === "SERVICES" ? openServices() : setActiveTab(tab)}
+          mode={activeModule}
+          copy={copy}
+        />
+      ) : null}
       {activeTab === "SERVICES" ? (
         <ServicesPanel
           copy={copy}
-          cryptoFlowUrl={frontendEnv.cryptoFlowUrl}
-          openAlerts={() => setActiveTab("ALERTS")}
+          openCryptoFlow={() => setActiveTab("CRYPTOFLOW")}
+          openAlerts={openAlertsService}
+        />
+      ) : null}
+      {activeTab === "CRYPTOFLOW" ? (
+        <CryptoFlowPanel
+          copy={copy}
+          src={cryptoFlowFrameUrl}
+          onBack={openServices}
         />
       ) : null}
       {activeTab === "HOME" ? (

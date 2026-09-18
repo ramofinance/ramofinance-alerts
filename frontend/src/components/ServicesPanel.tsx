@@ -1,10 +1,10 @@
 type Props = {
   copy: any;
-  cryptoFlowUrl: string;
+  openCryptoFlow: () => void;
   openAlerts: () => void;
 };
 
-export function ServicesPanel({ copy, cryptoFlowUrl, openAlerts }: Props) {
+export function ServicesPanel({ copy, openCryptoFlow, openAlerts }: Props) {
   return (
     <section className="services-screen">
       <header className="services-hero">
@@ -14,14 +14,18 @@ export function ServicesPanel({ copy, cryptoFlowUrl, openAlerts }: Props) {
       </header>
 
       <div className="services-grid">
-        <a className="service-card service-card--flow" href={cryptoFlowUrl}>
+        <button
+          className="service-card service-card--flow"
+          type="button"
+          onClick={openCryptoFlow}
+        >
           <span className="service-card__icon" aria-hidden="true">📊</span>
           <div>
             <strong>CryptoFlow</strong>
             <p>{copy.cryptoFlowDescription}</p>
           </div>
           <span className="service-card__action">{copy.openService}</span>
-        </a>
+        </button>
 
         <button
           className="service-card service-card--alerts"

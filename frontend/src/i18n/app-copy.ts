@@ -1,13 +1,131 @@
 import type { PreferredLanguage } from "../types/api";
 
 export const getAppDirection = (language: PreferredLanguage | null) => {
-  return language === "FA" ? "rtl" : "ltr";
+  return language === "FA" || language === "AR" ? "rtl" : "ltr";
 };
 
-export const getAppCopy = (language: PreferredLanguage | null) => {
+export const getAppCopy = (language: PreferredLanguage | null): any => {
+  if (language === "AR") {
+    return {
+      ...getAppCopy("EN"),
+      eyebrow: "RAMO FINANCE",
+      title: "تنبيهات الأسعار",
+      subtitle: "أنشئ تنبيهات السوق وأدرها داخل تيليجرام.",
+      telegramUser: "مستخدم تيليجرام", backendUser: "مستخدم النظام", mode: "الوضع",
+      telegram: "تيليجرام", browser: "معاينة المتصفح", language: "اللغة",
+      appLanguage: "لغة التطبيق", languageHint: "اختر لغة واجهة التطبيق.",
+      persianLanguage: "فارسی", englishLanguage: "English", arabicLanguage: "العربية",
+      spanishLanguage: "Español", chineseLanguage: "简体中文",
+      languageUpdateFailed: "تعذر حفظ اللغة", notAvailable: "غير متاح", notConnected: "غير متصل",
+      alerts: "التنبيهات", adminStats: "إحصاءات الإدارة", totalUsers: "المستخدمون الفريدون", totalOpens: "مرات الفتح",
+      activeNow: "نشط خلال آخر دقيقتين", statsLoading: "جارٍ تحميل الإحصاءات...", statsLoadFailed: "تعذر تحميل الإحصاءات",
+      notificationSettings: "إعدادات إشعارات التنبيه",
+      notificationSettingsHint: "حدد عدد رسائل تيليجرام والفاصل بين تكرارها.",
+      notificationRepeatCount: "عدد الرسائل", notificationInterval: "فاصل التكرار",
+      notificationSettingsUpdateFailed: "تعذر حفظ إعدادات الإشعارات",
+      notificationSettingsNotConnected: "افتح التطبيق المصغر داخل تيليجرام لحفظ الإعدادات.",
+      notificationCountOptions: { 1: "رسالة واحدة", 2: "رسالتان", 3: "3 رسائل", 4: "4 رسائل", 5: "5 رسائل" },
+      notificationIntervalOptions: { 30: "30 ثانية", 60: "دقيقة", 120: "دقيقتان", 300: "5 دقائق", 600: "10 دقائق" },
+      servicesTitle: "خدمات RAMO Finance", servicesSubtitle: "اختر أداة السوق التي تريد استخدامها.",
+      cryptoFlowDescription: "تدفق السوق وCVD ونشاط الحيتان ومناطق التصفية التقديرية.",
+      priceAlertsTitle: "تنبيهات الأسعار", priceAlertsDescription: "أنشئ تنبيهات للعملات الرقمية والفوركس والذهب واستلمها في تيليجرام.",
+      openService: "فتح", servicesFreeNote: "أداتان للسوق في تجربة بسيطة وموحدة.", backToServices: "العودة للخدمات",
+      tabs: { services: "الخدمات", home: "الرئيسية", chart: "الرسم", alerts: "التنبيهات", settings: "الإعدادات" },
+      market: "السوق", noMarket: "لا يوجد سوق", noMarketFound: "لم يتم العثور على سوق", marketUnavailable: "بيانات السوق غير متاحة بعد.",
+      latestPrice: "آخر سعر", liveChart: "الرسم المباشر", noLatestPrice: "لم يُسجل سعر بعد", source: "المصدر",
+      createAlert: "إنشاء تنبيه", newAlert: "تنبيه BTCUSDT جديد", titleLabel: "العنوان", selectMarket: "اختر السوق",
+      searchMarket: "بحث عن سوق", searchMarketPlaceholder: "مثال: BTC أو EUR", favorites: "المفضلة",
+      addFavorite: "إضافة للمفضلة", removeFavorite: "إزالة من المفضلة", noFavorites: "لم تضف أسواقاً للمفضلة بعد.",
+      favoriteUpdateFailed: "تعذر تحديث المفضلة", targetPrice: "السعر المستهدف", targetPricePlaceholder: "مثال: 80000",
+      optionalTitlePlaceholder: "اختياري؛ يُنشأ تلقائياً إذا تُرك فارغاً", preview: "معاينة التنبيه", invalidTargetPrice: "السعر المستهدف غير صالح",
+      direction: "الاتجاه", createButton: "إنشاء التنبيه", myAlerts: "تنبيهاتي", allStatuses: "كل الحالات", filterStatus: "تصفية الحالة",
+      loading: "جارٍ التحميل...", testPrice: "اختبار السعر", testPricePlaceholder: "سعر السوق الحالي", invalidTestPrice: "سعر الاختبار غير صالح",
+      noAlerts: "لا توجد تنبيهات بعد. أنشئ تنبيهك الأول.", edit: "تعديل", save: "حفظ", cancel: "إلغاء", pause: "إيقاف مؤقت",
+      resume: "استئناف", delete: "حذف", realtimeActive: "الاتصال المباشر نشط", waiting: "انتظار",
+      telegramNotConnected: "مستخدم تيليجرام غير متصل", noMarketAvailable: "لا يوجد سوق متاح",
+      createSuccess: "تم إنشاء التنبيه", createFailed: "تعذر إنشاء التنبيه", updateSuccess: "تم تحديث التنبيه", updateFailed: "تعذر تحديث التنبيه",
+      pauseSuccess: "تم إيقاف التنبيه", resumeSuccess: "تم استئناف التنبيه", statusUpdateFailed: "تعذر تحديث حالة التنبيه",
+      deleteSuccess: "تم حذف التنبيه", deleteFailed: "تعذر حذف التنبيه", loadFailed: "تعذر تحميل البيانات", telegramUserFailed: "تعذر تحميل مستخدم تيليجرام",
+      priceUpdated: "تم تحديث السعر", triggeredAlerts: "التنبيهات المفعلة", priceUpdateFailed: "تعذر تحديث السعر",
+      directions: { ABOVE: "أعلى من", BELOW: "أقل من", CROSSING_UP: "اختراق صاعد", CROSSING_DOWN: "اختراق هابط" },
+      statuses: { ACTIVE: "نشط", PAUSED: "متوقف", TRIGGERED: "تم التفعيل", CANCELLED: "ملغى", EXPIRED: "منتهي" }
+    };
+  }
+
+  if (language === "ES") {
+    return {
+      ...getAppCopy("EN"),
+      eyebrow: "RAMO FINANCE", title: "Alertas de precios", subtitle: "Crea y gestiona alertas de mercado dentro de Telegram.",
+      telegramUser: "Usuario de Telegram", backendUser: "Usuario del sistema", mode: "Modo", telegram: "Telegram", browser: "Vista del navegador", language: "Idioma",
+      appLanguage: "Idioma de la aplicación", languageHint: "Elige el idioma de la interfaz.",
+      persianLanguage: "فارسی", englishLanguage: "English", arabicLanguage: "العربية", spanishLanguage: "Español", chineseLanguage: "简体中文",
+      languageUpdateFailed: "No se pudo guardar el idioma", notAvailable: "No disponible", notConnected: "Sin conexión",
+      alerts: "Alertas", adminStats: "Estadísticas de administración", totalUsers: "Usuarios únicos", totalOpens: "Aperturas",
+      activeNow: "Activos en los últimos 2 minutos", statsLoading: "Cargando estadísticas...", statsLoadFailed: "No se pudieron cargar las estadísticas",
+      notificationSettings: "Notificaciones de alertas", notificationSettingsHint: "Elige cuántos mensajes enviar y el intervalo de repetición.",
+      notificationRepeatCount: "Número de mensajes", notificationInterval: "Intervalo", notificationSettingsUpdateFailed: "No se pudieron guardar las notificaciones",
+      notificationSettingsNotConnected: "Abre la Mini App en Telegram para guardar estos ajustes.",
+      notificationCountOptions: { 1: "1 mensaje", 2: "2 mensajes", 3: "3 mensajes", 4: "4 mensajes", 5: "5 mensajes" },
+      notificationIntervalOptions: { 30: "30 segundos", 60: "1 minuto", 120: "2 minutos", 300: "5 minutos", 600: "10 minutos" },
+      servicesTitle: "Servicios de RAMO Finance", servicesSubtitle: "Elige la herramienta de mercado que quieres usar.",
+      cryptoFlowDescription: "Flujo de mercado, CVD, actividad de ballenas y zonas estimadas de liquidación.",
+      priceAlertsTitle: "Alertas de precios", priceAlertsDescription: "Crea alertas de cripto, forex y oro y recíbelas en Telegram.",
+      openService: "Abrir", servicesFreeNote: "Dos herramientas de mercado en una experiencia sencilla y unificada.", backToServices: "Volver a servicios",
+      tabs: { services: "Servicios", home: "Inicio", chart: "Gráfico", alerts: "Alertas", settings: "Ajustes" },
+      market: "Mercado", noMarket: "Sin mercado", noMarketFound: "No se encontró el mercado", marketUnavailable: "Los datos aún no están disponibles.",
+      latestPrice: "Último precio", liveChart: "Gráfico en vivo", noLatestPrice: "Aún no hay precio", source: "Fuente",
+      createAlert: "Crear alerta", newAlert: "Nueva alerta BTCUSDT", titleLabel: "Título", selectMarket: "Elegir mercado", searchMarket: "Buscar mercado",
+      searchMarketPlaceholder: "Ejemplo: BTC o EUR", favorites: "Mis favoritos", addFavorite: "Añadir a favoritos", removeFavorite: "Quitar de favoritos",
+      noFavorites: "Aún no hay mercados favoritos.", favoriteUpdateFailed: "No se pudo actualizar favoritos", targetPrice: "Precio objetivo",
+      targetPricePlaceholder: "Ejemplo: 80000", optionalTitlePlaceholder: "Opcional; se genera si queda vacío", preview: "Vista previa", invalidTargetPrice: "Precio objetivo no válido",
+      direction: "Dirección", createButton: "Crear alerta", myAlerts: "Mis alertas", allStatuses: "Todos los estados", filterStatus: "Filtrar estado",
+      loading: "Cargando...", testPrice: "Probar precio", testPricePlaceholder: "Precio actual", invalidTestPrice: "Precio de prueba no válido",
+      noAlerts: "Aún no hay alertas. Crea la primera.", edit: "Editar", save: "Guardar", cancel: "Cancelar", pause: "Pausar", resume: "Reanudar", delete: "Eliminar",
+      realtimeActive: "Conexión en tiempo real activa", waiting: "Esperando", telegramNotConnected: "El usuario de Telegram no está conectado", noMarketAvailable: "No hay mercados disponibles",
+      createSuccess: "Alerta creada", createFailed: "No se pudo crear la alerta", updateSuccess: "Alerta actualizada", updateFailed: "No se pudo actualizar",
+      pauseSuccess: "Alerta pausada", resumeSuccess: "Alerta reanudada", statusUpdateFailed: "No se pudo cambiar el estado", deleteSuccess: "Alerta eliminada", deleteFailed: "No se pudo eliminar",
+      loadFailed: "No se pudieron cargar los datos", telegramUserFailed: "No se pudo cargar el usuario de Telegram",
+      priceUpdated: "Precio actualizado", triggeredAlerts: "Alertas activadas", priceUpdateFailed: "No se pudo actualizar el precio",
+      directions: { ABOVE: "Por encima de", BELOW: "Por debajo de", CROSSING_UP: "Cruce ascendente", CROSSING_DOWN: "Cruce descendente" },
+      statuses: { ACTIVE: "Activa", PAUSED: "Pausada", TRIGGERED: "Activada", CANCELLED: "Cancelada", EXPIRED: "Vencida" }
+    };
+  }
+
+  if (language === "ZH") {
+    return {
+      ...getAppCopy("EN"),
+      eyebrow: "RAMO FINANCE", title: "价格提醒", subtitle: "在 Telegram 中创建和管理市场价格提醒。",
+      telegramUser: "Telegram 用户", backendUser: "系统用户", mode: "模式", telegram: "Telegram", browser: "浏览器预览", language: "语言",
+      appLanguage: "应用语言", languageHint: "选择界面语言。", persianLanguage: "فارسی", englishLanguage: "English", arabicLanguage: "العربية", spanishLanguage: "Español", chineseLanguage: "简体中文",
+      languageUpdateFailed: "保存语言失败", notAvailable: "不可用", notConnected: "未连接",
+      alerts: "提醒", adminStats: "管理统计", totalUsers: "独立用户", totalOpens: "打开次数", activeNow: "最近两分钟活跃",
+      statsLoading: "正在加载统计...", statsLoadFailed: "加载统计失败",
+      notificationSettings: "提醒通知设置", notificationSettingsHint: "设置 Telegram 消息数量和重复间隔。", notificationRepeatCount: "消息数量", notificationInterval: "重复间隔",
+      notificationSettingsUpdateFailed: "保存通知设置失败", notificationSettingsNotConnected: "请在 Telegram 内打开小程序以保存设置。",
+      notificationCountOptions: { 1: "1 条消息", 2: "2 条消息", 3: "3 条消息", 4: "4 条消息", 5: "5 条消息" },
+      notificationIntervalOptions: { 30: "30 秒", 60: "1 分钟", 120: "2 分钟", 300: "5 分钟", 600: "10 分钟" },
+      servicesTitle: "RAMO Finance 服务", servicesSubtitle: "选择要使用的市场工具。", cryptoFlowDescription: "市场资金流、CVD、鲸鱼交易和预估清算区域。",
+      priceAlertsTitle: "价格提醒", priceAlertsDescription: "为加密货币、外汇和黄金创建提醒，并接收 Telegram 通知。", openService: "打开",
+      servicesFreeNote: "两款市场工具，统一简洁的使用体验。", backToServices: "返回服务",
+      tabs: { services: "服务", home: "首页", chart: "图表", alerts: "提醒", settings: "设置" },
+      market: "市场", noMarket: "暂无市场", noMarketFound: "未找到市场", marketUnavailable: "市场数据尚未准备好。", latestPrice: "最新价格", liveChart: "实时图表",
+      noLatestPrice: "暂无价格", source: "来源", createAlert: "创建提醒", newAlert: "新建 BTCUSDT 提醒", titleLabel: "标题", selectMarket: "选择市场",
+      searchMarket: "搜索市场", searchMarketPlaceholder: "例如 BTC 或 EUR", favorites: "我的收藏", addFavorite: "加入收藏", removeFavorite: "取消收藏",
+      noFavorites: "尚未收藏任何市场。", favoriteUpdateFailed: "更新收藏失败", targetPrice: "目标价格", targetPricePlaceholder: "例如 80000",
+      optionalTitlePlaceholder: "可选；留空将自动生成", preview: "提醒预览", invalidTargetPrice: "目标价格无效", direction: "方向", createButton: "创建提醒",
+      myAlerts: "我的提醒", allStatuses: "全部状态", filterStatus: "筛选状态", loading: "加载中...", testPrice: "测试价格", testPricePlaceholder: "当前市场价格",
+      invalidTestPrice: "测试价格无效", noAlerts: "暂无提醒，请创建第一个提醒。", edit: "编辑", save: "保存", cancel: "取消", pause: "暂停", resume: "继续", delete: "删除",
+      realtimeActive: "实时连接已启用", waiting: "等待中", telegramNotConnected: "Telegram 用户未连接", noMarketAvailable: "暂无可用市场",
+      createSuccess: "提醒已创建", createFailed: "创建提醒失败", updateSuccess: "提醒已更新", updateFailed: "更新提醒失败", pauseSuccess: "提醒已暂停",
+      resumeSuccess: "提醒已恢复", statusUpdateFailed: "更新提醒状态失败", deleteSuccess: "提醒已删除", deleteFailed: "删除提醒失败", loadFailed: "加载数据失败", telegramUserFailed: "加载 Telegram 用户失败",
+      priceUpdated: "价格已更新", triggeredAlerts: "已触发提醒", priceUpdateFailed: "价格更新失败",
+      directions: { ABOVE: "高于", BELOW: "低于", CROSSING_UP: "向上突破", CROSSING_DOWN: "向下突破" },
+      statuses: { ACTIVE: "生效中", PAUSED: "已暂停", TRIGGERED: "已触发", CANCELLED: "已取消", EXPIRED: "已过期" }
+    };
+  }
   if (language === "FA") {
     return {
-      eyebrow: "RAMOFINANCE",
+      eyebrow: "RAMO FINANCE",
       title: "مینی‌اپ هشدارها",
       subtitle: "ساخت، مدیریت و تست هشدارهای بازار داخل تلگرام.",
       telegramUser: "کاربر تلگرام",
@@ -20,6 +138,9 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
       languageHint: "زبان رابط کاربری را انتخاب کنید.",
       persianLanguage: "فارسی",
       englishLanguage: "English",
+      arabicLanguage: "العربية",
+      spanishLanguage: "Español",
+      chineseLanguage: "简体中文",
       adminStats: "آمار مدیریت",
       totalUsers: "کاربران یکتا",
       totalOpens: "دفعات بازشدن",
@@ -72,6 +193,7 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
       priceAlertsDescription: "برای کریپتو، فارکس و طلا هشدار بسازید و پیام تلگرام دریافت کنید.",
       openService: "باز کردن",
       servicesFreeNote: "دو ابزار بازار در یک فضای ساده و یکپارچه.",
+      backToServices: "بازگشت به خدمات",
       tabs: { services: "خدمات", home: "خانه", chart: "چارت", alerts: "هشدارها", settings: "تنظیمات" },
       market: "بازار",
       noMarket: "بازاری وجود ندارد",
@@ -153,7 +275,7 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
   }
 
   return {
-    eyebrow: "RAMOFINANCE",
+    eyebrow: "RAMO FINANCE",
     title: "Alerts Mini App",
     subtitle: "Create, manage and test your market alerts directly inside Telegram.",
     telegramUser: "Telegram User",
@@ -166,6 +288,9 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
     languageHint: "Choose the interface language.",
     persianLanguage: "فارسی",
     englishLanguage: "English",
+    arabicLanguage: "العربية",
+    spanishLanguage: "Español",
+    chineseLanguage: "简体中文",
     languageUpdateFailed: "Failed to save language",
     notificationSettings: "Alert Notifications",
     notificationSettingsHint:
@@ -212,6 +337,7 @@ export const getAppCopy = (language: PreferredLanguage | null) => {
     priceAlertsDescription: "Create crypto, forex and gold alerts and receive Telegram notifications.",
     openService: "Open",
     servicesFreeNote: "Two market tools in one simple, unified experience.",
+    backToServices: "Back to Services",
     tabs: { services: "Services", home: "Home", chart: "Chart", alerts: "Alerts", settings: "Settings" },
     market: "Market",
     noMarket: "No market",

@@ -21,5 +21,7 @@ export const frontendEnv = {
   websocketUrl: import.meta.env.VITE_WS_URL || getDefaultWebSocketUrl(),
   cryptoFlowUrl:
     import.meta.env.VITE_CRYPTOFLOW_URL ||
-    "https://cryptoflow.ramo-fin-group.workers.dev/"
+    "https://cryptoflow.ramo-fin-group.workers.dev/",
+  upcomingServicesEnabled:
+    import.meta.env.VITE_UPCOMING_SERVICES_ENABLED === "true"
 };
