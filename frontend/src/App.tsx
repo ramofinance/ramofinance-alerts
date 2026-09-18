@@ -74,7 +74,7 @@ export default function App() {
   const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
   const [splashVisible, setSplashVisible] = useState(true);
   const [selectedMarketId, setSelectedMarketId] = useState("");
-  const [activeTab, setActiveTab] = useState<TabKey>(() => startsInRadar ? "RADAR" : startsInAlerts ? "ALERTS" : "SERVICES");
+  const [activeTab, setActiveTab] = useState<TabKey>(() => startsInAlerts ? "ALERTS" : "SERVICES");
   const [activeModule, setActiveModule] = useState<"hub" | "alerts">(() => startsInAlerts ? "alerts" : "hub");
   const [marketSearch, setMarketSearch] = useState("");
   const [favoriteMarkets, setFavoriteMarkets] = useState<Market[]>([]);
@@ -355,14 +355,21 @@ export default function App() {
           );
           await loadDashboardData(data.user.id);
           const radarStatus = data.radarStatus ?? await getRadarStatus().catch(() => null);
-          setRadarEnabled(Boolean(
+          const canAccessRadar = Boolean(
             radarStatus?.enabled ||
             data.user.role === "ADMIN" ||
             data.user.radarPreviewAccess
-          ));
+          );
+          setRadarEnabled(canAccessRadar);
+          if (startsInRadar && canAccessRadar) {
+            setActiveTab("RADAR");
+          }
         })
         .catch((err) => {
           setError(err instanceof Error ? err.message : copy.telegramUserFailed);
+          if (startsInRadar) {
+            setActiveTab("SERVICES");
+          }
           void loadDashboardData();
         });
 

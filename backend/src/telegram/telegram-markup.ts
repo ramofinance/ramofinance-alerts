@@ -30,7 +30,7 @@ export const buildRadarReplyMarkup = () => {
   if (!env.TELEGRAM_WEBAPP_URL) return undefined;
   const url = new URL(env.TELEGRAM_WEBAPP_URL);
   url.searchParams.set("service", "radar");
-  url.searchParams.set("v", "3.2.2");
+  url.searchParams.set("v", "3.2.3");
 
   return {
     inline_keyboard: [[{

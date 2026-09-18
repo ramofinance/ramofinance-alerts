@@ -28,3 +28,7 @@ Radar availability is now returned with the authenticated Telegram user and refr
 - `/radar` reports access for the exact Telegram account issuing the command.
 - Approved users receive a versioned **Open Radar** Web App button that bypasses stale Telegram WebView caches.
 - The Services card is also shown directly from `radarPreviewAccess`, independently of the administrator role.
+
+## v3.2.3 direct-open loading fix
+
+The direct Radar link now waits for Telegram authentication and the access response before switching away from Services. A slow or failed user request can no longer leave the Mini App on an empty screen.
