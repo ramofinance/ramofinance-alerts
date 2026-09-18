@@ -7,6 +7,7 @@ import {
 import { telegramText } from "./telegram.i18n";
 import type { TelegramCallbackQuery } from "./telegram.types";
 import { upsertTelegramUserContext } from "./telegram-user-context";
+import { handleAdminCallback } from "./telegram-admin-access";
 
 export const handleTelegramCallbackQuery = async (
   callbackQuery: TelegramCallbackQuery
@@ -16,6 +17,11 @@ export const handleTelegramCallbackQuery = async (
   const { user, language } = await upsertTelegramUserContext(
     telegramUser
   );
+
+  const adminResult = await handleAdminCallback(callbackQuery, user);
+  if (adminResult) {
+    return { processed: true, command: "admin_callback", language, user, sendResult: adminResult };
+  }
 
   const languageByCallback: Partial<Record<string, PreferredLanguage>> = {
     "language:FA": PreferredLanguage.FA,

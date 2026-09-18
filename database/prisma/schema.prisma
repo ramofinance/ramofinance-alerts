@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -59,38 +59,53 @@ enum TelegramNotificationStatus {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  telegramId   String?  @unique
-  username     String?
-  firstName    String?
-  lastName     String?
-  languageCode       String?
-  preferredLanguage PreferredLanguage?
-  role               UserRole @default(USER)
-  isActive             Boolean   @default(true)
-  miniAppOpenCount      Int       @default(0)
-  botStartCount          Int       @default(0)
-  firstBotStartedAt      DateTime?
-  lastBotStartedAt       DateTime?
-  firstMiniAppOpenedAt  DateTime?
-  lastMiniAppOpenedAt   DateTime?
-  lastSeenAt                      DateTime?
-  alertNotificationRepeatCount    Int       @default(1)
-  alertNotificationIntervalSeconds Int      @default(60)
-  radarNotificationsEnabled       Boolean   @default(false)
-  radarMinimumScore               Int       @default(75)
-  createdAt                       DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                               String             @id @default(uuid())
+  telegramId                       String?            @unique
+  username                         String?
+  firstName                        String?
+  lastName                         String?
+  languageCode                     String?
+  preferredLanguage                PreferredLanguage?
+  role                             UserRole           @default(USER)
+  isActive                         Boolean            @default(true)
+  miniAppOpenCount                 Int                @default(0)
+  botStartCount                    Int                @default(0)
+  firstBotStartedAt                DateTime?
+  lastBotStartedAt                 DateTime?
+  firstMiniAppOpenedAt             DateTime?
+  lastMiniAppOpenedAt              DateTime?
+  lastSeenAt                       DateTime?
+  alertNotificationRepeatCount     Int                @default(1)
+  alertNotificationIntervalSeconds Int                @default(60)
+  radarNotificationsEnabled        Boolean            @default(false)
+  radarMinimumScore                Int                @default(75)
+  radarPreviewAccess               Boolean            @default(false)
+  createdAt                        DateTime           @default(now())
+  updatedAt                        DateTime           @updatedAt
 
-  alerts          Alert[]
-  subscriptions   Subscription[]
-  favoriteMarkets  UserMarketFavorite[]
-  notificationJobs TelegramAlertNotification[]
+  alerts             Alert[]
+  subscriptions      Subscription[]
+  favoriteMarkets    UserMarketFavorite[]
+  notificationJobs   TelegramAlertNotification[]
   radarNotifications RadarNotification[]
 
   @@index([telegramId])
   @@index([username])
   @@index([lastSeenAt])
+}
+
+model RadarAccessInvite {
+  id               String    @id @default(uuid())
+  token            String    @unique
+  createdByUserId  String
+  redeemedByUserId String?
+  expiresAt        DateTime
+  redeemedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([token, expiresAt])
+  @@index([createdByUserId])
 }
 
 model RadarSignal {
@@ -152,10 +167,10 @@ model Market {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  alerts        Alert[]
-  latestPrice   MarketPrice?
-  priceHistory  MarketPriceHistory[]
-  favoritedBy   UserMarketFavorite[]
+  alerts       Alert[]
+  latestPrice  MarketPrice?
+  priceHistory MarketPriceHistory[]
+  favoritedBy  UserMarketFavorite[]
 
   @@index([symbol])
   @@index([type])
@@ -204,17 +219,17 @@ model MarketPriceHistory {
 }
 
 model Alert {
-  id             String         @id @default(uuid())
-  userId         String
-  marketId       String
-  title          String?
-  targetPrice    Decimal
-  direction      AlertDirection
-  status         AlertStatus    @default(ACTIVE)
-  triggeredAt    DateTime?
-  expiresAt      DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id          String         @id @default(uuid())
+  userId      String
+  marketId    String
+  title       String?
+  targetPrice Decimal
+  direction   AlertDirection
+  status      AlertStatus    @default(ACTIVE)
+  triggeredAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   user             User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
   market           Market                      @relation(fields: [marketId], references: [id], onDelete: Cascade)

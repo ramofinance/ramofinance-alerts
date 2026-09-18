@@ -212,7 +212,10 @@ const queueSignalNotifications = async (signal: any) => {
       isActive: true,
       radarNotificationsEnabled: true,
       radarMinimumScore: { lte: signal.score },
-      telegramId: { not: null }
+      telegramId: { not: null },
+      ...(env.RADAR_PUBLIC_ENABLED ? {} : {
+        OR: [{ role: UserRole.ADMIN }, { radarPreviewAccess: true }]
+      })
     }
   });
   if (!users.length) return;
@@ -339,8 +342,8 @@ export const processRadarNotifications = async () => {
 };
 
 export const radarService = {
-  status(userRole: UserRole) {
-    return { enabled: env.RADAR_ENABLED && (env.RADAR_PUBLIC_ENABLED || userRole === UserRole.ADMIN), public: env.RADAR_PUBLIC_ENABLED, scanIntervalSeconds: Math.round(env.RADAR_SCAN_INTERVAL_MS / 1000) };
+  status(user: { role: UserRole; radarPreviewAccess: boolean }) {
+    return { enabled: env.RADAR_ENABLED && (env.RADAR_PUBLIC_ENABLED || user.role === UserRole.ADMIN || user.radarPreviewAccess), public: env.RADAR_PUBLIC_ENABLED, scanIntervalSeconds: Math.round(env.RADAR_SCAN_INTERVAL_MS / 1000) };
   },
   async listSignals(limit = 20) {
     return prisma.radarSignal.findMany({ orderBy: { detectedAt: "desc" }, take: Math.min(Math.max(limit, 1), 50) });

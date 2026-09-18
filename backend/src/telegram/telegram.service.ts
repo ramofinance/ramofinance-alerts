@@ -9,6 +9,8 @@ import {
 } from "./telegram-markup";
 import type { TelegramUpdate } from "./telegram.types";
 import { upsertTelegramUserContext } from "./telegram-user-context";
+import { handleAdminTextCommand } from "./telegram-admin-access";
+import { radarAccessService } from "../modules/radar/radar-access.service";
 
 export const telegramService = {
   async processUpdate(update: TelegramUpdate) {
@@ -39,6 +41,20 @@ export const telegramService = {
         user.firstBotStartedAt
       );
 
+      const inviteToken = message.text.match(/^\/start(?:@\w+)?\s+radar_([A-Za-z0-9_-]+)$/)?.[1];
+      if (inviteToken) {
+        const granted = await radarAccessService.redeemInvite(inviteToken, user.id);
+        const inviteMessage = granted
+          ? "✅ Radar access has been activated for your account.\n\nدسترسی رادار برای حساب شما فعال شد."
+          : "⚠️ This invitation link is invalid, expired, or already used.\n\nاین لینک دعوت نامعتبر، منقضی یا قبلاً استفاده شده است.";
+        const sendResult = await sendTelegramMessage(
+          message.chat.id,
+          inviteMessage,
+          buildStartReplyMarkup(language)
+        );
+        return { processed: true, command: "radar_invite", language, user, sendResult };
+      }
+
       const sendResult = await sendTelegramMessage(
         message.chat.id,
         telegramText.startMessage(language),
@@ -52,6 +68,17 @@ export const telegramService = {
         user,
         sendResult
       };
+    }
+
+    if (message.text) {
+      const adminResult = await handleAdminTextCommand(
+        message.text,
+        message.chat.id,
+        user
+      );
+      if (adminResult) {
+        return { processed: true, command: "admin", language, user, sendResult: adminResult };
+      }
     }
 
     if (message.text?.startsWith("/language")) {
