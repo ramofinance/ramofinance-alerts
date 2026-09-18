@@ -22,3 +22,9 @@ The scanner continues to use direct Binance and CoinGecko market data. External 
 ## v3.2.1 visibility fix
 
 Radar availability is now returned with the authenticated Telegram user and refreshed whenever the Services tab is opened. This prevents an approved preview user from remaining hidden behind a stale initial status request.
+
+## v3.2.2 direct access and diagnostics
+
+- `/radar` reports access for the exact Telegram account issuing the command.
+- Approved users receive a versioned **Open Radar** Web App button that bypasses stale Telegram WebView caches.
+- The Services card is also shown directly from `radarPreviewAccess`, independently of the administrator role.

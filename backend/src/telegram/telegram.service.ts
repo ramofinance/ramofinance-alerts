@@ -5,12 +5,14 @@ import { handleTelegramCallbackQuery } from "./telegram-callback-handler";
 import { telegramText } from "./telegram.i18n";
 import {
   buildLanguageReplyMarkup,
+  buildRadarReplyMarkup,
   buildStartReplyMarkup
 } from "./telegram-markup";
 import type { TelegramUpdate } from "./telegram.types";
 import { upsertTelegramUserContext } from "./telegram-user-context";
 import { handleAdminTextCommand } from "./telegram-admin-access";
 import { radarAccessService } from "../modules/radar/radar-access.service";
+import { radarService } from "../modules/radar/radar.service";
 
 export const telegramService = {
   async processUpdate(update: TelegramUpdate) {
@@ -79,6 +81,19 @@ export const telegramService = {
       if (adminResult) {
         return { processed: true, command: "admin", language, user, sendResult: adminResult };
       }
+    }
+
+    if (message.text?.match(/^\/radar(?:@\w+)?(?:\s|$)/i)) {
+      const status = radarService.status(user);
+      const account = user.username ? `@${user.username}` : String(telegramUser.id);
+      const sendResult = await sendTelegramMessage(
+        message.chat.id,
+        status.enabled
+          ? `✅ Radar access is active for <b>${account}</b>.\n\nدسترسی رادار برای این حساب فعال است. از دکمه زیر مستقیماً وارد شو.`
+          : `⛔️ Radar access is not active for <b>${account}</b>.\n\nدسترسی رادار برای این حساب فعال نیست. لینک دعوت باید با همین حساب باز شود.`,
+        status.enabled ? buildRadarReplyMarkup() : undefined
+      );
+      return { processed: true, command: "radar", language, user, sendResult };
     }
 
     if (message.text?.startsWith("/language")) {

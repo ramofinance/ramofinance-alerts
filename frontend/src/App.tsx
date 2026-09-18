@@ -43,7 +43,9 @@ import type {
 
 export default function App() {
   type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR";
-  const startsInAlerts = new URLSearchParams(window.location.search).get("service") === "alerts";
+  const initialService = new URLSearchParams(window.location.search).get("service");
+  const startsInAlerts = initialService === "alerts";
+  const startsInRadar = initialService === "radar";
   const { status, lastMessage } = useWebSocket(frontendEnv.websocketUrl);
   const [telegramMiniApp, setTelegramMiniApp] = useState(() => initializeTelegramMiniApp());
 
@@ -72,7 +74,7 @@ export default function App() {
   const [adminStatsError, setAdminStatsError] = useState<string | null>(null);
   const [splashVisible, setSplashVisible] = useState(true);
   const [selectedMarketId, setSelectedMarketId] = useState("");
-  const [activeTab, setActiveTab] = useState<TabKey>(() => startsInAlerts ? "ALERTS" : "SERVICES");
+  const [activeTab, setActiveTab] = useState<TabKey>(() => startsInRadar ? "RADAR" : startsInAlerts ? "ALERTS" : "SERVICES");
   const [activeModule, setActiveModule] = useState<"hub" | "alerts">(() => startsInAlerts ? "alerts" : "hub");
   const [marketSearch, setMarketSearch] = useState("");
   const [favoriteMarkets, setFavoriteMarkets] = useState<Market[]>([]);
@@ -472,7 +474,7 @@ export default function App() {
           openCryptoFlow={() => setActiveTab("CRYPTOFLOW")}
           openAlerts={openAlertsService}
           openRadar={() => setActiveTab("RADAR")}
-          radarEnabled={radarEnabled}
+          radarEnabled={radarEnabled || Boolean(backendUser?.radarPreviewAccess) || backendUser?.role === "ADMIN"}
         />
       ) : null}
       {activeTab === "CRYPTOFLOW" ? (
