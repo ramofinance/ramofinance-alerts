@@ -83,6 +83,12 @@ export type User = {
   alertNotificationIntervalSeconds: number;
   radarNotificationsEnabled: boolean;
   radarMinimumScore: number;
+  radarMinMarketCap: number;
+  radarMaxMarketCap: number | null;
+  radarMinTurnoverPercent: number;
+  radarMinVolumeAcceleration: number | null;
+  radarMinPriceChange24h: number | null;
+  radarMinTradeCount24h: number | null;
   radarPreviewAccess: boolean;
   createdAt: string;
   updatedAt: string;

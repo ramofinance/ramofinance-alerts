@@ -11,10 +11,21 @@ export const getRadarStatus = (initData?: string) =>
 export const getRadarSignals = (initData?: string) =>
   apiGet<RadarSignal[]>("/api/radar/signals?limit=20", telegramOptions(initData));
 
-export const updateRadarSettings = (enabled: boolean, minimumScore: number, initData?: string) =>
-  apiPatch<User, { enabled: boolean; minimumScore: number }>(
+export type RadarSettingsInput = {
+  enabled: boolean;
+  minimumScore: number;
+  minMarketCap: number;
+  maxMarketCap: number | null;
+  minTurnoverPercent: number;
+  minVolumeAcceleration: number | null;
+  minPriceChange24h: number | null;
+  minTradeCount24h: number | null;
+};
+
+export const updateRadarSettings = (settings: RadarSettingsInput, initData?: string) =>
+  apiPatch<User, RadarSettingsInput>(
     "/api/radar/settings",
-    { enabled, minimumScore },
+    settings,
     telegramOptions(initData)
   );
 

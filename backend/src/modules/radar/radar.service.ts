@@ -10,7 +10,6 @@ const BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines";
 const COINGECKO_MARKETS_URL = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1&sparkline=false";
 const REQUEST_TIMEOUT_MS = 15_000;
 const SIGNAL_COOLDOWN_MS = 4 * 60 * 60 * 1000;
-const MIN_NOTIFICATION_TURNOVER = 0.15;
 const WORKER_INTERVAL_MS = 10_000;
 const RETRY_DELAY_MS = 60_000;
 const MAX_ATTEMPTS = 3;
@@ -203,8 +202,24 @@ const formatSignalMessage = (signal: any, language: string) => {
 };
 
 const queueSignalNotifications = async (signal: any) => {
-  if (signal.turnover24h == null || signal.turnover24h < MIN_NOTIFICATION_TURNOVER) {
-    return;
+  if (signal.turnover24h == null) return;
+
+  const signalMarketCap = signal.marketCap == null ? 0 : Number(signal.marketCap);
+  const signalTurnoverPercent = signal.turnover24h == null ? 0 : signal.turnover24h * 100;
+  const signalAcceleration = signal.volumeAcceleration == null ? 0 : signal.volumeAcceleration;
+  const signalPriceChange = signal.priceChange24h == null ? 0 : signal.priceChange24h;
+  const signalTradeCount = signal.tradeCount24h == null ? 0 : signal.tradeCount24h;
+
+  const filters: Prisma.UserWhereInput[] = [
+    { radarMinMarketCap: { lte: signalMarketCap } },
+    { OR: [{ radarMaxMarketCap: null }, { radarMaxMarketCap: { gte: signalMarketCap } }] },
+    { radarMinTurnoverPercent: { lte: signalTurnoverPercent } },
+    { OR: [{ radarMinVolumeAcceleration: null }, { radarMinVolumeAcceleration: { lte: signalAcceleration } }] },
+    { OR: [{ radarMinPriceChange24h: null }, { radarMinPriceChange24h: { lte: signalPriceChange } }] },
+    { OR: [{ radarMinTradeCount24h: null }, { radarMinTradeCount24h: { lte: signalTradeCount } }] }
+  ];
+  if (!env.RADAR_PUBLIC_ENABLED) {
+    filters.push({ OR: [{ role: UserRole.ADMIN }, { radarPreviewAccess: true }] });
   }
 
   const users = await prisma.user.findMany({
@@ -213,9 +228,7 @@ const queueSignalNotifications = async (signal: any) => {
       radarNotificationsEnabled: true,
       radarMinimumScore: { lte: signal.score },
       telegramId: { not: null },
-      ...(env.RADAR_PUBLIC_ENABLED ? {} : {
-        OR: [{ role: UserRole.ADMIN }, { radarPreviewAccess: true }]
-      })
+      AND: filters
     }
   });
   if (!users.length) return;
@@ -348,19 +361,44 @@ export const radarService = {
   async listSignals(limit = 20) {
     return prisma.radarSignal.findMany({ orderBy: { detectedAt: "desc" }, take: Math.min(Math.max(limit, 1), 50) });
   },
-  async updateSettings(userId: string, enabled: boolean, minimumScore: number) {
+  async updateSettings(userId: string, settings: {
+    enabled: boolean;
+    minimumScore: number;
+    minMarketCap: number;
+    maxMarketCap: number | null;
+    minTurnoverPercent: number;
+    minVolumeAcceleration: number | null;
+    minPriceChange24h: number | null;
+    minTradeCount24h: number | null;
+  }) {
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { radarNotificationsEnabled: enabled, radarMinimumScore: minimumScore }
+      data: {
+        radarNotificationsEnabled: settings.enabled,
+        radarMinimumScore: settings.minimumScore,
+        radarMinMarketCap: settings.minMarketCap,
+        radarMaxMarketCap: settings.maxMarketCap,
+        radarMinTurnoverPercent: settings.minTurnoverPercent,
+        radarMinVolumeAcceleration: settings.minVolumeAcceleration,
+        radarMinPriceChange24h: settings.minPriceChange24h,
+        radarMinTradeCount24h: settings.minTradeCount24h
+      }
     });
 
-    if (enabled && user.telegramId) {
+    if (settings.enabled && user.telegramId) {
+      const recentSignalFilters: Prisma.RadarSignalWhereInput[] = [
+        { score: { gte: settings.minimumScore } },
+        { marketCap: { gte: settings.minMarketCap } },
+        { turnover24h: { gte: settings.minTurnoverPercent / 100 } },
+        { detectedAt: { gte: new Date(Date.now() - SIGNAL_COOLDOWN_MS) } }
+      ];
+      if (settings.maxMarketCap !== null) recentSignalFilters.push({ marketCap: { lte: settings.maxMarketCap } });
+      if (settings.minVolumeAcceleration !== null) recentSignalFilters.push({ volumeAcceleration: { gte: settings.minVolumeAcceleration } });
+      if (settings.minPriceChange24h !== null) recentSignalFilters.push({ priceChange24h: { gte: settings.minPriceChange24h } });
+      if (settings.minTradeCount24h !== null) recentSignalFilters.push({ tradeCount24h: { gte: settings.minTradeCount24h } });
+
       const recentSignals = await prisma.radarSignal.findMany({
-        where: {
-          score: { gte: minimumScore },
-          turnover24h: { gte: MIN_NOTIFICATION_TURNOVER },
-          detectedAt: { gte: new Date(Date.now() - SIGNAL_COOLDOWN_MS) }
-        },
+        where: { AND: recentSignalFilters },
         orderBy: { score: "desc" },
         take: 3
       });
@@ -390,7 +428,15 @@ export const radarService = {
     const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
     if (!user.telegramId) throw new Error("Telegram user is not connected");
     const signal = await prisma.radarSignal.findFirst({
-      where: { turnover24h: { gte: MIN_NOTIFICATION_TURNOVER } },
+      where: {
+        score: { gte: user.radarMinimumScore },
+        marketCap: { gte: user.radarMinMarketCap },
+        turnover24h: { gte: user.radarMinTurnoverPercent / 100 },
+        ...(user.radarMaxMarketCap == null ? {} : { marketCap: { gte: user.radarMinMarketCap, lte: user.radarMaxMarketCap } }),
+        ...(user.radarMinVolumeAcceleration == null ? {} : { volumeAcceleration: { gte: user.radarMinVolumeAcceleration } }),
+        ...(user.radarMinPriceChange24h == null ? {} : { priceChange24h: { gte: user.radarMinPriceChange24h } }),
+        ...(user.radarMinTradeCount24h == null ? {} : { tradeCount24h: { gte: user.radarMinTradeCount24h } })
+      },
       orderBy: { detectedAt: "desc" }
     });
     const demo = signal ?? { symbol: "DEMOUSDT", score: 82, price: new Prisma.Decimal("1.245"), marketCap: new Prisma.Decimal("100000000"), turnover24h: 0.2, priceChange24h: 6.4, volumeAcceleration: 3.7 };

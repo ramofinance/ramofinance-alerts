@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getRadarSignals, runRadarScan, sendRadarTestNotification, updateRadarSettings } from "../api/radar";
+import { getRadarSignals, runRadarScan, sendRadarTestNotification, updateRadarSettings, type RadarSettingsInput } from "../api/radar";
 import type { RadarSignal, User } from "../types/api";
 
 type Props = { copy: any; user: User; initData: string; onBack: () => void; onUserUpdated: (user: User) => void };
@@ -27,6 +27,15 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [draft, setDraft] = useState({
+    minimumScore: user.radarMinimumScore,
+    minMarketCapM: user.radarMinMarketCap / 1_000_000,
+    maxMarketCapM: user.radarMaxMarketCap == null ? "" : String(user.radarMaxMarketCap / 1_000_000),
+    minTurnoverPercent: user.radarMinTurnoverPercent,
+    minVolumeAcceleration: user.radarMinVolumeAcceleration == null ? "" : String(user.radarMinVolumeAcceleration),
+    minPriceChange24h: user.radarMinPriceChange24h == null ? "" : String(user.radarMinPriceChange24h),
+    minTradeCount24h: user.radarMinTradeCount24h == null ? "" : String(user.radarMinTradeCount24h)
+  });
 
   const load = async () => {
     try { setLoading(true); setSignals(await getRadarSignals(initData)); }
@@ -36,13 +45,38 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
 
   useEffect(() => { void load(); const timer = window.setInterval(() => void load(), 60000); return () => window.clearInterval(timer); }, []);
 
-  const saveSettings = async (enabled: boolean, minimumScore = user.radarMinimumScore) => {
+  const settingsPayload = (enabled = user.radarNotificationsEnabled): RadarSettingsInput => ({
+    enabled,
+    minimumScore: Number(draft.minimumScore),
+    minMarketCap: Math.max(0, Number(draft.minMarketCapM) || 0) * 1_000_000,
+    maxMarketCap: draft.maxMarketCapM === "" ? null : Math.max(0, Number(draft.maxMarketCapM) || 0) * 1_000_000,
+    minTurnoverPercent: Math.max(0, Number(draft.minTurnoverPercent) || 0),
+    minVolumeAcceleration: draft.minVolumeAcceleration === "" ? null : Math.max(0, Number(draft.minVolumeAcceleration) || 0),
+    minPriceChange24h: draft.minPriceChange24h === "" ? null : Number(draft.minPriceChange24h),
+    minTradeCount24h: draft.minTradeCount24h === "" ? null : Math.max(0, Math.trunc(Number(draft.minTradeCount24h) || 0))
+  });
+
+  const saveSettings = async (enabled = user.radarNotificationsEnabled) => {
     try {
       setBusy(true); setMessage(null);
-      onUserUpdated(await updateRadarSettings(enabled, minimumScore, initData));
+      const updated = await updateRadarSettings(settingsPayload(enabled), initData);
+      onUserUpdated(updated);
+      setDraft({
+        minimumScore: updated.radarMinimumScore,
+        minMarketCapM: updated.radarMinMarketCap / 1_000_000,
+        maxMarketCapM: updated.radarMaxMarketCap == null ? "" : String(updated.radarMaxMarketCap / 1_000_000),
+        minTurnoverPercent: updated.radarMinTurnoverPercent,
+        minVolumeAcceleration: updated.radarMinVolumeAcceleration == null ? "" : String(updated.radarMinVolumeAcceleration),
+        minPriceChange24h: updated.radarMinPriceChange24h == null ? "" : String(updated.radarMinPriceChange24h),
+        minTradeCount24h: updated.radarMinTradeCount24h == null ? "" : String(updated.radarMinTradeCount24h)
+      });
       setMessage(copy.radarSettingsSaved);
     } catch { setMessage(copy.radarActionFailed); }
     finally { setBusy(false); }
+  };
+
+  const resetFilters = () => {
+    setDraft({ minimumScore: 75, minMarketCapM: 3, maxMarketCapM: "", minTurnoverPercent: 15, minVolumeAcceleration: "", minPriceChange24h: "", minTradeCount24h: "" });
   };
 
   const testNotification = async () => {
@@ -66,18 +100,41 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
         <p>{copy.radarSubtitle}</p>
       </header>
 
-      <article className="radar-settings-card">
-        <div><strong>🔔 {copy.radarTelegramTitle}</strong><p>{copy.radarTelegramHint}</p></div>
+      <article className="radar-settings-card radar-settings-card--advanced">
+        <div className="radar-settings-heading"><strong>🔔 {copy.radarTelegramTitle}</strong><p>{copy.radarTelegramHint}</p></div>
         <label className="radar-switch">
           <input type="checkbox" checked={user.radarNotificationsEnabled} disabled={busy} onChange={(event) => void saveSettings(event.target.checked)} />
           <span>{user.radarNotificationsEnabled ? copy.radarEnabled : copy.radarDisabled}</span>
         </label>
-        <label>{copy.radarMinimumScore}
-          <select value={user.radarMinimumScore} disabled={busy} onChange={(event) => void saveSettings(user.radarNotificationsEnabled, Number(event.target.value))}>
-            {[70, 75, 80, 85, 90].map((score) => <option key={score} value={score}>{score}/100</option>)}
-          </select>
-        </label>
+        <div className="radar-filter-grid">
+          <label>{copy.radarMinimumScore}
+            <select value={draft.minimumScore} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minimumScore: Number(event.target.value) }))}>
+              {[70, 75, 80, 85, 90, 95].map((score) => <option key={score} value={score}>{score}/100</option>)}
+            </select>
+          </label>
+          <label>{copy.radarMinMarketCap}
+            <div className="radar-input-with-unit"><input type="number" min="0" step="1" value={draft.minMarketCapM} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minMarketCapM: Number(event.target.value) }))} /><span>$M</span></div>
+          </label>
+          <label>{copy.radarMaxMarketCap}
+            <div className="radar-input-with-unit"><input type="number" min="0" step="1" placeholder={copy.radarNoLimit} value={draft.maxMarketCapM} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, maxMarketCapM: event.target.value }))} /><span>$M</span></div>
+          </label>
+          <label>{copy.radarMinTurnover}
+            <div className="radar-input-with-unit"><input type="number" min="0" step="0.5" value={draft.minTurnoverPercent} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minTurnoverPercent: Number(event.target.value) }))} /><span>%</span></div>
+          </label>
+          <label>{copy.radarMinAcceleration}
+            <div className="radar-input-with-unit"><input type="number" min="0" step="0.1" placeholder={copy.radarNoLimit} value={draft.minVolumeAcceleration} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minVolumeAcceleration: event.target.value }))} /><span>x</span></div>
+          </label>
+          <label>{copy.radarMinPriceChange}
+            <div className="radar-input-with-unit"><input type="number" step="0.5" placeholder={copy.radarNoLimit} value={draft.minPriceChange24h} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minPriceChange24h: event.target.value }))} /><span>%</span></div>
+          </label>
+          <label>{copy.radarMinTrades}
+            <input type="number" min="0" step="1000" placeholder={copy.radarNoLimit} value={draft.minTradeCount24h} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minTradeCount24h: event.target.value }))} />
+          </label>
+        </div>
+        <p className="radar-filter-note">{copy.radarFilterHint}</p>
         <div className="radar-actions">
+          <button type="button" disabled={busy} onClick={() => void saveSettings()}>{copy.radarSaveFilters}</button>
+          <button type="button" disabled={busy} onClick={resetFilters}>{copy.radarResetFilters}</button>
           <button type="button" disabled={busy} onClick={() => void testNotification()}>{copy.radarTestButton}</button>
           {user.role === "ADMIN" ? <button type="button" disabled={busy} onClick={() => void scanNow()}>{copy.radarScanButton}</button> : null}
         </div>

@@ -79,6 +79,12 @@ model User {
   alertNotificationIntervalSeconds Int                @default(60)
   radarNotificationsEnabled        Boolean            @default(false)
   radarMinimumScore                Int                @default(75)
+  radarMinMarketCap                Float              @default(3000000)
+  radarMaxMarketCap                Float?
+  radarMinTurnoverPercent          Float              @default(15)
+  radarMinVolumeAcceleration       Float?
+  radarMinPriceChange24h           Float?
+  radarMinTradeCount24h            Int?
   radarPreviewAccess               Boolean            @default(false)
   createdAt                        DateTime           @default(now())
   updatedAt                        DateTime           @updatedAt

@@ -4,7 +4,20 @@ import { z } from "zod";
 import { AppError } from "../../utils/app-error";
 import { radarService, runRadarScan } from "./radar.service";
 
-const settingsSchema = z.object({ enabled: z.boolean(), minimumScore: z.number().int().min(60).max(95) });
+const settingsSchema = z.object({
+  enabled: z.boolean(),
+  minimumScore: z.number().int().min(60).max(95),
+  minMarketCap: z.number().min(0).max(10_000_000_000_000),
+  maxMarketCap: z.number().min(0).max(10_000_000_000_000).nullable(),
+  minTurnoverPercent: z.number().min(0).max(1000),
+  minVolumeAcceleration: z.number().min(0).max(1000).nullable(),
+  minPriceChange24h: z.number().min(-100).max(10000).nullable(),
+  minTradeCount24h: z.number().int().min(0).max(2_000_000_000).nullable()
+}).superRefine((value, ctx) => {
+  if (value.maxMarketCap !== null && value.maxMarketCap < value.minMarketCap) {
+    ctx.addIssue({ code: "custom", path: ["maxMarketCap"], message: "Maximum market cap must be greater than or equal to minimum market cap" });
+  }
+});
 
 const assertAvailable = (user: { role: UserRole; radarPreviewAccess: boolean }) => {
   const status = radarService.status(user);
@@ -29,7 +42,7 @@ export const radarSettingsController: RequestHandler = async (req, res, next) =>
     assertAvailable(res.locals.authUser);
     const parsed = settingsSchema.safeParse(req.body);
     if (!parsed.success) throw new AppError(parsed.error.issues[0]?.message ?? "Invalid settings", 400);
-    const user = await radarService.updateSettings(res.locals.authUser.id, parsed.data.enabled, parsed.data.minimumScore);
+    const user = await radarService.updateSettings(res.locals.authUser.id, parsed.data);
     res.json({ success: true, data: user });
   } catch (error) { next(error); }
 };
