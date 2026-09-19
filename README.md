@@ -6,16 +6,21 @@ without plans, payments, trials, or user-facing billing messages.
 
 ## Abnormal Activity Radar (private preview)
 
-- Live Binance activity plus CoinGecko market-cap and volume context
-- 15-minute volume acceleration, 24-hour turnover, price movement and trade-count score
-- Telegram delivery continues while the Mini App is closed
-- Four-hour per-symbol cooldown and a persisted retry queue reduce duplicate/noisy alerts
-- `RADAR_PUBLIC_ENABLED=false` keeps the feature visible to admins only during testing
-- Users explicitly opt in and choose a minimum score; all features remain free
-- Telegram radar notifications require at least 15% 24h volume-to-market-cap turnover
-- `ramoadmin` is automatically promoted when that Telegram username starts or opens the app
+Current Radar release: **v3.3.0 Multi-Source Intelligence**.
 
-Render applies the included Prisma migration automatically through the existing start command.
+- 5-minute automatic scans (the backend enforces a minimum 5-minute interval)
+- Binance + Bybit + OKX Spot activity with CoinGecko market-cap context
+- 24h and 72h turnover, 15m acceleration, taker flow, large trades and order-book imbalance
+- Derivatives enrichment: open interest, funding and Binance Futures liquidation flow
+- DEXScreener multi-chain discovery with DEX turnover, liquidity and buy/sell pressure
+- Best-effort public intelligence from the configured whale/liquidation Telegram channels
+- Optional direct Whale Alert stream via `WHALE_ALERT_API_KEY`; no key is required for the core Radar
+- Per-user persisted filters; every numeric field stays visible and `0` disables optional filters
+- Telegram delivery continues while the Mini App is closed
+- Four-hour per-symbol/chain cooldown and persisted retry queue reduce duplicate/noisy alerts
+- `RADAR_PUBLIC_ENABLED=false` preserves private admin/invite access during testing
+
+See `RADAR-V3.3.0-NOTES.md` for coverage details and limitations. Render applies the included additive Prisma migration automatically through the existing start command.
 
 ## Stack
 

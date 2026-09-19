@@ -4,18 +4,34 @@ import { z } from "zod";
 import { AppError } from "../../utils/app-error";
 import { radarService, runRadarScan } from "./radar.service";
 
+const zeroable = (max = 10_000_000_000_000) => z.number().min(0).max(max);
+
 const settingsSchema = z.object({
   enabled: z.boolean(),
   minimumScore: z.number().int().min(60).max(95),
-  minMarketCap: z.number().min(0).max(10_000_000_000_000),
-  maxMarketCap: z.number().min(0).max(10_000_000_000_000).nullable(),
+  minMarketCap: zeroable(),
+  maxMarketCap: zeroable().nullable(),
   minTurnoverPercent: z.number().min(0).max(1000),
-  minVolumeAcceleration: z.number().min(0).max(1000).nullable(),
-  minPriceChange24h: z.number().min(-100).max(10000).nullable(),
-  minTradeCount24h: z.number().int().min(0).max(2_000_000_000).nullable()
+  minVolumeAcceleration: z.number().min(0).max(1000),
+  minPriceChange24h: z.number().min(-100).max(10000),
+  minTradeCount24h: z.number().int().min(0).max(2_000_000_000),
+  minTurnover72hPercent: z.number().min(0).max(5000),
+  minBuyImbalancePercent: z.number().min(0).max(100),
+  minWhaleBuyVolumeUsd: zeroable(),
+  minBidWallImbalancePercent: z.number().min(0).max(100),
+  minOpenInterestChangePercent: z.number().min(0).max(10000),
+  minDexTurnoverPercent: z.number().min(0).max(5000),
+  minDexLiquidityUsd: zeroable(),
+  minDexBuyImbalancePercent: z.number().min(0).max(100),
+  minShortLiquidationUsd: zeroable(),
+  maxFundingRatePercent: z.number().min(0).max(100),
+  minOnchainWhaleUsd: zeroable(),
+  minExchangeOutflowUsd: zeroable(),
+  minCexConfirmations: z.number().int().min(0).max(3),
+  minChannelConfirmations: z.number().int().min(0).max(10)
 }).superRefine((value, ctx) => {
-  if (value.maxMarketCap !== null && value.maxMarketCap < value.minMarketCap) {
-    ctx.addIssue({ code: "custom", path: ["maxMarketCap"], message: "Maximum market cap must be greater than or equal to minimum market cap" });
+  if (value.maxMarketCap !== null && value.maxMarketCap > 0 && value.maxMarketCap < value.minMarketCap) {
+    ctx.addIssue({ code: "custom", path: ["maxMarketCap"], message: "Maximum market cap must be 0 (no limit) or greater than/equal to minimum market cap" });
   }
 });
 

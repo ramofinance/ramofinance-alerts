@@ -85,6 +85,20 @@ model User {
   radarMinVolumeAcceleration       Float?
   radarMinPriceChange24h           Float?
   radarMinTradeCount24h            Int?
+  radarMinTurnover72hPercent       Float              @default(0)
+  radarMinBuyImbalancePercent      Float              @default(0)
+  radarMinWhaleBuyVolumeUsd        Float              @default(0)
+  radarMinBidWallImbalancePercent  Float              @default(0)
+  radarMinOpenInterestChangePercent Float             @default(0)
+  radarMinDexTurnoverPercent       Float              @default(0)
+  radarMinDexLiquidityUsd          Float              @default(0)
+  radarMinDexBuyImbalancePercent   Float              @default(0)
+  radarMinShortLiquidationUsd      Float              @default(0)
+  radarMaxFundingRatePercent       Float              @default(0)
+  radarMinOnchainWhaleUsd          Float              @default(0)
+  radarMinExchangeOutflowUsd       Float              @default(0)
+  radarMinCexConfirmations         Int                @default(0)
+  radarMinChannelConfirmations     Int                @default(0)
   radarPreviewAccess               Boolean            @default(false)
   createdAt                        DateTime           @default(now())
   updatedAt                        DateTime           @updatedAt
@@ -126,6 +140,29 @@ model RadarSignal {
   priceChange24h     Float?
   volumeAcceleration Float?
   tradeCount24h      Int?
+  volume72h          Decimal?
+  turnover72h        Float?
+  buySellImbalance   Float?
+  whaleBuyVolumeUsd  Decimal?
+  whaleSellVolumeUsd Decimal?
+  whaleTradeCount    Int?
+  bidWallImbalance   Float?
+  openInterestChange Float?
+  fundingRate        Float?
+  shortLiquidationUsd Decimal?
+  longLiquidationUsd Decimal?
+  dexVolume24h       Decimal?
+  dexLiquidityUsd    Decimal?
+  dexTurnover24h     Float?
+  dexBuySellImbalance Float?
+  cexConfirmations   Int      @default(0)
+  channelConfirmations Int    @default(0)
+  channelMentions    Json?
+  onchainWhaleUsd    Decimal?
+  exchangeOutflowUsd Decimal?
+  exchangeInflowUsd  Decimal?
+  chainId            String?
+  dexUrl             String?
   sourceSummary      String
   reasons            Json
   cooldownKey        String   @unique

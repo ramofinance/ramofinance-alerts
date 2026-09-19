@@ -17,9 +17,23 @@ export type RadarSettingsInput = {
   minMarketCap: number;
   maxMarketCap: number | null;
   minTurnoverPercent: number;
-  minVolumeAcceleration: number | null;
-  minPriceChange24h: number | null;
-  minTradeCount24h: number | null;
+  minVolumeAcceleration: number;
+  minPriceChange24h: number;
+  minTradeCount24h: number;
+  minTurnover72hPercent: number;
+  minBuyImbalancePercent: number;
+  minWhaleBuyVolumeUsd: number;
+  minBidWallImbalancePercent: number;
+  minOpenInterestChangePercent: number;
+  minDexTurnoverPercent: number;
+  minDexLiquidityUsd: number;
+  minDexBuyImbalancePercent: number;
+  minShortLiquidationUsd: number;
+  maxFundingRatePercent: number;
+  minOnchainWhaleUsd: number;
+  minExchangeOutflowUsd: number;
+  minCexConfirmations: number;
+  minChannelConfirmations: number;
 };
 
 export const updateRadarSettings = (settings: RadarSettingsInput, initData?: string) =>

@@ -89,6 +89,20 @@ export type User = {
   radarMinVolumeAcceleration: number | null;
   radarMinPriceChange24h: number | null;
   radarMinTradeCount24h: number | null;
+  radarMinTurnover72hPercent: number;
+  radarMinBuyImbalancePercent: number;
+  radarMinWhaleBuyVolumeUsd: number;
+  radarMinBidWallImbalancePercent: number;
+  radarMinOpenInterestChangePercent: number;
+  radarMinDexTurnoverPercent: number;
+  radarMinDexLiquidityUsd: number;
+  radarMinDexBuyImbalancePercent: number;
+  radarMinShortLiquidationUsd: number;
+  radarMaxFundingRatePercent: number;
+  radarMinOnchainWhaleUsd: number;
+  radarMinExchangeOutflowUsd: number;
+  radarMinCexConfirmations: number;
+  radarMinChannelConfirmations: number;
   radarPreviewAccess: boolean;
   createdAt: string;
   updatedAt: string;
@@ -99,6 +113,14 @@ export type RadarSignal = {
   id: string; symbol: string; score: number; direction: string; price: string;
   marketCap: string | null; volume24h: string | null; turnover24h: number | null;
   priceChange24h: number | null; volumeAcceleration: number | null; tradeCount24h: number | null;
+  volume72h: string | null; turnover72h: number | null; buySellImbalance: number | null;
+  whaleBuyVolumeUsd: string | null; whaleSellVolumeUsd: string | null; whaleTradeCount: number | null;
+  bidWallImbalance: number | null; openInterestChange: number | null; fundingRate: number | null;
+  shortLiquidationUsd: string | null; longLiquidationUsd: string | null;
+  dexVolume24h: string | null; dexLiquidityUsd: string | null; dexTurnover24h: number | null; dexBuySellImbalance: number | null;
+  cexConfirmations: number; channelConfirmations: number; channelMentions: string[] | null;
+  onchainWhaleUsd: string | null; exchangeOutflowUsd: string | null; exchangeInflowUsd: string | null;
+  chainId: string | null; dexUrl: string | null;
   sourceSummary: string; reasons: string[]; detectedAt: string;
 };
 

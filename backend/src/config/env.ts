@@ -43,8 +43,10 @@ const envSchema = z.object({
   PRICE_POLLING_INTERVAL_MS: z.coerce.number().int().positive().default(30000),
   RADAR_ENABLED: booleanFromEnv.default(true),
   RADAR_PUBLIC_ENABLED: booleanFromEnv.default(false),
-  RADAR_SCAN_INTERVAL_MS: z.coerce.number().int().positive().default(120000),
-  RADAR_SIGNAL_THRESHOLD: z.coerce.number().int().min(50).max(100).default(68)
+  RADAR_SCAN_INTERVAL_MS: z.coerce.number().int().positive().default(300000).transform((value) => Math.max(value, 300000)),
+  RADAR_SIGNAL_THRESHOLD: z.coerce.number().int().min(50).max(100).default(60),
+  WHALE_ALERT_API_KEY: z.preprocess((value) => typeof value === "string" && !value.trim() ? undefined : value, z.string().min(1).optional()),
+  RADAR_WHALE_ALERT_MIN_USD: z.coerce.number().positive().default(1000000)
 }).superRefine((values, context) => {
   if (values.NODE_ENV !== "production") {
     return;
