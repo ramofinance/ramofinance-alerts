@@ -52,7 +52,7 @@ export const telegramService = {
         const sendResult = await sendTelegramMessage(
           message.chat.id,
           inviteMessage,
-          buildStartReplyMarkup(language)
+          granted ? buildRadarReplyMarkup() : buildStartReplyMarkup(language)
         );
         return { processed: true, command: "radar_invite", language, user, sendResult };
       }

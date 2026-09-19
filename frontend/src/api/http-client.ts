@@ -69,13 +69,15 @@ export const apiPost = async <TData, TBody extends object>(
 
 export const apiPatch = async <TData, TBody extends object>(
   path: string,
-  body: TBody
+  body: TBody,
+  options?: RequestOptions
 ): Promise<TData> => {
   const response = await fetch(buildUrl(path), {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      ...telegramHeaders()
+      ...telegramHeaders(),
+      ...options?.headers
     },
     body: JSON.stringify(body)
   });

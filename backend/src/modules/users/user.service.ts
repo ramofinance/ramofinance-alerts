@@ -31,12 +31,22 @@ const adminUsernames = new Set(
     .filter(Boolean)
 );
 
-const withConfiguredAdminRole = (input: UpsertTelegramUserInput) => ({
-  ...input,
-  role: input.username && adminUsernames.has(input.username.toLowerCase())
-    ? UserRole.ADMIN
-    : undefined
-});
+const adminTelegramIds = new Set(
+  env.TELEGRAM_ADMIN_IDS.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+);
+
+const withConfiguredAdminRole = (input: UpsertTelegramUserInput) => {
+  const isConfiguredAdmin =
+    adminTelegramIds.has(input.telegramId) ||
+    Boolean(input.username && adminUsernames.has(input.username.toLowerCase()));
+
+  return {
+    ...input,
+    role: isConfiguredAdmin ? UserRole.ADMIN : undefined
+  };
+};
 
 export const userService = {
   async listUsers(input: ListUsersInput) {

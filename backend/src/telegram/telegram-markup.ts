@@ -2,12 +2,31 @@ import type { PreferredLanguage } from "@prisma/client";
 import { env } from "../config/env";
 import { telegramText } from "./telegram.i18n";
 
-export const buildStartReplyMarkup = (language: PreferredLanguage) => {
+const WEBAPP_VERSION = "3.2.4";
+
+const buildWebAppUrl = (service?: "radar") => {
   if (!env.TELEGRAM_WEBAPP_URL) return undefined;
+
+  const url = new URL(env.TELEGRAM_WEBAPP_URL);
+  url.searchParams.set("v", WEBAPP_VERSION);
+
+  if (service) {
+    url.searchParams.set("service", service);
+  } else {
+    url.searchParams.delete("service");
+  }
+
+  return url.toString();
+};
+
+export const buildStartReplyMarkup = (language: PreferredLanguage) => {
+  const url = buildWebAppUrl();
+  if (!url) return undefined;
+
   return {
     inline_keyboard: [[{
       text: telegramText.openHubButton(language),
-      web_app: { url: env.TELEGRAM_WEBAPP_URL }
+      web_app: { url }
     }]]
   };
 };
@@ -27,15 +46,13 @@ export const buildLanguageReplyMarkup = () => ({
 });
 
 export const buildRadarReplyMarkup = () => {
-  if (!env.TELEGRAM_WEBAPP_URL) return undefined;
-  const url = new URL(env.TELEGRAM_WEBAPP_URL);
-  url.searchParams.set("service", "radar");
-  url.searchParams.set("v", "3.2.3");
+  const url = buildWebAppUrl("radar");
+  if (!url) return undefined;
 
   return {
     inline_keyboard: [[{
       text: "🔎 Open Radar | باز کردن رادار",
-      web_app: { url: url.toString() }
+      web_app: { url }
     }]]
   };
 };

@@ -1,9 +1,33 @@
 import { apiGet, apiPatch, apiPost } from "./http-client";
 import type { RadarSignal, RadarStatus, User } from "../types/api";
 
-export const getRadarStatus = () => apiGet<RadarStatus>("/api/radar/status");
-export const getRadarSignals = () => apiGet<RadarSignal[]>("/api/radar/signals?limit=20");
-export const updateRadarSettings = (enabled: boolean, minimumScore: number) =>
-  apiPatch<User, { enabled: boolean; minimumScore: number }>("/api/radar/settings", { enabled, minimumScore });
-export const sendRadarTestNotification = () => apiPost<{ sent: boolean }, Record<string, never>>("/api/radar/test-notification", {});
-export const runRadarScan = () => apiPost<{ created: number; candidates: number }, Record<string, never>>("/api/radar/scan", {});
+const telegramOptions = (initData?: string) => initData
+  ? { headers: { "X-Telegram-Init-Data": initData } }
+  : undefined;
+
+export const getRadarStatus = (initData?: string) =>
+  apiGet<RadarStatus>("/api/radar/status", telegramOptions(initData));
+
+export const getRadarSignals = (initData?: string) =>
+  apiGet<RadarSignal[]>("/api/radar/signals?limit=20", telegramOptions(initData));
+
+export const updateRadarSettings = (enabled: boolean, minimumScore: number, initData?: string) =>
+  apiPatch<User, { enabled: boolean; minimumScore: number }>(
+    "/api/radar/settings",
+    { enabled, minimumScore },
+    telegramOptions(initData)
+  );
+
+export const sendRadarTestNotification = (initData?: string) =>
+  apiPost<{ sent: boolean }, Record<string, never>>(
+    "/api/radar/test-notification",
+    {},
+    telegramOptions(initData)
+  );
+
+export const runRadarScan = (initData?: string) =>
+  apiPost<{ created: number; candidates: number }, Record<string, never>>(
+    "/api/radar/scan",
+    {},
+    telegramOptions(initData)
+  );

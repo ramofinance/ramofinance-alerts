@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getRadarSignals, runRadarScan, sendRadarTestNotification, updateRadarSettings } from "../api/radar";
 import type { RadarSignal, User } from "../types/api";
 
-type Props = { copy: any; user: User; onBack: () => void; onUserUpdated: (user: User) => void };
+type Props = { copy: any; user: User; initData: string; onBack: () => void; onUserUpdated: (user: User) => void };
 
 const money = (value: string | null) => {
   if (!value) return "—";
@@ -22,14 +22,14 @@ const reasonText = (reason: string, copy: any) => {
   return reason;
 };
 
-export function RadarPanel({ copy, user, onBack, onUserUpdated }: Props) {
+export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Props) {
   const [signals, setSignals] = useState<RadarSignal[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   const load = async () => {
-    try { setLoading(true); setSignals(await getRadarSignals()); }
+    try { setLoading(true); setSignals(await getRadarSignals(initData)); }
     catch { setMessage(copy.radarLoadFailed); }
     finally { setLoading(false); }
   };
@@ -39,20 +39,20 @@ export function RadarPanel({ copy, user, onBack, onUserUpdated }: Props) {
   const saveSettings = async (enabled: boolean, minimumScore = user.radarMinimumScore) => {
     try {
       setBusy(true); setMessage(null);
-      onUserUpdated(await updateRadarSettings(enabled, minimumScore));
+      onUserUpdated(await updateRadarSettings(enabled, minimumScore, initData));
       setMessage(copy.radarSettingsSaved);
     } catch { setMessage(copy.radarActionFailed); }
     finally { setBusy(false); }
   };
 
   const testNotification = async () => {
-    try { setBusy(true); setMessage(null); await sendRadarTestNotification(); setMessage(copy.radarTestSent); }
+    try { setBusy(true); setMessage(null); await sendRadarTestNotification(initData); setMessage(copy.radarTestSent); }
     catch { setMessage(copy.radarActionFailed); }
     finally { setBusy(false); }
   };
 
   const scanNow = async () => {
-    try { setBusy(true); setMessage(copy.radarScanning); await runRadarScan(); await load(); setMessage(copy.radarScanDone); }
+    try { setBusy(true); setMessage(copy.radarScanning); await runRadarScan(initData); await load(); setMessage(copy.radarScanDone); }
     catch { setMessage(copy.radarActionFailed); }
     finally { setBusy(false); }
   };

@@ -354,7 +354,7 @@ export default function App() {
             data.language
           );
           await loadDashboardData(data.user.id);
-          const radarStatus = data.radarStatus ?? await getRadarStatus().catch(() => null);
+          const radarStatus = data.radarStatus ?? await getRadarStatus(currentTelegramMiniApp.initData).catch(() => null);
           const canAccessRadar = Boolean(
             radarStatus?.enabled ||
             data.user.role === "ADMIN" ||
@@ -384,8 +384,12 @@ export default function App() {
       return;
     }
 
-    void getRadarStatus()
-      .then((status) => setRadarEnabled(Boolean(status.enabled)))
+    void getRadarStatus(telegramMiniApp.initData)
+      .then((status) => setRadarEnabled(Boolean(
+        status.enabled ||
+        backendUser.role === "ADMIN" ||
+        backendUser.radarPreviewAccess
+      )))
       .catch(() => setRadarEnabled(
         backendUser.role === "ADMIN" || backendUser.radarPreviewAccess
       ));
@@ -455,6 +459,12 @@ export default function App() {
     };
   }, [telegramMiniApp.initData, backendUser?.role, appLanguage]);
 
+  const hasRadarAccess = Boolean(
+    radarEnabled ||
+    backendUser?.role === "ADMIN" ||
+    backendUser?.radarPreviewAccess
+  );
+
   const telegramUserLabel = telegramMiniApp.user?.username
     ? `@${telegramMiniApp.user.username}`
     : telegramMiniApp.user?.first_name ?? copy.browser;
@@ -481,7 +491,7 @@ export default function App() {
           openCryptoFlow={() => setActiveTab("CRYPTOFLOW")}
           openAlerts={openAlertsService}
           openRadar={() => setActiveTab("RADAR")}
-          radarEnabled={radarEnabled || Boolean(backendUser?.radarPreviewAccess) || backendUser?.role === "ADMIN"}
+          radarEnabled={hasRadarAccess}
         />
       ) : null}
       {activeTab === "CRYPTOFLOW" ? (
@@ -495,6 +505,7 @@ export default function App() {
         <RadarPanel
           copy={copy}
           user={backendUser}
+          initData={telegramMiniApp.initData}
           onBack={openServices}
           onUserUpdated={setBackendUser}
         />

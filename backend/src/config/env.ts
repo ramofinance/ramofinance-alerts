@@ -28,6 +28,7 @@ const envSchema = z.object({
   TELEGRAM_WEBAPP_URL: z.string().optional(),
   TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
   TELEGRAM_ADMIN_USERNAMES: z.string().default("ramoadmin"),
+  TELEGRAM_ADMIN_IDS: z.string().default("111287296"),
 
   CRYPTOFLOW_URL: z.string().url().default("https://cryptoflow.ramo-fin-group.workers.dev/"),
   ALLOWED_ORIGINS: z.string().default(""),
