@@ -122,7 +122,9 @@ export const userService = {
     // admin access resilient to database restores, stale rows and future UI
     // releases. Existing manually assigned admins are never downgraded.
     if (user.role !== UserRole.ADMIN && isConfiguredAdminIdentity({
-      telegramId: user.telegramId,
+      // We are inside getUserByTelegramId(), so this argument is guaranteed
+      // to be a real Telegram ID even though the Prisma field itself is nullable.
+      telegramId,
       username: user.username
     })) {
       return userRepository.setRole(user.id, UserRole.ADMIN);

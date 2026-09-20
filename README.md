@@ -6,7 +6,7 @@ without plans, payments, trials, or user-facing billing messages.
 
 ## Abnormal Activity Radar (private preview)
 
-Current Radar release: **v3.4.1 Gem Intelligence + Context Help**.
+Current Radar release: **v3.4.2 Gem Intelligence + Context Help**.
 
 - 5-minute automatic scans (the backend enforces a minimum 5-minute interval)
 - Binance + Bybit + OKX Spot activity with CoinGecko market-cap context
