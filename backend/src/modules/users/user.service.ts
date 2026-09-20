@@ -25,38 +25,28 @@ type UpsertTelegramUserInput = {
   preferredLanguage?: PreferredLanguage | null;
 };
 
-// Permanent built-in owner identity. Keep this independent from optional
-// environment configuration so future Radar releases cannot accidentally
-// hide the service from the project owner again.
-const builtinAdminUsernames = new Set(["ramoadmin"]);
-const builtinAdminTelegramIds = new Set(["111287296"]);
-
 const adminUsernames = new Set(
-  [
-    ...env.TELEGRAM_ADMIN_USERNAMES.split(","),
-    ...builtinAdminUsernames
-  ]
+  env.TELEGRAM_ADMIN_USERNAMES.split(",")
     .map((value) => value.trim().replace(/^@/, "").toLowerCase())
     .filter(Boolean)
 );
 
 const adminTelegramIds = new Set(
-  [
-    ...env.TELEGRAM_ADMIN_IDS.split(","),
-    ...builtinAdminTelegramIds
-  ]
+  env.TELEGRAM_ADMIN_IDS.split(",")
     .map((value) => value.trim())
     .filter(Boolean)
 );
 
-const isConfiguredAdminIdentity = (input: { telegramId: string; username?: string | null }) =>
-  adminTelegramIds.has(input.telegramId) ||
-  Boolean(input.username && adminUsernames.has(input.username.replace(/^@/, "").toLowerCase()));
+const withConfiguredAdminRole = (input: UpsertTelegramUserInput) => {
+  const isConfiguredAdmin =
+    adminTelegramIds.has(input.telegramId) ||
+    Boolean(input.username && adminUsernames.has(input.username.toLowerCase()));
 
-const withConfiguredAdminRole = (input: UpsertTelegramUserInput) => ({
-  ...input,
-  role: isConfiguredAdminIdentity(input) ? UserRole.ADMIN : undefined
-});
+  return {
+    ...input,
+    role: isConfiguredAdmin ? UserRole.ADMIN : undefined
+  };
+};
 
 export const userService = {
   async listUsers(input: ListUsersInput) {
@@ -116,18 +106,6 @@ export const userService = {
 
     if (!user) {
       throw new AppError("User not found", 404);
-    }
-
-    // Self-heal the owner/admin role on every authenticated lookup. This makes
-    // admin access resilient to database restores, stale rows and future UI
-    // releases. Existing manually assigned admins are never downgraded.
-    if (user.role !== UserRole.ADMIN && isConfiguredAdminIdentity({
-      // We are inside getUserByTelegramId(), so this argument is guaranteed
-      // to be a real Telegram ID even though the Prisma field itself is nullable.
-      telegramId,
-      username: user.username
-    })) {
-      return userRepository.setRole(user.id, UserRole.ADMIN);
     }
 
     return user;

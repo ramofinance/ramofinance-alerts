@@ -198,13 +198,6 @@ export const userRepository = {
     });
   },
 
-  setRole(id: string, role: UserRole) {
-    return prisma.user.update({
-      where: { id },
-      data: { role }
-    });
-  },
-
   setPreferredLanguage(id: string, preferredLanguage: PreferredLanguage) {
     return prisma.user.update({
       where: { id },
