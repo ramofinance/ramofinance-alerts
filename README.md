@@ -6,7 +6,7 @@ without plans, payments, trials, or user-facing billing messages.
 
 ## Abnormal Activity Radar (private preview)
 
-Current Radar release: **v3.5.0 Priority Settings + Stable Access**.
+Current Radar release: **v3.5.1 Minimum 10-Day History + DEX Identity**.
 
 - 5-minute automatic scans (the backend enforces a minimum 5-minute interval)
 - Binance + Bybit + OKX Spot activity with CoinGecko market-cap context
@@ -20,7 +20,7 @@ Current Radar release: **v3.5.0 Priority Settings + Stable Access**.
 - Four-hour per-symbol/chain cooldown and persisted retry queue reduce duplicate/noisy alerts
 - `RADAR_PUBLIC_ENABLED=false` preserves private admin/invite access during testing
 
-See `RADAR-V3.5.0-NOTES.md` for the simplified priority settings and scoring model. `RADAR-V3.4.3-NOTES.md` remains the access-stability baseline. Render applies the included additive Prisma migration automatically through the existing start command.
+See `RADAR-V3.5.1-NOTES.md` for the 10-day history gate and DEX network/contract metadata. `RADAR-V3.5.0-NOTES.md` remains the simplified scoring/settings baseline and `RADAR-V3.4.3-NOTES.md` remains the access-stability baseline. Render applies the included additive Prisma migration automatically through the existing start command.
 
 ## Stack
 

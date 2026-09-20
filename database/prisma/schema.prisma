@@ -174,7 +174,14 @@ model RadarSignal {
   exchangeOutflowUsd Decimal?
   exchangeInflowUsd  Decimal?
   chainId            String?
-  dexUrl             String?
+  dexId               String?
+  pairAddress         String?
+  tokenAddress        String?
+  quoteSymbol         String?
+  quoteTokenAddress   String?
+  pairCreatedAt       DateTime?
+  marketAgeDays       Int?
+  dexUrl              String?
   sourceSummary      String
   reasons            Json
   cooldownKey        String   @unique

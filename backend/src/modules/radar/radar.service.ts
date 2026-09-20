@@ -11,6 +11,7 @@ import {
   enrichCexMetrics,
   getBinanceShortSqueezeDepth,
   findDexSnapshot,
+  getCexMarketAgeDays,
   loadCexUniverse,
   loadCoinGeckoMarkets,
   loadDexDiscovery,
@@ -30,6 +31,7 @@ const MAX_ATTEMPTS = 3;
 const PRELIMINARY_CEX_LIMIT = 24;
 const CHANNEL_PRIORITY_LIMIT = 8;
 const MAX_STORED_PER_SCAN = 14;
+const MIN_MARKET_AGE_DAYS = 10;
 
 type CandidateValues = {
   symbol: string;
@@ -67,6 +69,13 @@ type CandidateValues = {
   exchangeOutflowUsd: number;
   exchangeInflowUsd: number;
   chainId: string | null;
+  dexId: string | null;
+  pairAddress: string | null;
+  tokenAddress: string | null;
+  quoteSymbol: string | null;
+  quoteTokenAddress: string | null;
+  pairCreatedAt: number | null;
+  marketAgeDays: number;
   dexUrl: string | null;
   sourceSummary: string;
 };
@@ -223,8 +232,21 @@ const compactMoneyNumber = (number: number) => {
 const compactMoney = (value: Prisma.Decimal | null | undefined) => compactMoneyNumber(value == null ? 0 : Number(value));
 const pct = (value: number | null | undefined, digits = 1) => value == null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(digits)}%`;
 
+const chainLabel = (value: string | null | undefined) => {
+  const key = String(value ?? "").toLowerCase();
+  const labels: Record<string, string> = {
+    ethereum: "Ethereum", eth: "Ethereum", solana: "Solana", bsc: "BNB Smart Chain",
+    base: "Base", arbitrum: "Arbitrum", optimism: "Optimism", polygon: "Polygon",
+    polygonpos: "Polygon", avalanche: "Avalanche", avax: "Avalanche", tron: "TRON",
+    sui: "Sui", linea: "Linea", blast: "Blast", fantom: "Fantom"
+  };
+  return labels[key] ?? (value ? String(value) : "—");
+};
+
 const formatSignalMessage = (signal: any, language: string) => {
   const symbol = escapeHtml(signal.symbol);
+  const baseSymbolRaw = String(signal.symbol).endsWith("USDT") ? String(signal.symbol).slice(0, -4) : String(signal.symbol);
+  const baseSymbol = escapeHtml(baseSymbolRaw);
   const score = signal.score;
   const turnover = signal.turnover24h == null ? "—" : `${(signal.turnover24h * 100).toFixed(1)}%`;
   const turnover72 = signal.turnover72h == null ? "—" : `${(signal.turnover72h * 100).toFixed(1)}%`;
@@ -239,12 +261,22 @@ const formatSignalMessage = (signal: any, language: string) => {
   const squeezeDepth = Number(signal.shortSqueezeDepth ?? 0);
   const squeezeTimeframe = signal.shortSqueezeTimeframe ? String(signal.shortSqueezeTimeframe) : "—";
   const channels = Number(signal.channelConfirmations ?? 0);
+  const chain = signal.chainId ? chainLabel(String(signal.chainId)) : null;
+  const contract = signal.tokenAddress ? escapeHtml(String(signal.tokenAddress)) : null;
+  const quote = signal.quoteSymbol ? escapeHtml(String(signal.quoteSymbol)) : null;
+  const dexId = signal.dexId ? escapeHtml(String(signal.dexId)) : null;
+  const ageDays = Number(signal.marketAgeDays ?? 0);
   const isFa = language === "FA";
 
   if (isFa) {
     return [
       "🚨 <b>رادار چندمنبعی RAMO Finance</b>", "",
-      `🪙 ارز: <b>${symbol}</b>`, `🎯 امتیاز ترکیبی: <b>${score}/100</b>`,
+      `🪙 ارز: <b>${symbol}</b>`,
+      ...(chain ? [`🌐 شبکه: <b>${escapeHtml(chain)}</b>`] : []),
+      ...(quote ? [`💱 جفت معاملاتی DEX: <b>${baseSymbol}/${quote}</b>${dexId ? ` · <b>${dexId}</b>` : ""}`] : []),
+      ...(contract ? [`📄 آدرس کانترکت: <code>${contract}</code>`] : []),
+      ...(ageDays > 0 ? [`⏳ سابقه قابل تأیید بازار: <b>${ageDays} روز</b>`] : []),
+      `🎯 امتیاز ترکیبی: <b>${score}/100</b>`,
       `💵 قیمت: <b>${Number(signal.price).toLocaleString("en-US", { maximumSignificantDigits: 8 })}</b>`,
       `📈 تغییر ۲۴ساعته: <b>${change}</b>`, `🔥 گردش ۲۴ساعته: <b>${turnover}</b>`,
       `🕒 گردش ۷۲ساعته: <b>${turnover72}</b>`, `⚡ شتاب حجم ۱۵دقیقه: <b>${acceleration}</b>`,
@@ -259,7 +291,12 @@ const formatSignalMessage = (signal: any, language: string) => {
 
   return [
     "🚨 <b>RAMO Finance Multi-Source Radar</b>", "",
-    `🪙 Asset: <b>${symbol}</b>`, `🎯 Composite score: <b>${score}/100</b>`,
+    `🪙 Asset: <b>${symbol}</b>`,
+    ...(chain ? [`🌐 Network: <b>${escapeHtml(chain)}</b>`] : []),
+    ...(quote ? [`💱 DEX pair: <b>${baseSymbol}/${quote}</b>${dexId ? ` · <b>${dexId}</b>` : ""}`] : []),
+    ...(contract ? [`📄 Contract: <code>${contract}</code>`] : []),
+    ...(ageDays > 0 ? [`⏳ Verified market history: <b>${ageDays} days</b>`] : []),
+    `🎯 Composite score: <b>${score}/100</b>`,
     `💵 Price: <b>${Number(signal.price).toLocaleString("en-US", { maximumSignificantDigits: 8 })}</b>`,
     `📈 24h change: <b>${change}</b>`, `🔥 24h turnover: <b>${turnover}</b>`,
     `🕒 72h turnover: <b>${turnover72}</b>`, `⚡ 15m acceleration: <b>${acceleration}</b>`,
@@ -283,6 +320,7 @@ const marketCapBucket = (marketCap: number) => {
 
 const matchesUserFilters = (signal: any, user: any) => {
   const marketCap = valueOrZero(signal.marketCap);
+  if (valueOrZero(signal.marketAgeDays) < MIN_MARKET_AGE_DAYS) return false;
   if (signal.score < user.radarMinimumScore) return false;
 
   const bucket = marketCapBucket(marketCap);
@@ -361,10 +399,12 @@ const makeCexCandidate = async (item: {
   priceChange24h: number;
   tradeCount24h: number;
 }, channel?: ChannelIntelligence): Promise<Candidate> => {
-  const [deep, dex] = await Promise.all([
+  const [deep, dex, cexAgeDays] = await Promise.all([
     enrichCexMetrics(item.venues, item.marketCap),
-    findDexSnapshot(item.baseAsset)
+    findDexSnapshot(item.baseAsset),
+    getCexMarketAgeDays(item.venues)
   ]);
+  const marketAgeDays = Math.max(cexAgeDays, dex?.marketAgeDays ?? 0);
   const liquidation = getLiquidationMetrics(`${item.baseAsset}USDT`);
   const squeeze = liquidation.shortLiquidationUsd >= 25_000
     ? await getBinanceShortSqueezeDepth(`${item.baseAsset}USDT`)
@@ -402,6 +442,13 @@ const makeCexCandidate = async (item: {
     cexConfirmations: item.venues.length,
     ...intel,
     chainId: dex?.chainId ?? null,
+    dexId: dex?.dexId ?? null,
+    pairAddress: dex?.pairAddress ?? null,
+    tokenAddress: dex?.tokenAddress ?? null,
+    quoteSymbol: dex?.quoteSymbol ?? null,
+    quoteTokenAddress: dex?.quoteTokenAddress ?? null,
+    pairCreatedAt: dex?.pairCreatedAt ?? null,
+    marketAgeDays,
     dexUrl: dex?.url ?? null,
     sourceSummary: [
       ...item.venues.map((venue) => venue.venue),
@@ -447,6 +494,13 @@ const makeDexCandidate = (dex: DexSnapshot, channel?: ChannelIntelligence): Cand
     cexConfirmations: 0,
     ...intel,
     chainId: dex.chainId,
+    dexId: dex.dexId,
+    pairAddress: dex.pairAddress,
+    tokenAddress: dex.tokenAddress,
+    quoteSymbol: dex.quoteSymbol,
+    quoteTokenAddress: dex.quoteTokenAddress,
+    pairCreatedAt: dex.pairCreatedAt,
+    marketAgeDays: dex.marketAgeDays,
     dexUrl: dex.url,
     sourceSummary: [`DEXScreener:${dex.chainId}`, channel?.confirmations ? "Telegram" : null].filter(Boolean).join(" + ")
   };
@@ -517,6 +571,7 @@ export const runRadarScan = async () => {
     }
 
     const qualified = candidates
+      .filter((item) => item.marketAgeDays >= MIN_MARKET_AGE_DAYS)
       .filter((item) => item.score >= Math.min(env.RADAR_SIGNAL_THRESHOLD, 60) && item.direction !== "DOWN")
       .sort((a, b) => b.score - a.score)
       .slice(0, MAX_STORED_PER_SCAN);
@@ -563,10 +618,17 @@ export const runRadarScan = async () => {
             exchangeOutflowUsd: item.exchangeOutflowUsd || null,
             exchangeInflowUsd: item.exchangeInflowUsd || null,
             chainId: item.chainId,
+            dexId: item.dexId,
+            pairAddress: item.pairAddress,
+            tokenAddress: item.tokenAddress,
+            quoteSymbol: item.quoteSymbol,
+            quoteTokenAddress: item.quoteTokenAddress,
+            pairCreatedAt: item.pairCreatedAt ? new Date(item.pairCreatedAt) : null,
+            marketAgeDays: item.marketAgeDays,
             dexUrl: item.dexUrl,
             sourceSummary: item.sourceSummary,
             reasons: item.reasons,
-            cooldownKey: `${item.symbol}:${item.chainId ?? "cex"}:${item.direction}:${bucket}`
+            cooldownKey: `${item.symbol}:${item.chainId ?? "cex"}:${item.tokenAddress ?? "na"}:${item.direction}:${bucket}`
           }
         });
         created += 1;
@@ -576,7 +638,7 @@ export const runRadarScan = async () => {
         if (code !== "P2002") throw error;
       }
     }
-    logger.info({ candidates: candidates.length, qualified: qualified.length, created }, "Radar v3.4 multi-source scan completed");
+    logger.info({ candidates: candidates.length, qualified: qualified.length, created }, "Radar v3.5.1 multi-source scan completed");
     return { created, candidates: candidates.length };
   } catch (error) {
     logger.warn({ error: error instanceof Error ? error.message : error }, "Radar scan failed");
@@ -666,7 +728,11 @@ export const radarService = {
     };
   },
   async listSignals(limit = 20) {
-    return prisma.radarSignal.findMany({ orderBy: { detectedAt: "desc" }, take: Math.min(Math.max(limit, 1), 50) });
+    return prisma.radarSignal.findMany({
+      where: { marketAgeDays: { gte: MIN_MARKET_AGE_DAYS } },
+      orderBy: { detectedAt: "desc" },
+      take: Math.min(Math.max(limit, 1), 50)
+    });
   },
   async updateSettings(userId: string, settings: RadarSettings) {
     const user = await prisma.user.update({ where: { id: userId }, data: settingsToData(settings) });

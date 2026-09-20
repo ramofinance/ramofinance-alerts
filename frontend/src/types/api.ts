@@ -128,7 +128,9 @@ export type RadarSignal = {
   dexVolume24h: string | null; dexLiquidityUsd: string | null; dexTurnover24h: number | null; dexBuySellImbalance: number | null; dexUniqueBuyers24h: number | null; dexUniqueSellers24h: number | null;
   cexConfirmations: number; channelConfirmations: number; channelMentions: string[] | null;
   onchainWhaleUsd: string | null; exchangeOutflowUsd: string | null; exchangeInflowUsd: string | null;
-  chainId: string | null; dexUrl: string | null;
+  chainId: string | null; dexId: string | null; pairAddress: string | null; tokenAddress: string | null;
+  quoteSymbol: string | null; quoteTokenAddress: string | null; pairCreatedAt: string | null; marketAgeDays: number | null;
+  dexUrl: string | null;
   sourceSummary: string; reasons: string[]; detectedAt: string;
 };
 

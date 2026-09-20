@@ -64,6 +64,10 @@ export type DexSnapshot = {
   dexId: string;
   pairAddress: string | null;
   tokenAddress: string | null;
+  quoteSymbol: string | null;
+  quoteTokenAddress: string | null;
+  pairCreatedAt: number | null;
+  marketAgeDays: number;
   url: string | null;
   price: number;
   marketCap: number;
@@ -103,7 +107,7 @@ const fetchWithTimeout = async (url: string, accept = "application/json") => {
       signal: controller.signal,
       headers: {
         Accept: accept,
-        "User-Agent": "RAMO-Finance-Radar/3.5"
+        "User-Agent": "RAMO-Finance-Radar/3.5.1"
       }
     });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
@@ -224,6 +228,41 @@ export const loadCexUniverse = async () => {
     map.set(quote.baseAsset, current);
   }
   return map;
+};
+
+const DAY_MS = 86_400_000;
+
+const fetchOldestDailyCandleTime = async (quote: CexQuote): Promise<number | null> => {
+  try {
+    if (quote.venue === "Binance") {
+      const rows = await fetchJson<unknown[][]>(`https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(quote.symbol)}&interval=1d&limit=11`);
+      const timestamps = rows.map((row) => safeNumber(row[0])).filter((value) => value > 0);
+      return timestamps.length ? Math.min(...timestamps) : null;
+    }
+    if (quote.venue === "Bybit") {
+      const response = await fetchJson<{ result?: { list?: unknown[][] } }>(`https://api.bybit.com/v5/market/kline?category=spot&symbol=${encodeURIComponent(quote.symbol)}&interval=D&limit=11`);
+      const timestamps = (response.result?.list ?? []).map((row) => safeNumber(row[0])).filter((value) => value > 0);
+      return timestamps.length ? Math.min(...timestamps) : null;
+    }
+    const response = await fetchJson<{ data?: unknown[][] }>(`https://www.okx.com/api/v5/market/candles?instId=${encodeURIComponent(quote.instrumentId)}&bar=1D&limit=11`);
+    const timestamps = (response.data ?? []).map((row) => safeNumber(row[0])).filter((value) => value > 0);
+    return timestamps.length ? Math.min(...timestamps) : null;
+  } catch {
+    return null;
+  }
+};
+
+export const getCexMarketAgeDays = async (venues: CexQuote[]) => {
+  // Any monitored venue with at least ten full days of price history is sufficient evidence
+  // that the asset is not a just-listed token. Unknown age intentionally resolves to 0.
+  const ordered = [...venues].sort((a, b) => (a.venue === "Binance" ? -1 : 0) - (b.venue === "Binance" ? -1 : 0));
+  for (const quote of ordered) {
+    const oldest = await fetchOldestDailyCandleTime(quote);
+    if (!oldest) continue;
+    const ageDays = Math.max(0, Math.floor((Date.now() - oldest) / DAY_MS));
+    if (ageDays >= 10) return ageDays;
+  }
+  return 0;
 };
 
 const decodeHtml = (value: string) => value
@@ -349,6 +388,7 @@ type DexPair = {
   liquidity?: { usd?: number };
   fdv?: number | null;
   marketCap?: number | null;
+  pairCreatedAt?: number | null;
 };
 
 type DexSearchResponse = { pairs?: DexPair[] | null };
@@ -370,6 +410,10 @@ const dexSnapshotFromPair = (pair: DexPair): DexSnapshot | null => {
     dexId: String(pair.dexId ?? "DEX"),
     pairAddress: pair.pairAddress ?? null,
     tokenAddress: pair.baseToken?.address ?? null,
+    quoteSymbol: pair.quoteToken?.symbol ? String(pair.quoteToken.symbol).toUpperCase() : null,
+    quoteTokenAddress: pair.quoteToken?.address ?? null,
+    pairCreatedAt: safeNumber(pair.pairCreatedAt) > 0 ? safeNumber(pair.pairCreatedAt) : null,
+    marketAgeDays: safeNumber(pair.pairCreatedAt) > 0 ? Math.max(0, Math.floor((Date.now() - safeNumber(pair.pairCreatedAt)) / 86_400_000)) : 0,
     url: pair.url ?? null,
     price,
     marketCap,
@@ -393,7 +437,10 @@ const GECKOTERMINAL_NETWORK: Record<string, string> = {
 };
 
 type GeckoPoolResponse = {
-  data?: { attributes?: { transactions?: { h24?: { buyers?: number; sellers?: number } } } };
+  data?: { attributes?: {
+    transactions?: { h24?: { buyers?: number; sellers?: number } };
+    pool_created_at?: string;
+  } };
 };
 
 const enrichDexUniqueParticipants = async (snapshot: DexSnapshot): Promise<DexSnapshot> => {
@@ -404,9 +451,14 @@ const enrichDexUniqueParticipants = async (snapshot: DexSnapshot): Promise<DexSn
     const response = await fetchJson<GeckoPoolResponse>(
       `https://api.geckoterminal.com/api/v2/networks/${encodeURIComponent(network)}/pools/${encodeURIComponent(snapshot.pairAddress)}`
     );
-    const h24 = response.data?.attributes?.transactions?.h24;
+    const attributes = response.data?.attributes;
+    const h24 = attributes?.transactions?.h24;
+    const geckoCreatedAt = attributes?.pool_created_at ? Date.parse(attributes.pool_created_at) : NaN;
+    const pairCreatedAt = snapshot.pairCreatedAt ?? (Number.isFinite(geckoCreatedAt) ? geckoCreatedAt : null);
     return {
       ...snapshot,
+      pairCreatedAt,
+      marketAgeDays: pairCreatedAt ? Math.max(0, Math.floor((Date.now() - pairCreatedAt) / 86_400_000)) : snapshot.marketAgeDays,
       uniqueBuyers24h: Math.max(0, Math.trunc(safeNumber(h24?.buyers))),
       uniqueSellers24h: Math.max(0, Math.trunc(safeNumber(h24?.sellers)))
     };
@@ -461,7 +513,9 @@ export const loadDexDiscovery = async () => {
     for (const pair of pairResults) {
       const snapshot = dexSnapshotFromPair(pair);
       if (!snapshot || snapshot.marketCap < 10_000 || snapshot.liquidityUsd < 10_000 || snapshot.turnover24h <= 0) continue;
-      const key = `${snapshot.chainId}:${snapshot.symbol}`;
+      // Reject known-new pools immediately; unknown age gets one chance to be recovered by GeckoTerminal enrichment.
+      if (snapshot.marketAgeDays > 0 && snapshot.marketAgeDays < 10) continue;
+      const key = `${snapshot.chainId}:${snapshot.tokenAddress ?? snapshot.symbol}`;
       const current = bestByToken.get(key);
       if (!current || snapshot.liquidityUsd > current.liquidityUsd) bestByToken.set(key, snapshot);
     }
@@ -471,7 +525,9 @@ export const loadDexDiscovery = async () => {
     // GeckoTerminal public pool data exposes real unique buyers/sellers on DEXs.
     // Enrich only the highest-priority candidates to stay comfortably below the public rate limit.
     const enriched = await Promise.all(selected.slice(0, 12).map(enrichDexUniqueParticipants));
-    return [...enriched, ...selected.slice(12)];
+    // A DEX-only token must have at least ten days of verifiable pool history.
+    // Unknown creation time is excluded rather than risking just-listed pump-and-dump pools.
+    return [...enriched, ...selected.slice(12)].filter((item) => item.marketAgeDays >= 10);
   } catch (error) {
     logger.warn({ error: error instanceof Error ? error.message : error }, "Radar DEX discovery unavailable");
     return [];
