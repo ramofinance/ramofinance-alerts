@@ -80,28 +80,20 @@ type Candidate = CandidateValues & {
 type RadarSettings = {
   enabled: boolean;
   minimumScore: number;
-  minMarketCap: number;
-  maxMarketCap: number | null;
+  includeLowCap: boolean;
+  includeMidCap: boolean;
+  includeHighCap: boolean;
+  includeDex: boolean;
+  includeCex: boolean;
   minTurnoverPercent: number;
-  minVolumeAcceleration: number;
   minPriceChange24h: number;
   minTradeCount24h: number;
   minDexUniqueBuyers24h: number;
-  minTurnover72hPercent: number;
   minBuyImbalancePercent: number;
-  minWhaleBuyVolumeUsd: number;
-  minBidWallImbalancePercent: number;
-  minOpenInterestChangePercent: number;
-  minDexTurnoverPercent: number;
   minDexLiquidityUsd: number;
-  minDexBuyImbalancePercent: number;
+  minDexVolumeUsd: number;
   minShortLiquidationUsd: number;
   minShortSqueezeDepth: number;
-  maxFundingRatePercent: number;
-  minOnchainWhaleUsd: number;
-  minExchangeOutflowUsd: number;
-  minCexConfirmations: number;
-  minChannelConfirmations: number;
 };
 
 let scanTimer: NodeJS.Timeout | undefined;
@@ -122,6 +114,9 @@ const safeNumber = (value: unknown, fallback = 0) => {
 const average = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 
 const scoreCandidate = (candidate: CandidateValues) => {
+  // v3.5 primary score: only factors explicitly prioritised for Gem hunting
+  // affect the 0-100 score. All other intelligence remains collected and is
+  // surfaced as supplementary evidence/reasons below.
   let score = 0;
   const reasons: string[] = [];
   const turnover = candidate.turnover24h;
@@ -129,24 +124,29 @@ const scoreCandidate = (candidate: CandidateValues) => {
   const acceleration = candidate.volumeAcceleration;
   const change = candidate.priceChange24h;
 
-  if (turnover >= 0.8) score += 24;
-  else if (turnover >= 0.4) score += 20;
-  else if (turnover >= 0.2) score += 16;
-  else if (turnover >= 0.1) score += 12;
-  else if (turnover >= 0.05) score += 7;
+  // 1) 24h volume / market cap — highest priority (max 25)
+  if (turnover >= 0.8) score += 25;
+  else if (turnover >= 0.4) score += 21;
+  else if (turnover >= 0.2) score += 17;
+  else if (turnover >= 0.1) score += 13;
+  else if (turnover >= 0.05) score += 8;
   if (turnover >= 0.1) reasons.push(`TURNOVER:${(turnover * 100).toFixed(1)}`);
 
-  if (turnover72 >= 1.5) score += 8;
-  else if (turnover72 >= 0.75) score += 6;
-  else if (turnover72 >= 0.3) score += 3;
-  if (turnover72 >= 0.3) reasons.push(`TURNOVER72:${(turnover72 * 100).toFixed(1)}`);
+  // 2) 24h trade count — broad activity, max 15
+  if (candidate.tradeCount24h >= 500_000) score += 15;
+  else if (candidate.tradeCount24h >= 100_000) score += 11;
+  else if (candidate.tradeCount24h >= 20_000) score += 7;
+  else if (candidate.tradeCount24h >= 5_000) score += 3;
+  if (candidate.tradeCount24h >= 100_000) reasons.push("HIGH_TRADES");
 
-  if (acceleration >= 6) score += 10;
-  else if (acceleration >= 3) score += 8;
-  else if (acceleration >= 1.8) score += 6;
-  else if (acceleration >= 1.2) score += 3;
-  if (acceleration >= 1.8) reasons.push(`ACCELERATION:${acceleration.toFixed(1)}`);
+  // 3) Real unique DEX buyers — broad wallet participation, max 20
+  if (candidate.dexUniqueBuyers24h >= 2_000) score += 20;
+  else if (candidate.dexUniqueBuyers24h >= 750) score += 15;
+  else if (candidate.dexUniqueBuyers24h >= 250) score += 10;
+  else if (candidate.dexUniqueBuyers24h >= 75) score += 5;
+  if (candidate.dexUniqueBuyers24h >= 75) reasons.push(`DEX_UNIQUE_BUYERS:${candidate.dexUniqueBuyers24h}`);
 
+  // 4) Positive 24h price change, max 10
   const positiveChange = Math.max(change, 0);
   if (positiveChange >= 12) score += 10;
   else if (positiveChange >= 7) score += 8;
@@ -154,89 +154,58 @@ const scoreCandidate = (candidate: CandidateValues) => {
   else if (positiveChange >= 1) score += 2;
   if (positiveChange >= 3) reasons.push(`PRICE:${positiveChange.toFixed(1)}`);
 
-  if (candidate.tradeCount24h >= 500_000) score += 12;
-  else if (candidate.tradeCount24h >= 100_000) score += 9;
-  else if (candidate.tradeCount24h >= 20_000) score += 5;
-  else if (candidate.tradeCount24h >= 5_000) score += 2;
-  if (candidate.tradeCount24h >= 100_000) reasons.push("HIGH_TRADES");
-
-  if (candidate.dexUniqueBuyers24h >= 2_000) score += 16;
-  else if (candidate.dexUniqueBuyers24h >= 750) score += 12;
-  else if (candidate.dexUniqueBuyers24h >= 250) score += 8;
-  else if (candidate.dexUniqueBuyers24h >= 75) score += 4;
-  if (candidate.dexUniqueBuyers24h >= 75) reasons.push(`DEX_UNIQUE_BUYERS:${candidate.dexUniqueBuyers24h}`);
-
+  // 5) Gem market-cap tier, max 10
   if (candidate.marketCap >= 10_000 && candidate.marketCap < 1_000_000) {
-    score += 8;
+    score += 10;
     reasons.push("LOW_CAP");
   } else if (candidate.marketCap >= 1_000_000 && candidate.marketCap < 100_000_000) {
-    score += 6;
+    score += 7;
     reasons.push("MID_CAP");
   } else if (candidate.marketCap >= 100_000_000 && candidate.marketCap <= 500_000_000) {
     score += 3;
     reasons.push("HIGH_CAP");
   }
 
-  if (candidate.buySellImbalance >= 40) score += 8;
-  else if (candidate.buySellImbalance >= 25) score += 6;
-  else if (candidate.buySellImbalance >= 10) score += 3;
-  if (candidate.buySellImbalance >= 15) reasons.push(`BUY_IMBALANCE:${candidate.buySellImbalance.toFixed(1)}`);
+  // 6) Buy pressure. Use the stronger observed CEX/DEX pressure, max 8.
+  const primaryBuyPressure = Math.max(candidate.buySellImbalance, candidate.dexBuySellImbalance, 0);
+  if (primaryBuyPressure >= 40) score += 8;
+  else if (primaryBuyPressure >= 25) score += 6;
+  else if (primaryBuyPressure >= 10) score += 3;
+  if (primaryBuyPressure >= 15) reasons.push(`BUY_IMBALANCE:${primaryBuyPressure.toFixed(1)}`);
 
-  const whaleNetBuy = Math.max(candidate.whaleBuyVolumeUsd - candidate.whaleSellVolumeUsd, 0);
-  if (whaleNetBuy >= 1_000_000) score += 7;
-  else if (whaleNetBuy >= 250_000) score += 5;
-  else if (whaleNetBuy >= 75_000) score += 3;
-  if (whaleNetBuy >= 75_000) reasons.push(`WHALE_BUY:${Math.round(whaleNetBuy)}`);
-
-  if (candidate.bidWallImbalance >= 35) score += 5;
-  else if (candidate.bidWallImbalance >= 20) score += 3;
-  if (candidate.bidWallImbalance >= 20) reasons.push(`BID_WALL:${candidate.bidWallImbalance.toFixed(1)}`);
-
-  if (candidate.openInterestChange >= 5) score += 6;
-  else if (candidate.openInterestChange >= 2) score += 4;
-  else if (candidate.openInterestChange >= 0.5) score += 2;
-  if (candidate.openInterestChange >= 2) reasons.push(`OI:${candidate.openInterestChange.toFixed(1)}`);
-
-  if (candidate.shortLiquidationUsd >= 1_000_000) score += 4;
-  else if (candidate.shortLiquidationUsd >= 250_000) score += 2;
-  if (candidate.shortLiquidationUsd >= 250_000) reasons.push(`SHORT_LIQ:${Math.round(candidate.shortLiquidationUsd)}`);
-  if (candidate.shortSqueezeDepth >= 10) score += 8;
-  else if (candidate.shortSqueezeDepth >= 5) score += 5;
-  else if (candidate.shortSqueezeDepth >= 2) score += 2;
-  if (candidate.shortSqueezeDepth >= 2) reasons.push(`SQUEEZE_DEPTH:${candidate.shortSqueezeDepth}:${candidate.shortSqueezeTimeframe ?? "1h"}`);
-
-  if (candidate.dexTurnover24h >= 0.5) score += 12;
-  else if (candidate.dexTurnover24h >= 0.2) score += 8;
-  else if (candidate.dexTurnover24h >= 0.1) score += 5;
-  if (candidate.dexTurnover24h >= 0.1) reasons.push(`DEX_TURNOVER:${(candidate.dexTurnover24h * 100).toFixed(1)}`);
-  if (candidate.dexBuySellImbalance >= 30) score += 5;
-  else if (candidate.dexBuySellImbalance >= 15) score += 3;
-  if (candidate.dexBuySellImbalance >= 15) reasons.push(`DEX_BUY:${candidate.dexBuySellImbalance.toFixed(1)}`);
-
-  if (candidate.dexLiquidityUsd >= 1_000_000) score += 8;
-  else if (candidate.dexLiquidityUsd >= 500_000) score += 6;
-  else if (candidate.dexLiquidityUsd >= 100_000) score += 3;
+  // 7) DEX liquidity, max 5
+  if (candidate.dexLiquidityUsd >= 1_000_000) score += 5;
+  else if (candidate.dexLiquidityUsd >= 500_000) score += 4;
+  else if (candidate.dexLiquidityUsd >= 100_000) score += 2;
   if (candidate.dexLiquidityUsd >= 100_000) reasons.push(`DEX_LIQUIDITY:${Math.round(candidate.dexLiquidityUsd)}`);
 
-  if (candidate.dexVolume24h >= 10_000_000) score += 6;
-  else if (candidate.dexVolume24h >= 2_000_000) score += 4;
-  else if (candidate.dexVolume24h >= 500_000) score += 2;
+  // 8) DEX volume, max 3
+  if (candidate.dexVolume24h >= 10_000_000) score += 3;
+  else if (candidate.dexVolume24h >= 2_000_000) score += 2;
+  else if (candidate.dexVolume24h >= 500_000) score += 1;
   if (candidate.dexVolume24h >= 500_000) reasons.push(`DEX_VOLUME:${Math.round(candidate.dexVolume24h)}`);
 
-  if (candidate.cexConfirmations >= 3) score += 2;
-  else if (candidate.cexConfirmations === 2) score += 1;
+  // 9) Short liquidation + squeeze depth, max 4 combined
+  if (candidate.shortLiquidationUsd >= 1_000_000) score += 2;
+  else if (candidate.shortLiquidationUsd >= 250_000) score += 1;
+  if (candidate.shortLiquidationUsd >= 250_000) reasons.push(`SHORT_LIQ:${Math.round(candidate.shortLiquidationUsd)}`);
+  if (candidate.shortSqueezeDepth >= 10) score += 2;
+  else if (candidate.shortSqueezeDepth >= 5) score += 1;
+  if (candidate.shortSqueezeDepth >= 2) reasons.push(`SQUEEZE_DEPTH:${candidate.shortSqueezeDepth}:${candidate.shortSqueezeTimeframe ?? "1h"}`);
+
+  // Supplementary intelligence: checked and displayed, but intentionally not scored.
+  if (turnover72 >= 0.3) reasons.push(`TURNOVER72:${(turnover72 * 100).toFixed(1)}`);
+  if (acceleration >= 1.8) reasons.push(`ACCELERATION:${acceleration.toFixed(1)}`);
+
+  const whaleNetBuy = Math.max(candidate.whaleBuyVolumeUsd - candidate.whaleSellVolumeUsd, 0);
+  if (whaleNetBuy >= 75_000) reasons.push(`WHALE_BUY:${Math.round(whaleNetBuy)}`);
+  if (candidate.bidWallImbalance >= 20) reasons.push(`BID_WALL:${candidate.bidWallImbalance.toFixed(1)}`);
+  if (candidate.openInterestChange >= 2) reasons.push(`OI:${candidate.openInterestChange.toFixed(1)}`);
+  if (candidate.dexTurnover24h >= 0.1) reasons.push(`DEX_TURNOVER:${(candidate.dexTurnover24h * 100).toFixed(1)}`);
+  if (candidate.dexBuySellImbalance >= 15) reasons.push(`DEX_BUY:${candidate.dexBuySellImbalance.toFixed(1)}`);
   if (candidate.cexConfirmations >= 2) reasons.push(`CEX_CONFIRM:${candidate.cexConfirmations}`);
-
-  if (candidate.channelConfirmations >= 3) score += 4;
-  else if (candidate.channelConfirmations === 2) score += 3;
-  else if (candidate.channelConfirmations === 1) score += 1;
   if (candidate.channelConfirmations > 0) reasons.push(`CHANNELS:${candidate.channelConfirmations}`);
-
-  if (candidate.exchangeOutflowUsd >= 5_000_000) score += 4;
-  else if (candidate.exchangeOutflowUsd >= 1_000_000) score += 2;
   if (candidate.exchangeOutflowUsd >= 1_000_000) reasons.push(`OUTFLOW:${Math.round(candidate.exchangeOutflowUsd)}`);
-  if (candidate.onchainWhaleUsd >= 5_000_000) score += 3;
-  else if (candidate.onchainWhaleUsd >= 1_000_000) score += 1;
   if (candidate.onchainWhaleUsd >= 1_000_000) reasons.push(`ONCHAIN:${Math.round(candidate.onchainWhaleUsd)}`);
 
   const direction = change >= 1 ? "UP" : change <= -1 ? "DOWN" : "NEUTRAL";
@@ -305,32 +274,47 @@ const formatSignalMessage = (signal: any, language: string) => {
 
 const valueOrZero = (value: unknown) => safeNumber(value, 0);
 
+const marketCapBucket = (marketCap: number) => {
+  if (marketCap >= 10_000 && marketCap < 1_000_000) return "LOW" as const;
+  if (marketCap >= 1_000_000 && marketCap < 100_000_000) return "MID" as const;
+  if (marketCap >= 100_000_000 && marketCap <= 500_000_000) return "HIGH" as const;
+  return "OUTSIDE" as const;
+};
+
 const matchesUserFilters = (signal: any, user: any) => {
   const marketCap = valueOrZero(signal.marketCap);
   if (signal.score < user.radarMinimumScore) return false;
-  if (user.radarMinMarketCap > 0 && marketCap < user.radarMinMarketCap) return false;
-  if (user.radarMaxMarketCap != null && user.radarMaxMarketCap > 0 && marketCap > user.radarMaxMarketCap) return false;
+
+  const bucket = marketCapBucket(marketCap);
+  const capEnabled =
+    (bucket === "LOW" && user.radarIncludeLowCap) ||
+    (bucket === "MID" && user.radarIncludeMidCap) ||
+    (bucket === "HIGH" && user.radarIncludeHighCap);
+  if (!capEnabled) return false;
+
+  const hasCex = valueOrZero(signal.cexConfirmations) > 0;
+  const hasDex = Boolean(signal.dexUrl || signal.chainId) || valueOrZero(signal.dexVolume24h) > 0 || valueOrZero(signal.dexLiquidityUsd) > 0;
+  if (!((user.radarIncludeCex && hasCex) || (user.radarIncludeDex && hasDex))) return false;
+
   if (user.radarMinTurnoverPercent > 0 && valueOrZero(signal.turnover24h) * 100 < user.radarMinTurnoverPercent) return false;
-  if (valueOrZero(user.radarMinVolumeAcceleration) > 0 && valueOrZero(signal.volumeAcceleration) < valueOrZero(user.radarMinVolumeAcceleration)) return false;
   if (valueOrZero(user.radarMinPriceChange24h) !== 0 && valueOrZero(signal.priceChange24h) < valueOrZero(user.radarMinPriceChange24h)) return false;
   if (valueOrZero(user.radarMinTradeCount24h) > 0 && valueOrZero(signal.tradeCount24h) < valueOrZero(user.radarMinTradeCount24h)) return false;
-  if (valueOrZero(user.radarMinDexUniqueBuyers24h) > 0 && valueOrZero(signal.dexUniqueBuyers24h) < valueOrZero(user.radarMinDexUniqueBuyers24h)) return false;
-  if (valueOrZero(user.radarMinTurnover72hPercent) > 0 && valueOrZero(signal.turnover72h) * 100 < valueOrZero(user.radarMinTurnover72hPercent)) return false;
-  if (valueOrZero(user.radarMinBuyImbalancePercent) > 0 && valueOrZero(signal.buySellImbalance) < valueOrZero(user.radarMinBuyImbalancePercent)) return false;
-  if (valueOrZero(user.radarMinWhaleBuyVolumeUsd) > 0 && valueOrZero(signal.whaleBuyVolumeUsd) < valueOrZero(user.radarMinWhaleBuyVolumeUsd)) return false;
-  if (valueOrZero(user.radarMinBidWallImbalancePercent) > 0 && valueOrZero(signal.bidWallImbalance) < valueOrZero(user.radarMinBidWallImbalancePercent)) return false;
-  if (valueOrZero(user.radarMinOpenInterestChangePercent) > 0 && valueOrZero(signal.openInterestChange) < valueOrZero(user.radarMinOpenInterestChangePercent)) return false;
-  if (valueOrZero(user.radarMinDexTurnoverPercent) > 0 && valueOrZero(signal.dexTurnover24h) * 100 < valueOrZero(user.radarMinDexTurnoverPercent)) return false;
-  if (valueOrZero(user.radarMinDexLiquidityUsd) > 0 && valueOrZero(signal.dexLiquidityUsd) < valueOrZero(user.radarMinDexLiquidityUsd)) return false;
-  if (valueOrZero(user.radarMinDexBuyImbalancePercent) > 0 && valueOrZero(signal.dexBuySellImbalance) < valueOrZero(user.radarMinDexBuyImbalancePercent)) return false;
+
+  if (user.radarIncludeDex) {
+    if (valueOrZero(user.radarMinDexUniqueBuyers24h) > 0 && valueOrZero(signal.dexUniqueBuyers24h) < valueOrZero(user.radarMinDexUniqueBuyers24h)) return false;
+    if (valueOrZero(user.radarMinDexLiquidityUsd) > 0 && valueOrZero(signal.dexLiquidityUsd) < valueOrZero(user.radarMinDexLiquidityUsd)) return false;
+    if (valueOrZero(user.radarMinDexVolumeUsd) > 0 && valueOrZero(signal.dexVolume24h) < valueOrZero(user.radarMinDexVolumeUsd)) return false;
+  }
+
+  const buyPressure = user.radarIncludeDex && user.radarIncludeCex
+    ? Math.max(valueOrZero(signal.buySellImbalance), valueOrZero(signal.dexBuySellImbalance))
+    : user.radarIncludeDex
+      ? valueOrZero(signal.dexBuySellImbalance)
+      : valueOrZero(signal.buySellImbalance);
+  if (valueOrZero(user.radarMinBuyImbalancePercent) > 0 && buyPressure < valueOrZero(user.radarMinBuyImbalancePercent)) return false;
+
   if (valueOrZero(user.radarMinShortLiquidationUsd) > 0 && valueOrZero(signal.shortLiquidationUsd) < valueOrZero(user.radarMinShortLiquidationUsd)) return false;
   if (valueOrZero(user.radarMinShortSqueezeDepth) > 0 && valueOrZero(signal.shortSqueezeDepth) < valueOrZero(user.radarMinShortSqueezeDepth)) return false;
-  const maxFunding = valueOrZero(user.radarMaxFundingRatePercent);
-  if (maxFunding > 0 && Math.abs(valueOrZero(signal.fundingRate)) > maxFunding) return false;
-  if (valueOrZero(user.radarMinOnchainWhaleUsd) > 0 && valueOrZero(signal.onchainWhaleUsd) < valueOrZero(user.radarMinOnchainWhaleUsd)) return false;
-  if (valueOrZero(user.radarMinExchangeOutflowUsd) > 0 && valueOrZero(signal.exchangeOutflowUsd) < valueOrZero(user.radarMinExchangeOutflowUsd)) return false;
-  if (valueOrZero(user.radarMinCexConfirmations) > 0 && valueOrZero(signal.cexConfirmations) < valueOrZero(user.radarMinCexConfirmations)) return false;
-  if (valueOrZero(user.radarMinChannelConfirmations) > 0 && valueOrZero(signal.channelConfirmations) < valueOrZero(user.radarMinChannelConfirmations)) return false;
   return true;
 };
 
@@ -639,28 +623,38 @@ export const processRadarNotifications = async () => {
 const settingsToData = (settings: RadarSettings) => ({
   radarNotificationsEnabled: settings.enabled,
   radarMinimumScore: settings.minimumScore,
-  radarMinMarketCap: settings.minMarketCap,
-  radarMaxMarketCap: settings.maxMarketCap != null && settings.maxMarketCap > 0 ? settings.maxMarketCap : null,
+  radarIncludeLowCap: settings.includeLowCap,
+  radarIncludeMidCap: settings.includeMidCap,
+  radarIncludeHighCap: settings.includeHighCap,
+  radarIncludeDex: settings.includeDex,
+  radarIncludeCex: settings.includeCex,
   radarMinTurnoverPercent: settings.minTurnoverPercent,
-  radarMinVolumeAcceleration: settings.minVolumeAcceleration > 0 ? settings.minVolumeAcceleration : null,
   radarMinPriceChange24h: settings.minPriceChange24h !== 0 ? settings.minPriceChange24h : null,
   radarMinTradeCount24h: settings.minTradeCount24h > 0 ? settings.minTradeCount24h : null,
   radarMinDexUniqueBuyers24h: settings.minDexUniqueBuyers24h,
-  radarMinTurnover72hPercent: settings.minTurnover72hPercent,
   radarMinBuyImbalancePercent: settings.minBuyImbalancePercent,
-  radarMinWhaleBuyVolumeUsd: settings.minWhaleBuyVolumeUsd,
-  radarMinBidWallImbalancePercent: settings.minBidWallImbalancePercent,
-  radarMinOpenInterestChangePercent: settings.minOpenInterestChangePercent,
-  radarMinDexTurnoverPercent: settings.minDexTurnoverPercent,
   radarMinDexLiquidityUsd: settings.minDexLiquidityUsd,
-  radarMinDexBuyImbalancePercent: settings.minDexBuyImbalancePercent,
+  radarMinDexVolumeUsd: settings.minDexVolumeUsd,
   radarMinShortLiquidationUsd: settings.minShortLiquidationUsd,
   radarMinShortSqueezeDepth: settings.minShortSqueezeDepth,
-  radarMaxFundingRatePercent: settings.maxFundingRatePercent,
-  radarMinOnchainWhaleUsd: settings.minOnchainWhaleUsd,
-  radarMinExchangeOutflowUsd: settings.minExchangeOutflowUsd,
-  radarMinCexConfirmations: settings.minCexConfirmations,
-  radarMinChannelConfirmations: settings.minChannelConfirmations
+
+  // Legacy advanced thresholds are intentionally neutral in v3.5. They are
+  // still measured and displayed as supplementary intelligence, but they no
+  // longer gate alerts or change the primary score.
+  radarMinMarketCap: 0,
+  radarMaxMarketCap: null,
+  radarMinVolumeAcceleration: null,
+  radarMinTurnover72hPercent: 0,
+  radarMinWhaleBuyVolumeUsd: 0,
+  radarMinBidWallImbalancePercent: 0,
+  radarMinOpenInterestChangePercent: 0,
+  radarMinDexTurnoverPercent: 0,
+  radarMinDexBuyImbalancePercent: 0,
+  radarMaxFundingRatePercent: 0,
+  radarMinOnchainWhaleUsd: 0,
+  radarMinExchangeOutflowUsd: 0,
+  radarMinCexConfirmations: 0,
+  radarMinChannelConfirmations: 0
 });
 
 export const radarService = {

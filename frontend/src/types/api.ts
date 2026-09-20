@@ -90,6 +90,11 @@ export type User = {
   radarMinPriceChange24h: number | null;
   radarMinTradeCount24h: number | null;
   radarMinDexUniqueBuyers24h: number;
+  radarIncludeLowCap: boolean;
+  radarIncludeMidCap: boolean;
+  radarIncludeHighCap: boolean;
+  radarIncludeDex: boolean;
+  radarIncludeCex: boolean;
   radarMinTurnover72hPercent: number;
   radarMinBuyImbalancePercent: number;
   radarMinWhaleBuyVolumeUsd: number;
@@ -97,6 +102,7 @@ export type User = {
   radarMinOpenInterestChangePercent: number;
   radarMinDexTurnoverPercent: number;
   radarMinDexLiquidityUsd: number;
+  radarMinDexVolumeUsd: number;
   radarMinDexBuyImbalancePercent: number;
   radarMinShortLiquidationUsd: number;
   radarMinShortSqueezeDepth: number;

@@ -9,31 +9,26 @@ const zeroable = (max = 10_000_000_000_000) => z.number().min(0).max(max);
 const settingsSchema = z.object({
   enabled: z.boolean(),
   minimumScore: z.number().int().min(60).max(95),
-  minMarketCap: zeroable(),
-  maxMarketCap: zeroable().nullable(),
+  includeLowCap: z.boolean(),
+  includeMidCap: z.boolean(),
+  includeHighCap: z.boolean(),
+  includeDex: z.boolean(),
+  includeCex: z.boolean(),
   minTurnoverPercent: z.number().min(0).max(1000),
-  minVolumeAcceleration: z.number().min(0).max(1000),
   minPriceChange24h: z.number().min(-100).max(10000),
   minTradeCount24h: z.number().int().min(0).max(2_000_000_000),
-  minDexUniqueBuyers24h: z.number().int().min(0).max(100_000_000).default(0),
-  minTurnover72hPercent: z.number().min(0).max(5000),
+  minDexUniqueBuyers24h: z.number().int().min(0).max(100_000_000),
   minBuyImbalancePercent: z.number().min(0).max(100),
-  minWhaleBuyVolumeUsd: zeroable(),
-  minBidWallImbalancePercent: z.number().min(0).max(100),
-  minOpenInterestChangePercent: z.number().min(0).max(10000),
-  minDexTurnoverPercent: z.number().min(0).max(5000),
   minDexLiquidityUsd: zeroable(),
-  minDexBuyImbalancePercent: z.number().min(0).max(100),
+  minDexVolumeUsd: zeroable(),
   minShortLiquidationUsd: zeroable(),
-  minShortSqueezeDepth: z.number().int().min(0).max(100).default(0),
-  maxFundingRatePercent: z.number().min(0).max(100),
-  minOnchainWhaleUsd: zeroable(),
-  minExchangeOutflowUsd: zeroable(),
-  minCexConfirmations: z.number().int().min(0).max(3),
-  minChannelConfirmations: z.number().int().min(0).max(10)
+  minShortSqueezeDepth: z.number().int().min(0).max(100)
 }).superRefine((value, ctx) => {
-  if (value.maxMarketCap !== null && value.maxMarketCap > 0 && value.maxMarketCap < value.minMarketCap) {
-    ctx.addIssue({ code: "custom", path: ["maxMarketCap"], message: "Maximum market cap must be 0 (no limit) or greater than/equal to minimum market cap" });
+  if (!value.includeLowCap && !value.includeMidCap && !value.includeHighCap) {
+    ctx.addIssue({ code: "custom", path: ["includeLowCap"], message: "Select at least one market-cap range" });
+  }
+  if (!value.includeDex && !value.includeCex) {
+    ctx.addIssue({ code: "custom", path: ["includeDex"], message: "Enable at least one market source (DEX or CEX)" });
   }
 });
 

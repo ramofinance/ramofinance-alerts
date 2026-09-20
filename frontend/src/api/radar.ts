@@ -14,28 +14,20 @@ export const getRadarSignals = (initData?: string) =>
 export type RadarSettingsInput = {
   enabled: boolean;
   minimumScore: number;
-  minMarketCap: number;
-  maxMarketCap: number | null;
+  includeLowCap: boolean;
+  includeMidCap: boolean;
+  includeHighCap: boolean;
+  includeDex: boolean;
+  includeCex: boolean;
   minTurnoverPercent: number;
-  minVolumeAcceleration: number;
   minPriceChange24h: number;
   minTradeCount24h: number;
   minDexUniqueBuyers24h: number;
-  minTurnover72hPercent: number;
   minBuyImbalancePercent: number;
-  minWhaleBuyVolumeUsd: number;
-  minBidWallImbalancePercent: number;
-  minOpenInterestChangePercent: number;
-  minDexTurnoverPercent: number;
   minDexLiquidityUsd: number;
-  minDexBuyImbalancePercent: number;
+  minDexVolumeUsd: number;
   minShortLiquidationUsd: number;
   minShortSqueezeDepth: number;
-  maxFundingRatePercent: number;
-  minOnchainWhaleUsd: number;
-  minExchangeOutflowUsd: number;
-  minCexConfirmations: number;
-  minChannelConfirmations: number;
 };
 
 export const updateRadarSettings = (settings: RadarSettingsInput, initData?: string) =>

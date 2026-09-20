@@ -86,6 +86,11 @@ model User {
   radarMinPriceChange24h           Float?
   radarMinTradeCount24h            Int?
   radarMinDexUniqueBuyers24h       Int                @default(0)
+  radarIncludeLowCap               Boolean            @default(true)
+  radarIncludeMidCap               Boolean            @default(true)
+  radarIncludeHighCap              Boolean            @default(false)
+  radarIncludeDex                  Boolean            @default(true)
+  radarIncludeCex                  Boolean            @default(true)
   radarMinTurnover72hPercent       Float              @default(0)
   radarMinBuyImbalancePercent      Float              @default(0)
   radarMinWhaleBuyVolumeUsd        Float              @default(0)
@@ -93,6 +98,7 @@ model User {
   radarMinOpenInterestChangePercent Float             @default(0)
   radarMinDexTurnoverPercent       Float              @default(0)
   radarMinDexLiquidityUsd          Float              @default(0)
+  radarMinDexVolumeUsd             Float              @default(0)
   radarMinDexBuyImbalancePercent   Float              @default(0)
   radarMinShortLiquidationUsd      Float              @default(0)
   radarMinShortSqueezeDepth        Int                @default(0)

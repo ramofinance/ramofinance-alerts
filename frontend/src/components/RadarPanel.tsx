@@ -48,56 +48,41 @@ const reasonText = (reason: string, copy: any) => {
 
 const defaults = {
   minimumScore: 75,
-  minMarketCapM: 3,
-  maxMarketCapM: 0,
+  includeLowCap: true,
+  includeMidCap: true,
+  includeHighCap: false,
+  includeDex: true,
+  includeCex: true,
   minTurnoverPercent: 15,
-  minVolumeAcceleration: 0,
   minPriceChange24h: 0,
   minTradeCount24h: 0,
   minDexUniqueBuyers24h: 0,
-  minTurnover72hPercent: 0,
   minBuyImbalancePercent: 0,
-  minWhaleBuyVolumeK: 0,
-  minBidWallImbalancePercent: 0,
-  minOpenInterestChangePercent: 0,
-  minDexTurnoverPercent: 0,
   minDexLiquidityK: 0,
-  minDexBuyImbalancePercent: 0,
+  minDexVolumeK: 0,
   minShortLiquidationK: 0,
-  minShortSqueezeDepth: 0,
-  maxFundingRatePercent: 0,
-  minOnchainWhaleM: 0,
-  minExchangeOutflowM: 0,
-  minCexConfirmations: 0,
-  minChannelConfirmations: 0
+  minShortSqueezeDepth: 0
 };
 
 type Draft = typeof defaults;
+type NumericDraftKey = Exclude<keyof Draft, "includeLowCap" | "includeMidCap" | "includeHighCap" | "includeDex" | "includeCex">;
 
 const draftFromUser = (user: User): Draft => ({
   minimumScore: user.radarMinimumScore,
-  minMarketCapM: user.radarMinMarketCap / 1_000_000,
-  maxMarketCapM: (user.radarMaxMarketCap ?? 0) / 1_000_000,
+  includeLowCap: user.radarIncludeLowCap ?? true,
+  includeMidCap: user.radarIncludeMidCap ?? true,
+  includeHighCap: user.radarIncludeHighCap ?? false,
+  includeDex: user.radarIncludeDex ?? true,
+  includeCex: user.radarIncludeCex ?? true,
   minTurnoverPercent: user.radarMinTurnoverPercent,
-  minVolumeAcceleration: user.radarMinVolumeAcceleration ?? 0,
   minPriceChange24h: user.radarMinPriceChange24h ?? 0,
   minTradeCount24h: user.radarMinTradeCount24h ?? 0,
   minDexUniqueBuyers24h: user.radarMinDexUniqueBuyers24h ?? 0,
-  minTurnover72hPercent: user.radarMinTurnover72hPercent ?? 0,
   minBuyImbalancePercent: user.radarMinBuyImbalancePercent ?? 0,
-  minWhaleBuyVolumeK: (user.radarMinWhaleBuyVolumeUsd ?? 0) / 1_000,
-  minBidWallImbalancePercent: user.radarMinBidWallImbalancePercent ?? 0,
-  minOpenInterestChangePercent: user.radarMinOpenInterestChangePercent ?? 0,
-  minDexTurnoverPercent: user.radarMinDexTurnoverPercent ?? 0,
   minDexLiquidityK: (user.radarMinDexLiquidityUsd ?? 0) / 1_000,
-  minDexBuyImbalancePercent: user.radarMinDexBuyImbalancePercent ?? 0,
+  minDexVolumeK: (user.radarMinDexVolumeUsd ?? 0) / 1_000,
   minShortLiquidationK: (user.radarMinShortLiquidationUsd ?? 0) / 1_000,
-  minShortSqueezeDepth: user.radarMinShortSqueezeDepth ?? 0,
-  maxFundingRatePercent: user.radarMaxFundingRatePercent ?? 0,
-  minOnchainWhaleM: (user.radarMinOnchainWhaleUsd ?? 0) / 1_000_000,
-  minExchangeOutflowM: (user.radarMinExchangeOutflowUsd ?? 0) / 1_000_000,
-  minCexConfirmations: user.radarMinCexConfirmations ?? 0,
-  minChannelConfirmations: user.radarMinChannelConfirmations ?? 0
+  minShortSqueezeDepth: user.radarMinShortSqueezeDepth ?? 0
 });
 
 export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Props) {
@@ -125,28 +110,20 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
   const settingsPayload = (enabled = user.radarNotificationsEnabled): RadarSettingsInput => ({
     enabled,
     minimumScore: Math.trunc(n(draft.minimumScore)),
-    minMarketCap: Math.max(0, n(draft.minMarketCapM)) * 1_000_000,
-    maxMarketCap: Math.max(0, n(draft.maxMarketCapM)) * 1_000_000,
+    includeLowCap: draft.includeLowCap,
+    includeMidCap: draft.includeMidCap,
+    includeHighCap: draft.includeHighCap,
+    includeDex: draft.includeDex,
+    includeCex: draft.includeCex,
     minTurnoverPercent: Math.max(0, n(draft.minTurnoverPercent)),
-    minVolumeAcceleration: Math.max(0, n(draft.minVolumeAcceleration)),
     minPriceChange24h: n(draft.minPriceChange24h),
     minTradeCount24h: Math.max(0, Math.trunc(n(draft.minTradeCount24h))),
     minDexUniqueBuyers24h: Math.max(0, Math.trunc(n(draft.minDexUniqueBuyers24h))),
-    minTurnover72hPercent: Math.max(0, n(draft.minTurnover72hPercent)),
     minBuyImbalancePercent: Math.max(0, n(draft.minBuyImbalancePercent)),
-    minWhaleBuyVolumeUsd: Math.max(0, n(draft.minWhaleBuyVolumeK)) * 1_000,
-    minBidWallImbalancePercent: Math.max(0, n(draft.minBidWallImbalancePercent)),
-    minOpenInterestChangePercent: Math.max(0, n(draft.minOpenInterestChangePercent)),
-    minDexTurnoverPercent: Math.max(0, n(draft.minDexTurnoverPercent)),
     minDexLiquidityUsd: Math.max(0, n(draft.minDexLiquidityK)) * 1_000,
-    minDexBuyImbalancePercent: Math.max(0, n(draft.minDexBuyImbalancePercent)),
+    minDexVolumeUsd: Math.max(0, n(draft.minDexVolumeK)) * 1_000,
     minShortLiquidationUsd: Math.max(0, n(draft.minShortLiquidationK)) * 1_000,
-    minShortSqueezeDepth: Math.max(0, Math.trunc(n(draft.minShortSqueezeDepth))),
-    maxFundingRatePercent: Math.max(0, n(draft.maxFundingRatePercent)),
-    minOnchainWhaleUsd: Math.max(0, n(draft.minOnchainWhaleM)) * 1_000_000,
-    minExchangeOutflowUsd: Math.max(0, n(draft.minExchangeOutflowM)) * 1_000_000,
-    minCexConfirmations: Math.min(3, Math.max(0, Math.trunc(n(draft.minCexConfirmations)))),
-    minChannelConfirmations: Math.min(10, Math.max(0, Math.trunc(n(draft.minChannelConfirmations))))
+    minShortSqueezeDepth: Math.max(0, Math.trunc(n(draft.minShortSqueezeDepth)))
   });
 
   const saveSettings = async (enabled = user.radarNotificationsEnabled) => {
@@ -183,17 +160,55 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
     </span>
   );
 
-  const numberField = (key: keyof Draft, label: string, unit: string, helpKey: RadarHelpKey, step = 1, min?: number, max?: number) => (
+  const numberField = (key: NumericDraftKey, label: string, unit: string, helpKey: RadarHelpKey, step = 1, min?: number, max?: number, forceDisabled = false) => (
     <label>{fieldTitle(label, helpKey)}
       <div className="radar-input-with-unit">
-        <input type="number" step={step} min={min} max={max} value={draft[key]} disabled={busy}
+        <input type="number" step={step} min={min} max={max} value={draft[key] as number} disabled={busy || forceDisabled}
           onChange={(event) => setDraft((value) => ({ ...value, [key]: Number(event.target.value) }))} />
         <span>{unit}</span>
       </div>
     </label>
   );
 
-  const applyCapPreset = (minM: number, maxM: number) => setDraft((value) => ({ ...value, minMarketCapM: minM, maxMarketCapM: maxM }));
+  const isFa = String(user.preferredLanguage ?? user.languageCode ?? "").toUpperCase().startsWith("FA");
+  const settingsText = isFa ? {
+    capTitle: "بازه Market Cap",
+    sourceTitle: "منابع بازار",
+    priorityTitle: "فاکتورهای اصلی امتیازدهی",
+    low: "LOW CAP · $10K–$1M",
+    mid: "MID CAP · $1M–$100M",
+    high: "HIGH CAP · $100M–$500M",
+    dex: "DEX",
+    cex: "CEX",
+    dexVolume: "حداقل حجم DEX در 24h",
+    scoreNote: "فقط فاکتورهای این بخش روی Score اصلی اثر دارند. بقیه داده‌ها همچنان بررسی و در جزئیات سیگنال نمایش داده می‌شوند."
+  } : {
+    capTitle: "Market-cap ranges",
+    sourceTitle: "Market sources",
+    priorityTitle: "Primary scoring factors",
+    low: "LOW CAP · $10K–$1M",
+    mid: "MID CAP · $1M–$100M",
+    high: "HIGH CAP · $100M–$500M",
+    dex: "DEX",
+    cex: "CEX",
+    dexVolume: "Minimum DEX volume (24h)",
+    scoreNote: "Only the factors shown here affect the primary score. Other intelligence is still checked and shown as supplementary evidence."
+  };
+
+  const toggleCap = (key: "includeLowCap" | "includeMidCap" | "includeHighCap") => {
+    setDraft((current) => {
+      if (current[key] && [current.includeLowCap, current.includeMidCap, current.includeHighCap].filter(Boolean).length === 1) return current;
+      return { ...current, [key]: !current[key] };
+    });
+  };
+
+  const toggleSource = (key: "includeDex" | "includeCex") => {
+    setDraft((current) => {
+      const other = key === "includeDex" ? current.includeCex : current.includeDex;
+      if (current[key] && !other) return current;
+      return { ...current, [key]: !current[key] };
+    });
+  };
   const capTier = (raw: string | null) => {
     const cap = Number(raw ?? 0);
     if (cap >= 10_000 && cap < 1_000_000) return { key: "low", label: "LOW CAP" };
@@ -201,6 +216,40 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
     if (cap >= 100_000_000 && cap <= 500_000_000) return { key: "high", label: "HIGH CAP" };
     return cap > 500_000_000 ? { key: "large", label: "LARGE CAP" } : null;
   };
+
+
+  const signalMatchesSavedSettings = (signal: RadarSignal) => {
+    if (signal.score < user.radarMinimumScore) return false;
+    const cap = Number(signal.marketCap ?? 0);
+    const tier = capTier(signal.marketCap);
+    if (!tier || tier.key === "large") return false;
+    if (tier.key === "low" && !user.radarIncludeLowCap) return false;
+    if (tier.key === "mid" && !user.radarIncludeMidCap) return false;
+    if (tier.key === "high" && !user.radarIncludeHighCap) return false;
+
+    const hasCex = signal.cexConfirmations > 0;
+    const hasDex = Boolean(signal.dexUrl || signal.chainId) || Number(signal.dexVolume24h ?? 0) > 0 || Number(signal.dexLiquidityUsd ?? 0) > 0;
+    if (!((user.radarIncludeCex && hasCex) || (user.radarIncludeDex && hasDex))) return false;
+
+    if (user.radarMinTurnoverPercent > 0 && (signal.turnover24h ?? 0) * 100 < user.radarMinTurnoverPercent) return false;
+    if ((user.radarMinPriceChange24h ?? 0) !== 0 && (signal.priceChange24h ?? 0) < (user.radarMinPriceChange24h ?? 0)) return false;
+    if ((user.radarMinTradeCount24h ?? 0) > 0 && (signal.tradeCount24h ?? 0) < (user.radarMinTradeCount24h ?? 0)) return false;
+    if (user.radarIncludeDex && user.radarMinDexUniqueBuyers24h > 0 && (signal.dexUniqueBuyers24h ?? 0) < user.radarMinDexUniqueBuyers24h) return false;
+    if (user.radarIncludeDex && user.radarMinDexLiquidityUsd > 0 && Number(signal.dexLiquidityUsd ?? 0) < user.radarMinDexLiquidityUsd) return false;
+    if (user.radarIncludeDex && user.radarMinDexVolumeUsd > 0 && Number(signal.dexVolume24h ?? 0) < user.radarMinDexVolumeUsd) return false;
+
+    const buyPressure = user.radarIncludeDex && user.radarIncludeCex
+      ? Math.max(signal.buySellImbalance ?? 0, signal.dexBuySellImbalance ?? 0)
+      : user.radarIncludeDex
+        ? signal.dexBuySellImbalance ?? 0
+        : signal.buySellImbalance ?? 0;
+    if (user.radarMinBuyImbalancePercent > 0 && buyPressure < user.radarMinBuyImbalancePercent) return false;
+    if (user.radarMinShortLiquidationUsd > 0 && Number(signal.shortLiquidationUsd ?? 0) < user.radarMinShortLiquidationUsd) return false;
+    if (user.radarMinShortSqueezeDepth > 0 && (signal.shortSqueezeDepth ?? 0) < user.radarMinShortSqueezeDepth) return false;
+    return cap > 0;
+  };
+
+  const visibleSignals = signals.filter(signalMatchesSavedSettings);
 
   return (
     <section className="radar-screen">
@@ -218,56 +267,58 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
           <span>{user.radarNotificationsEnabled ? copy.radarEnabled : copy.radarDisabled}</span>
         </label>
 
-        <h3 className="radar-filter-group-title">{copy.radarGroupCore}</h3>
-        <div className="radar-cap-presets">
-          <button type="button" onClick={() => applyCapPreset(0.01, 1)}>LOW CAP · $10K–$1M</button>
-          <button type="button" onClick={() => applyCapPreset(1, 100)}>MID CAP · $1M–$100M</button>
-          <button type="button" onClick={() => applyCapPreset(100, 500)}>HIGH CAP · $100M–$500M</button>
-          <button type="button" onClick={() => applyCapPreset(0.01, 100)}>GEM · $10K–$100M</button>
+        <h3 className="radar-filter-group-title">{settingsText.capTitle} {fieldTitle("", "capRanges")}</h3>
+        <div className="radar-choice-grid radar-choice-grid--caps">
+          <label className={`radar-choice-chip ${draft.includeLowCap ? "is-active" : ""}`}>
+            <input type="checkbox" checked={draft.includeLowCap} disabled={busy} onChange={() => toggleCap("includeLowCap")} />
+            <span>✓</span><b>{settingsText.low}</b>
+          </label>
+          <label className={`radar-choice-chip ${draft.includeMidCap ? "is-active" : ""}`}>
+            <input type="checkbox" checked={draft.includeMidCap} disabled={busy} onChange={() => toggleCap("includeMidCap")} />
+            <span>✓</span><b>{settingsText.mid}</b>
+          </label>
+          <label className={`radar-choice-chip ${draft.includeHighCap ? "is-active" : ""}`}>
+            <input type="checkbox" checked={draft.includeHighCap} disabled={busy} onChange={() => toggleCap("includeHighCap")} />
+            <span>✓</span><b>{settingsText.high}</b>
+          </label>
         </div>
+
+        <h3 className="radar-filter-group-title">{settingsText.sourceTitle}</h3>
+        <div className="radar-choice-grid radar-choice-grid--sources">
+          <label className={`radar-choice-chip ${draft.includeDex ? "is-active" : ""}`}>
+            <input type="checkbox" checked={draft.includeDex} disabled={busy} onChange={() => toggleSource("includeDex")} />
+            <span>✓</span><b>{settingsText.dex}</b>
+            <button type="button" className="radar-info-button" aria-label="DEX info" onClick={(event) => { event.preventDefault(); setActiveHelp((current) => current === "sourceDex" ? null : "sourceDex"); }}>!</button>
+            {activeHelp === "sourceDex" ? <span className="radar-help-popover" role="note">{help.sourceDex}</span> : null}
+          </label>
+          <label className={`radar-choice-chip ${draft.includeCex ? "is-active" : ""}`}>
+            <input type="checkbox" checked={draft.includeCex} disabled={busy} onChange={() => toggleSource("includeCex")} />
+            <span>✓</span><b>{settingsText.cex}</b>
+            <button type="button" className="radar-info-button" aria-label="CEX info" onClick={(event) => { event.preventDefault(); setActiveHelp((current) => current === "sourceCex" ? null : "sourceCex"); }}>!</button>
+            {activeHelp === "sourceCex" ? <span className="radar-help-popover" role="note">{help.sourceCex}</span> : null}
+          </label>
+        </div>
+
+        <h3 className="radar-filter-group-title">{settingsText.priorityTitle}</h3>
         <div className="radar-filter-grid">
           <label>{fieldTitle(copy.radarMinimumScore, "minimumScore")}
             <select value={draft.minimumScore} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minimumScore: Number(event.target.value) }))}>
               {[60, 65, 70, 75, 80, 85, 90, 95].map((score) => <option key={score} value={score}>{score}/100</option>)}
             </select>
           </label>
-          {numberField("minMarketCapM", copy.radarMinMarketCap, "$M", "minMarketCap", 0.01, 0)}
-          {numberField("maxMarketCapM", copy.radarMaxMarketCap, "$M", "maxMarketCap", 0.01, 0)}
           {numberField("minTurnoverPercent", copy.radarMinTurnover, "%", "minTurnover24h", 0.5, 0)}
-          {numberField("minTurnover72hPercent", copy.radarMinTurnover72h, "%", "minTurnover72h", 1, 0)}
-          {numberField("minVolumeAcceleration", copy.radarMinAcceleration, "x", "minAcceleration", 0.1, 0)}
-          {numberField("minPriceChange24h", copy.radarMinPriceChange, "%", "minPriceChange", 0.5)}
           {numberField("minTradeCount24h", copy.radarMinTrades, "#", "minTrades", 1000, 0)}
-          {numberField("minDexUniqueBuyers24h", copy.radarMinUniqueBuyers ?? "Unique DEX buyers (24h)", "wallets", "minUniqueBuyers", 10, 0)}
-        </div>
-
-        <h3 className="radar-filter-group-title">{copy.radarGroupFlow}</h3>
-        <div className="radar-filter-grid">
+          {numberField("minDexUniqueBuyers24h", copy.radarMinUniqueBuyers ?? "Unique DEX buyers (24h)", "wallets", "minUniqueBuyers", 10, 0, undefined, !draft.includeDex)}
+          {numberField("minPriceChange24h", copy.radarMinPriceChange, "%", "minPriceChange", 0.5)}
           {numberField("minBuyImbalancePercent", copy.radarMinBuyImbalance, "%", "minBuyPressure", 1, 0, 100)}
-          {numberField("minWhaleBuyVolumeK", copy.radarMinWhaleBuy, "$K", "minWhaleBuy", 10, 0)}
-          {numberField("minBidWallImbalancePercent", copy.radarMinBidWall, "%", "minBidWall", 1, 0, 100)}
-          {numberField("minCexConfirmations", copy.radarMinCexConfirmations, "CEX", "minCex", 1, 0, 3)}
-          {numberField("minChannelConfirmations", copy.radarMinChannelConfirmations, "ch", "minChannels", 1, 0, 10)}
+          {numberField("minDexLiquidityK", copy.radarMinDexLiquidity, "$K", "minDexLiquidity", 10, 0, undefined, !draft.includeDex)}
+          {numberField("minDexVolumeK", settingsText.dexVolume, "$K", "minDexVolume", 10, 0, undefined, !draft.includeDex)}
+          {numberField("minShortLiquidationK", copy.radarMinShortLiq, "$K", "minShortLiq", 10, 0, undefined, !draft.includeCex)}
+          {numberField("minShortSqueezeDepth", copy.radarMinSqueezeDepth ?? "Minimum squeeze depth", "candles", "minSqueezeDepth", 1, 0, 100, !draft.includeCex)}
         </div>
 
-        <h3 className="radar-filter-group-title">{copy.radarGroupDerivatives}</h3>
-        <div className="radar-filter-grid">
-          {numberField("minOpenInterestChangePercent", copy.radarMinOiChange, "%", "minOi", 0.1, 0)}
-          {numberField("minShortLiquidationK", copy.radarMinShortLiq, "$K", "minShortLiq", 10, 0)}
-          {numberField("minShortSqueezeDepth", copy.radarMinSqueezeDepth ?? "Minimum squeeze depth", "candles", "minSqueezeDepth", 1, 0, 100)}
-          {numberField("maxFundingRatePercent", copy.radarMaxFunding, "%", "maxFunding", 0.001, 0)}
-        </div>
+        <p className="radar-filter-note">{settingsText.scoreNote}</p>
 
-        <h3 className="radar-filter-group-title">{copy.radarGroupDexOnchain}</h3>
-        <div className="radar-filter-grid">
-          {numberField("minDexTurnoverPercent", copy.radarMinDexTurnover, "%", "minDexTurnover", 1, 0)}
-          {numberField("minDexLiquidityK", copy.radarMinDexLiquidity, "$K", "minDexLiquidity", 10, 0)}
-          {numberField("minDexBuyImbalancePercent", copy.radarMinDexBuyImbalance, "%", "minDexBuyPressure", 1, 0, 100)}
-          {numberField("minOnchainWhaleM", copy.radarMinOnchainWhale, "$M", "minOnchainWhale", 0.1, 0)}
-          {numberField("minExchangeOutflowM", copy.radarMinExchangeOutflow, "$M", "minExchangeOutflow", 0.1, 0)}
-        </div>
-
-        <p className="radar-filter-note">{copy.radarFilterHintV33}</p>
         <div className="radar-actions">
           <button type="button" disabled={busy} onClick={() => void saveSettings()}>{copy.radarSaveFilters}</button>
           <button type="button" disabled={busy} onClick={resetFilters}>{copy.radarResetFilters}</button>
@@ -278,10 +329,10 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
       </article>
 
       <div className="radar-section-title"><div><strong>{copy.radarCandidates}</strong><small>{copy.radarSourcesV33}</small></div><button type="button" onClick={() => void load()} disabled={loading}>↻</button></div>
-      {loading && !signals.length ? <div className="radar-empty">{copy.loading}</div> : null}
-      {!loading && !signals.length ? <div className="radar-empty">{copy.radarNoSignals}</div> : null}
+      {loading && !visibleSignals.length ? <div className="radar-empty">{copy.loading}</div> : null}
+      {!loading && !visibleSignals.length ? <div className="radar-empty">{copy.radarNoSignals}</div> : null}
       <div className="radar-list">
-        {signals.map((signal) => (
+        {visibleSignals.map((signal) => (
           <article className="radar-signal-card" key={signal.id}>
             <div className="radar-signal-head">
               <div><strong>{signal.symbol.endsWith("USDT") ? signal.symbol.replace(/USDT$/, "/USDT") : signal.symbol}</strong>{capTier(signal.marketCap) ? <em className={`radar-cap-badge is-${capTier(signal.marketCap)!.key}`}>{capTier(signal.marketCap)!.label}</em> : null}<span>{new Date(signal.detectedAt).toLocaleString()}</span></div>
@@ -307,6 +358,8 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
               {Math.abs(signal.fundingRate ?? 0) > 0.0001 ? <span><small>{copy.radarFunding}</small><b>{pct(signal.fundingRate, 3)}</b></span> : null}
               {Number(signal.shortLiquidationUsd ?? 0) > 0 ? <span><small>{copy.radarShortLiq}</small><b>{money(signal.shortLiquidationUsd)}</b></span> : null}
               {signal.dexTurnover24h != null && signal.dexTurnover24h > 0 ? <span><small>{copy.radarDexTurnover}</small><b>{(signal.dexTurnover24h * 100).toFixed(1)}%</b></span> : null}
+              {Number(signal.dexVolume24h ?? 0) > 0 ? <span><small>{copy.radarDexVolume ?? "DEX volume (24h)"}</small><b>{money(signal.dexVolume24h)}</b></span> : null}
+              {Math.abs(signal.dexBuySellImbalance ?? 0) > 0.1 ? <span><small>{copy.radarDexBuyPressure ?? "DEX buy pressure"}</small><b>{pct(signal.dexBuySellImbalance)}</b></span> : null}
               {Number(signal.dexLiquidityUsd ?? 0) > 0 ? <span><small>{copy.radarDexLiquidity}</small><b>{money(signal.dexLiquidityUsd)}</b></span> : null}
               {signal.channelConfirmations > 0 ? <span><small>{copy.radarChannelConfirmations}</small><b>{signal.channelConfirmations}</b></span> : null}
               {Number(signal.onchainWhaleUsd ?? 0) > 0 ? <span><small>{copy.radarOnchainWhale}</small><b>{money(signal.onchainWhaleUsd)}</b></span> : null}
