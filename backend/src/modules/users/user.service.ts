@@ -1,7 +1,7 @@
 import { PreferredLanguage, UserRole } from "@prisma/client";
 import { AppError } from "../../utils/app-error";
 import { userRepository } from "./user.repository";
-import { env } from "../../config/env";
+import { matchesConfiguredAdminIdentity } from "../../security/admin-identity";
 
 type ListUsersInput = {
   search?: string;
@@ -25,28 +25,13 @@ type UpsertTelegramUserInput = {
   preferredLanguage?: PreferredLanguage | null;
 };
 
-const adminUsernames = new Set(
-  env.TELEGRAM_ADMIN_USERNAMES.split(",")
-    .map((value) => value.trim().replace(/^@/, "").toLowerCase())
-    .filter(Boolean)
-);
-
-const adminTelegramIds = new Set(
-  env.TELEGRAM_ADMIN_IDS.split(",")
-    .map((value) => value.trim())
-    .filter(Boolean)
-);
-
-const withConfiguredAdminRole = (input: UpsertTelegramUserInput) => {
-  const isConfiguredAdmin =
-    adminTelegramIds.has(input.telegramId) ||
-    Boolean(input.username && adminUsernames.has(input.username.toLowerCase()));
-
-  return {
-    ...input,
-    role: isConfiguredAdmin ? UserRole.ADMIN : undefined
-  };
-};
+const withConfiguredAdminRole = (input: UpsertTelegramUserInput) => ({
+  ...input,
+  role: matchesConfiguredAdminIdentity({
+    telegramId: input.telegramId,
+    username: input.username
+  }) ? UserRole.ADMIN : undefined
+});
 
 export const userService = {
   async listUsers(input: ListUsersInput) {

@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { isAdminIdentity } from "../security/admin-identity";
 import type { RequestHandler } from "express";
 import { userService } from "../modules/users/user.service";
 import { verifyTelegramMiniAppInitData } from "../telegram/telegram-mini-app-auth";
@@ -40,7 +40,7 @@ export const requireTelegramAuth: RequestHandler = async (req, res, next) => {
 export const requireAdmin: RequestHandler = (req, res, next) => {
   const user = res.locals.authUser;
 
-  if (!user || user.role !== UserRole.ADMIN) {
+  if (!user || !isAdminIdentity(user)) {
     next(new AppError("Admin access is required", 403));
     return;
   }
@@ -51,7 +51,7 @@ export const requireAdmin: RequestHandler = (req, res, next) => {
 export const requireSelfOrAdmin: RequestHandler = (req, res, next) => {
   const user = res.locals.authUser;
 
-  if (!user || (user.role !== UserRole.ADMIN && user.id !== req.params.id)) {
+  if (!user || (!isAdminIdentity(user) && user.id !== req.params.id)) {
     next(new AppError("Access denied", 403));
     return;
   }

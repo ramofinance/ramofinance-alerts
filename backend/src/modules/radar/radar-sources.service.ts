@@ -107,7 +107,7 @@ const fetchWithTimeout = async (url: string, accept = "application/json") => {
       signal: controller.signal,
       headers: {
         Accept: accept,
-        "User-Agent": "RAMO-Finance-Radar/3.5.1"
+        "User-Agent": "RAMO-Finance-Radar/3.5.2"
       }
     });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);

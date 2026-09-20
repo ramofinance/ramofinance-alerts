@@ -81,6 +81,12 @@ export default function App() {
   const [favoriteSavingMarketId, setFavoriteSavingMarketId] =
     useState<string | null>(null);
   const [radarEnabled, setRadarEnabled] = useState(false);
+  const isPrimaryRadarAdmin = Boolean(
+    telegramMiniApp.user?.id === 111287296 ||
+    telegramMiniApp.user?.username?.replace(/^@/, "").toLowerCase() === "ramoadmin" ||
+    backendUser?.telegramId === "111287296" ||
+    backendUser?.username?.replace(/^@/, "").toLowerCase() === "ramoadmin"
+  );
 
 
   const filteredMarkets = markets.filter((market) => {
@@ -358,7 +364,8 @@ export default function App() {
           const canAccessRadar = Boolean(
             radarStatus?.enabled ||
             data.user.role === "ADMIN" ||
-            data.user.radarPreviewAccess
+            data.user.radarPreviewAccess ||
+            isPrimaryRadarAdmin
           );
           setRadarEnabled(canAccessRadar);
           if (startsInRadar && canAccessRadar) {
@@ -388,10 +395,11 @@ export default function App() {
       .then((status) => setRadarEnabled(Boolean(
         status.enabled ||
         backendUser.role === "ADMIN" ||
-        backendUser.radarPreviewAccess
+        backendUser.radarPreviewAccess ||
+        isPrimaryRadarAdmin
       )))
       .catch(() => setRadarEnabled(
-        backendUser.role === "ADMIN" || backendUser.radarPreviewAccess
+        backendUser.role === "ADMIN" || backendUser.radarPreviewAccess || isPrimaryRadarAdmin
       ));
   }, [activeTab, telegramMiniApp.initData, backendUser?.id, backendUser?.role, backendUser?.radarPreviewAccess]);
 
@@ -462,7 +470,8 @@ export default function App() {
   const hasRadarAccess = Boolean(
     radarEnabled ||
     backendUser?.role === "ADMIN" ||
-    backendUser?.radarPreviewAccess
+    backendUser?.radarPreviewAccess ||
+    isPrimaryRadarAdmin
   );
 
   const telegramUserLabel = telegramMiniApp.user?.username

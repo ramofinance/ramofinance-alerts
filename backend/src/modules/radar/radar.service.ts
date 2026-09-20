@@ -1,5 +1,6 @@
 import { Prisma, TelegramNotificationStatus, UserRole } from "@prisma/client";
 import { env } from "../../config/env";
+import { isAdminIdentity } from "../../security/admin-identity";
 import { prisma } from "../../database/prisma";
 import { sendTelegramMessage } from "../../telegram/telegram-api";
 import { resolveTelegramLanguage } from "../../telegram/telegram.i18n";
@@ -361,11 +362,13 @@ const queueSignalNotifications = async (signal: any) => {
     where: {
       isActive: true,
       radarNotificationsEnabled: true,
-      telegramId: { not: null },
-      ...(!env.RADAR_PUBLIC_ENABLED ? { OR: [{ role: UserRole.ADMIN }, { radarPreviewAccess: true }] } : {})
+      telegramId: { not: null }
     }
   });
-  const eligible = users.filter((user) => matchesUserFilters(signal, user));
+  const accessEligible = env.RADAR_PUBLIC_ENABLED
+    ? users
+    : users.filter((user) => isAdminIdentity(user) || user.radarPreviewAccess);
+  const eligible = accessEligible.filter((user) => matchesUserFilters(signal, user));
   if (!eligible.length) return;
   await prisma.radarNotification.createMany({
     data: eligible.map((user) => ({
@@ -638,7 +641,7 @@ export const runRadarScan = async () => {
         if (code !== "P2002") throw error;
       }
     }
-    logger.info({ candidates: candidates.length, qualified: qualified.length, created }, "Radar v3.5.1 multi-source scan completed");
+    logger.info({ candidates: candidates.length, qualified: qualified.length, created }, "Radar v3.5.2 multi-source scan completed");
     return { created, candidates: candidates.length };
   } catch (error) {
     logger.warn({ error: error instanceof Error ? error.message : error }, "Radar scan failed");
@@ -720,9 +723,9 @@ const settingsToData = (settings: RadarSettings) => ({
 });
 
 export const radarService = {
-  status(user: { role: UserRole; radarPreviewAccess: boolean }) {
+  status(user: { role: UserRole; radarPreviewAccess: boolean; telegramId?: string | null; username?: string | null }) {
     return {
-      enabled: env.RADAR_ENABLED && (env.RADAR_PUBLIC_ENABLED || user.role === UserRole.ADMIN || user.radarPreviewAccess),
+      enabled: env.RADAR_ENABLED && (env.RADAR_PUBLIC_ENABLED || isAdminIdentity(user) || user.radarPreviewAccess),
       public: env.RADAR_PUBLIC_ENABLED,
       scanIntervalSeconds: Math.round(env.RADAR_SCAN_INTERVAL_MS / 1000)
     };

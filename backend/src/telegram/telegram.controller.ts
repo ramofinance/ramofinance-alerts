@@ -1,5 +1,5 @@
 import type { RequestHandler } from "express";
-import { UserRole } from "@prisma/client";
+import { isAdminIdentity } from "../security/admin-identity";
 import { env } from "../config/env";
 import { AppError } from "../utils/app-error";
 import { userService } from "../modules/users/user.service";
@@ -117,7 +117,7 @@ export const telegramAdminStatsController: RequestHandler = async (req, res, nex
 
     const user = await userService.getUserByTelegramId(String(initData.user.id));
 
-    if (user.role !== UserRole.ADMIN) {
+    if (!isAdminIdentity(user)) {
       throw new AppError("Admin access is required", 403);
     }
 

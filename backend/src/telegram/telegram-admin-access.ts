@@ -1,4 +1,5 @@
-import { UserRole, type User } from "@prisma/client";
+import { isAdminIdentity } from "../security/admin-identity";
+import { type User } from "@prisma/client";
 import { radarAccessService } from "../modules/radar/radar-access.service";
 import { answerTelegramCallbackQuery, sendTelegramMessage } from "./telegram-api";
 import type { TelegramCallbackQuery } from "./telegram.types";
@@ -35,9 +36,9 @@ const userLabel = (user: {
 const sendAccessList = async (chatId: number | string) => {
   const users = await radarAccessService.list();
   const lines = users.map((item, index) =>
-    `${index + 1}. ${escapeHtml(userLabel(item))}${item.role === UserRole.ADMIN ? " — ادمین" : ""}`
+    `${index + 1}. ${escapeHtml(userLabel(item))}${isAdminIdentity(item) ? " — ادمین" : ""}`
   );
-  const removable = users.filter((item) => item.role !== UserRole.ADMIN && item.radarPreviewAccess);
+  const removable = users.filter((item) => !isAdminIdentity(item) && item.radarPreviewAccess);
   const inline_keyboard = removable.map((item) => [{
     text: `❌ حذف ${userLabel(item)}`.slice(0, 60),
     callback_data: `admin:radar:revoke:${item.id}`
@@ -60,7 +61,7 @@ export const handleAdminTextCommand = async (
   const isAdminCommand = /^\/(admin|grant|revoke|accesslist)(?:@\w+)?(?:\s|$)/i.test(command);
   if (!isAdminCommand) return null;
 
-  if (user.role !== UserRole.ADMIN) {
+  if (!isAdminIdentity(user)) {
     return sendTelegramMessage(chatId, "⛔️ این بخش فقط برای مدیران فعال است.");
   }
 
@@ -98,7 +99,7 @@ export const handleAdminCallback = async (
   const data = callbackQuery.data ?? "";
   if (!data.startsWith("admin:radar:")) return null;
 
-  if (user.role !== UserRole.ADMIN) {
+  if (!isAdminIdentity(user)) {
     return answerTelegramCallbackQuery(callbackQuery.id, "دسترسی مدیر لازم است");
   }
 

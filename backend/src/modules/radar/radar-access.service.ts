@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { UserRole } from "@prisma/client";
 import { env } from "../../config/env";
 import { prisma } from "../../database/prisma";
+import { isAdminIdentity } from "../../security/admin-identity";
 
 const normalizeUsername = (value: string) =>
   value.trim().replace(/^@/, "").toLowerCase();
@@ -49,7 +50,7 @@ export const radarAccessService = {
     const user = await prisma.user.findFirst({
       where: { username: { equals: username, mode: "insensitive" } }
     });
-    if (!user || user.role === UserRole.ADMIN) return null;
+    if (!user || isAdminIdentity(user)) return null;
 
     return prisma.user.update({
       where: { id: user.id },
@@ -62,7 +63,7 @@ export const radarAccessService = {
 
   async revokeById(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.role === UserRole.ADMIN) return null;
+    if (!user || isAdminIdentity(user)) return null;
 
     return prisma.user.update({
       where: { id: user.id },
