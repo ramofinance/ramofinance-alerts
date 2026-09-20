@@ -109,7 +109,7 @@ const connectWhaleAlert = () => {
     logger.info("Radar Whale Alert stream connected");
     socket.send(JSON.stringify({
       type: "subscribe_alerts",
-      id: "ramo-radar-v3.3",
+      id: "ramo-radar-v3.4",
       tx_types: ["transfer"],
       min_value_usd: env.RADAR_WHALE_ALERT_MIN_USD
     }));

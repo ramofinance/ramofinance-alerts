@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getRadarSignals, runRadarScan, sendRadarTestNotification, updateRadarSettings, type RadarSettingsInput } from "../api/radar";
 import type { RadarSignal, User } from "../types/api";
+import { getRadarHelp, type RadarHelpKey } from "./radar-help";
 
 type Props = { copy: any; user: User; initData: string; onBack: () => void; onUserUpdated: (user: User) => void };
 
@@ -24,6 +25,11 @@ const reasonText = (reason: string, copy: any) => {
   if (code === "PRICE") return copy.radarReasonPrice.replace("{value}", value ?? "—");
   if (code === "HIGH_TRADES") return copy.radarReasonTrades;
   if (code === "SMALL_CAP") return copy.radarReasonSmallCap;
+  if (code === "LOW_CAP") return copy.radarReasonLowCap ?? "Low-cap gem range.";
+  if (code === "MID_CAP") return copy.radarReasonMidCap ?? "Mid-cap gem range.";
+  if (code === "HIGH_CAP") return copy.radarReasonHighCap ?? "Higher-cap range.";
+  if (code === "DEX_UNIQUE_BUYERS") return (copy.radarReasonUniqueBuyers ?? "{value} unique DEX buyers in 24h.").replace("{value}", value ?? "—");
+  if (code === "SQUEEZE_DEPTH") { const parts = reason.split(":"); return (copy.radarReasonSqueezeDepth ?? "Short-squeeze candle swept {value} prior candles on {timeframe}.").replace("{value}", parts[1] ?? "—").replace("{timeframe}", parts[2] ?? "—"); }
   if (code === "BUY_IMBALANCE") return copy.radarReasonBuyImbalance.replace("{value}", value ?? "—");
   if (code === "WHALE_BUY") return copy.radarReasonWhaleBuy.replace("{value}", money(value ?? null));
   if (code === "BID_WALL") return copy.radarReasonBidWall.replace("{value}", value ?? "—");
@@ -48,6 +54,7 @@ const defaults = {
   minVolumeAcceleration: 0,
   minPriceChange24h: 0,
   minTradeCount24h: 0,
+  minDexUniqueBuyers24h: 0,
   minTurnover72hPercent: 0,
   minBuyImbalancePercent: 0,
   minWhaleBuyVolumeK: 0,
@@ -57,6 +64,7 @@ const defaults = {
   minDexLiquidityK: 0,
   minDexBuyImbalancePercent: 0,
   minShortLiquidationK: 0,
+  minShortSqueezeDepth: 0,
   maxFundingRatePercent: 0,
   minOnchainWhaleM: 0,
   minExchangeOutflowM: 0,
@@ -74,6 +82,7 @@ const draftFromUser = (user: User): Draft => ({
   minVolumeAcceleration: user.radarMinVolumeAcceleration ?? 0,
   minPriceChange24h: user.radarMinPriceChange24h ?? 0,
   minTradeCount24h: user.radarMinTradeCount24h ?? 0,
+  minDexUniqueBuyers24h: user.radarMinDexUniqueBuyers24h ?? 0,
   minTurnover72hPercent: user.radarMinTurnover72hPercent ?? 0,
   minBuyImbalancePercent: user.radarMinBuyImbalancePercent ?? 0,
   minWhaleBuyVolumeK: (user.radarMinWhaleBuyVolumeUsd ?? 0) / 1_000,
@@ -83,6 +92,7 @@ const draftFromUser = (user: User): Draft => ({
   minDexLiquidityK: (user.radarMinDexLiquidityUsd ?? 0) / 1_000,
   minDexBuyImbalancePercent: user.radarMinDexBuyImbalancePercent ?? 0,
   minShortLiquidationK: (user.radarMinShortLiquidationUsd ?? 0) / 1_000,
+  minShortSqueezeDepth: user.radarMinShortSqueezeDepth ?? 0,
   maxFundingRatePercent: user.radarMaxFundingRatePercent ?? 0,
   minOnchainWhaleM: (user.radarMinOnchainWhaleUsd ?? 0) / 1_000_000,
   minExchangeOutflowM: (user.radarMinExchangeOutflowUsd ?? 0) / 1_000_000,
@@ -96,6 +106,8 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(() => draftFromUser(user));
+  const [activeHelp, setActiveHelp] = useState<RadarHelpKey | null>(null);
+  const help = getRadarHelp(user.preferredLanguage ?? user.languageCode);
 
   const load = async () => {
     try { setLoading(true); setSignals(await getRadarSignals(initData)); }
@@ -119,6 +131,7 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
     minVolumeAcceleration: Math.max(0, n(draft.minVolumeAcceleration)),
     minPriceChange24h: n(draft.minPriceChange24h),
     minTradeCount24h: Math.max(0, Math.trunc(n(draft.minTradeCount24h))),
+    minDexUniqueBuyers24h: Math.max(0, Math.trunc(n(draft.minDexUniqueBuyers24h))),
     minTurnover72hPercent: Math.max(0, n(draft.minTurnover72hPercent)),
     minBuyImbalancePercent: Math.max(0, n(draft.minBuyImbalancePercent)),
     minWhaleBuyVolumeUsd: Math.max(0, n(draft.minWhaleBuyVolumeK)) * 1_000,
@@ -128,6 +141,7 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
     minDexLiquidityUsd: Math.max(0, n(draft.minDexLiquidityK)) * 1_000,
     minDexBuyImbalancePercent: Math.max(0, n(draft.minDexBuyImbalancePercent)),
     minShortLiquidationUsd: Math.max(0, n(draft.minShortLiquidationK)) * 1_000,
+    minShortSqueezeDepth: Math.max(0, Math.trunc(n(draft.minShortSqueezeDepth))),
     maxFundingRatePercent: Math.max(0, n(draft.maxFundingRatePercent)),
     minOnchainWhaleUsd: Math.max(0, n(draft.minOnchainWhaleM)) * 1_000_000,
     minExchangeOutflowUsd: Math.max(0, n(draft.minExchangeOutflowM)) * 1_000_000,
@@ -160,8 +174,17 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
     finally { setBusy(false); }
   };
 
-  const numberField = (key: keyof Draft, label: string, unit: string, step = 1, min?: number, max?: number) => (
-    <label>{label}
+  const fieldTitle = (label: string, helpKey: RadarHelpKey) => (
+    <span className="radar-field-title">
+      <span>{label}</span>
+      <button type="button" className="radar-info-button" aria-label={`Info: ${label}`} aria-expanded={activeHelp === helpKey}
+        onClick={(event) => { event.preventDefault(); event.stopPropagation(); setActiveHelp((current) => current === helpKey ? null : helpKey); }}>!</button>
+      {activeHelp === helpKey ? <span className="radar-help-popover" role="note">{help[helpKey]}</span> : null}
+    </span>
+  );
+
+  const numberField = (key: keyof Draft, label: string, unit: string, helpKey: RadarHelpKey, step = 1, min?: number, max?: number) => (
+    <label>{fieldTitle(label, helpKey)}
       <div className="radar-input-with-unit">
         <input type="number" step={step} min={min} max={max} value={draft[key]} disabled={busy}
           onChange={(event) => setDraft((value) => ({ ...value, [key]: Number(event.target.value) }))} />
@@ -169,6 +192,15 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
       </div>
     </label>
   );
+
+  const applyCapPreset = (minM: number, maxM: number) => setDraft((value) => ({ ...value, minMarketCapM: minM, maxMarketCapM: maxM }));
+  const capTier = (raw: string | null) => {
+    const cap = Number(raw ?? 0);
+    if (cap >= 10_000 && cap < 1_000_000) return { key: "low", label: "LOW CAP" };
+    if (cap >= 1_000_000 && cap < 100_000_000) return { key: "mid", label: "MID CAP" };
+    if (cap >= 100_000_000 && cap <= 500_000_000) return { key: "high", label: "HIGH CAP" };
+    return cap > 500_000_000 ? { key: "large", label: "LARGE CAP" } : null;
+  };
 
   return (
     <section className="radar-screen">
@@ -180,51 +212,59 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
       </header>
 
       <article className="radar-settings-card radar-settings-card--advanced">
-        <div className="radar-settings-heading"><strong>🔔 {copy.radarTelegramTitle}</strong><p>{copy.radarTelegramHint}</p></div>
+        <div className="radar-settings-heading"><strong className="radar-heading-with-help">🔔 {copy.radarTelegramTitle}<button type="button" className="radar-info-button" aria-label="Telegram alert info" aria-expanded={activeHelp === "notifications"} onClick={() => setActiveHelp((current) => current === "notifications" ? null : "notifications")}>!</button>{activeHelp === "notifications" ? <span className="radar-help-popover radar-help-popover--heading" role="note">{help.notifications}</span> : null}</strong><p>{copy.radarTelegramHint}</p></div>
         <label className="radar-switch">
           <input type="checkbox" checked={user.radarNotificationsEnabled} disabled={busy} onChange={(event) => void saveSettings(event.target.checked)} />
           <span>{user.radarNotificationsEnabled ? copy.radarEnabled : copy.radarDisabled}</span>
         </label>
 
         <h3 className="radar-filter-group-title">{copy.radarGroupCore}</h3>
+        <div className="radar-cap-presets">
+          <button type="button" onClick={() => applyCapPreset(0.01, 1)}>LOW CAP · $10K–$1M</button>
+          <button type="button" onClick={() => applyCapPreset(1, 100)}>MID CAP · $1M–$100M</button>
+          <button type="button" onClick={() => applyCapPreset(100, 500)}>HIGH CAP · $100M–$500M</button>
+          <button type="button" onClick={() => applyCapPreset(0.01, 100)}>GEM · $10K–$100M</button>
+        </div>
         <div className="radar-filter-grid">
-          <label>{copy.radarMinimumScore}
+          <label>{fieldTitle(copy.radarMinimumScore, "minimumScore")}
             <select value={draft.minimumScore} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minimumScore: Number(event.target.value) }))}>
               {[60, 65, 70, 75, 80, 85, 90, 95].map((score) => <option key={score} value={score}>{score}/100</option>)}
             </select>
           </label>
-          {numberField("minMarketCapM", copy.radarMinMarketCap, "$M", 1, 0)}
-          {numberField("maxMarketCapM", copy.radarMaxMarketCap, "$M", 1, 0)}
-          {numberField("minTurnoverPercent", copy.radarMinTurnover, "%", 0.5, 0)}
-          {numberField("minTurnover72hPercent", copy.radarMinTurnover72h, "%", 1, 0)}
-          {numberField("minVolumeAcceleration", copy.radarMinAcceleration, "x", 0.1, 0)}
-          {numberField("minPriceChange24h", copy.radarMinPriceChange, "%", 0.5)}
-          {numberField("minTradeCount24h", copy.radarMinTrades, "#", 1000, 0)}
+          {numberField("minMarketCapM", copy.radarMinMarketCap, "$M", "minMarketCap", 0.01, 0)}
+          {numberField("maxMarketCapM", copy.radarMaxMarketCap, "$M", "maxMarketCap", 0.01, 0)}
+          {numberField("minTurnoverPercent", copy.radarMinTurnover, "%", "minTurnover24h", 0.5, 0)}
+          {numberField("minTurnover72hPercent", copy.radarMinTurnover72h, "%", "minTurnover72h", 1, 0)}
+          {numberField("minVolumeAcceleration", copy.radarMinAcceleration, "x", "minAcceleration", 0.1, 0)}
+          {numberField("minPriceChange24h", copy.radarMinPriceChange, "%", "minPriceChange", 0.5)}
+          {numberField("minTradeCount24h", copy.radarMinTrades, "#", "minTrades", 1000, 0)}
+          {numberField("minDexUniqueBuyers24h", copy.radarMinUniqueBuyers ?? "Unique DEX buyers (24h)", "wallets", "minUniqueBuyers", 10, 0)}
         </div>
 
         <h3 className="radar-filter-group-title">{copy.radarGroupFlow}</h3>
         <div className="radar-filter-grid">
-          {numberField("minBuyImbalancePercent", copy.radarMinBuyImbalance, "%", 1, 0, 100)}
-          {numberField("minWhaleBuyVolumeK", copy.radarMinWhaleBuy, "$K", 10, 0)}
-          {numberField("minBidWallImbalancePercent", copy.radarMinBidWall, "%", 1, 0, 100)}
-          {numberField("minCexConfirmations", copy.radarMinCexConfirmations, "CEX", 1, 0, 3)}
-          {numberField("minChannelConfirmations", copy.radarMinChannelConfirmations, "ch", 1, 0, 10)}
+          {numberField("minBuyImbalancePercent", copy.radarMinBuyImbalance, "%", "minBuyPressure", 1, 0, 100)}
+          {numberField("minWhaleBuyVolumeK", copy.radarMinWhaleBuy, "$K", "minWhaleBuy", 10, 0)}
+          {numberField("minBidWallImbalancePercent", copy.radarMinBidWall, "%", "minBidWall", 1, 0, 100)}
+          {numberField("minCexConfirmations", copy.radarMinCexConfirmations, "CEX", "minCex", 1, 0, 3)}
+          {numberField("minChannelConfirmations", copy.radarMinChannelConfirmations, "ch", "minChannels", 1, 0, 10)}
         </div>
 
         <h3 className="radar-filter-group-title">{copy.radarGroupDerivatives}</h3>
         <div className="radar-filter-grid">
-          {numberField("minOpenInterestChangePercent", copy.radarMinOiChange, "%", 0.1, 0)}
-          {numberField("minShortLiquidationK", copy.radarMinShortLiq, "$K", 10, 0)}
-          {numberField("maxFundingRatePercent", copy.radarMaxFunding, "%", 0.001, 0)}
+          {numberField("minOpenInterestChangePercent", copy.radarMinOiChange, "%", "minOi", 0.1, 0)}
+          {numberField("minShortLiquidationK", copy.radarMinShortLiq, "$K", "minShortLiq", 10, 0)}
+          {numberField("minShortSqueezeDepth", copy.radarMinSqueezeDepth ?? "Minimum squeeze depth", "candles", "minSqueezeDepth", 1, 0, 100)}
+          {numberField("maxFundingRatePercent", copy.radarMaxFunding, "%", "maxFunding", 0.001, 0)}
         </div>
 
         <h3 className="radar-filter-group-title">{copy.radarGroupDexOnchain}</h3>
         <div className="radar-filter-grid">
-          {numberField("minDexTurnoverPercent", copy.radarMinDexTurnover, "%", 1, 0)}
-          {numberField("minDexLiquidityK", copy.radarMinDexLiquidity, "$K", 10, 0)}
-          {numberField("minDexBuyImbalancePercent", copy.radarMinDexBuyImbalance, "%", 1, 0, 100)}
-          {numberField("minOnchainWhaleM", copy.radarMinOnchainWhale, "$M", 0.1, 0)}
-          {numberField("minExchangeOutflowM", copy.radarMinExchangeOutflow, "$M", 0.1, 0)}
+          {numberField("minDexTurnoverPercent", copy.radarMinDexTurnover, "%", "minDexTurnover", 1, 0)}
+          {numberField("minDexLiquidityK", copy.radarMinDexLiquidity, "$K", "minDexLiquidity", 10, 0)}
+          {numberField("minDexBuyImbalancePercent", copy.radarMinDexBuyImbalance, "%", "minDexBuyPressure", 1, 0, 100)}
+          {numberField("minOnchainWhaleM", copy.radarMinOnchainWhale, "$M", "minOnchainWhale", 0.1, 0)}
+          {numberField("minExchangeOutflowM", copy.radarMinExchangeOutflow, "$M", "minExchangeOutflow", 0.1, 0)}
         </div>
 
         <p className="radar-filter-note">{copy.radarFilterHintV33}</p>
@@ -244,7 +284,7 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
         {signals.map((signal) => (
           <article className="radar-signal-card" key={signal.id}>
             <div className="radar-signal-head">
-              <div><strong>{signal.symbol.endsWith("USDT") ? signal.symbol.replace(/USDT$/, "/USDT") : signal.symbol}</strong><span>{new Date(signal.detectedAt).toLocaleString()}</span></div>
+              <div><strong>{signal.symbol.endsWith("USDT") ? signal.symbol.replace(/USDT$/, "/USDT") : signal.symbol}</strong>{capTier(signal.marketCap) ? <em className={`radar-cap-badge is-${capTier(signal.marketCap)!.key}`}>{capTier(signal.marketCap)!.label}</em> : null}<span>{new Date(signal.detectedAt).toLocaleString()}</span></div>
               <b className={`radar-score ${signal.score >= 85 ? "is-hot" : ""}`}>{signal.score}<small>/100</small></b>
             </div>
             <div className="radar-metrics">
@@ -255,6 +295,10 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
               <span><small>{copy.radarAcceleration}</small><b>{signal.volumeAcceleration == null ? "—" : `${signal.volumeAcceleration.toFixed(1)}x`}</b></span>
               <span><small>{copy.radarBuyPressure}</small><b>{pct(signal.buySellImbalance)}</b></span>
               <span><small>{copy.radarMarketCap}</small><b>{money(signal.marketCap)}</b></span>
+              {signal.tradeCount24h != null && signal.tradeCount24h > 0 ? <span><small>{copy.radarTradeCount ?? "24h trades"}</small><b>{signal.tradeCount24h.toLocaleString("en-US")}</b></span> : null}
+              {signal.dexUniqueBuyers24h != null && signal.dexUniqueBuyers24h > 0 ? <span><small>{copy.radarUniqueBuyers ?? "Unique DEX buyers"}</small><b>{signal.dexUniqueBuyers24h.toLocaleString("en-US")}</b></span> : null}
+              {signal.dexUniqueSellers24h != null && signal.dexUniqueSellers24h > 0 ? <span><small>{copy.radarUniqueSellers ?? "Unique DEX sellers"}</small><b>{signal.dexUniqueSellers24h.toLocaleString("en-US")}</b></span> : null}
+              {signal.shortSqueezeDepth != null && signal.shortSqueezeDepth > 0 ? <span><small>{copy.radarSqueezeDepth ?? "Squeeze depth"}</small><b>{signal.shortSqueezeDepth} × {signal.shortSqueezeTimeframe ?? "—"}</b></span> : null}
               <span><small>{copy.radarCexConfirmations}</small><b>{signal.cexConfirmations}/3</b></span>
               {signal.chainId ? <span><small>{copy.radarChain}</small><b>{signal.chainId}</b></span> : null}
               {Number(signal.whaleBuyVolumeUsd ?? 0) > 0 ? <span><small>{copy.radarWhaleBuys}</small><b>{money(signal.whaleBuyVolumeUsd)}</b></span> : null}

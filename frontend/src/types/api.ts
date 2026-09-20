@@ -89,6 +89,7 @@ export type User = {
   radarMinVolumeAcceleration: number | null;
   radarMinPriceChange24h: number | null;
   radarMinTradeCount24h: number | null;
+  radarMinDexUniqueBuyers24h: number;
   radarMinTurnover72hPercent: number;
   radarMinBuyImbalancePercent: number;
   radarMinWhaleBuyVolumeUsd: number;
@@ -98,6 +99,7 @@ export type User = {
   radarMinDexLiquidityUsd: number;
   radarMinDexBuyImbalancePercent: number;
   radarMinShortLiquidationUsd: number;
+  radarMinShortSqueezeDepth: number;
   radarMaxFundingRatePercent: number;
   radarMinOnchainWhaleUsd: number;
   radarMinExchangeOutflowUsd: number;
@@ -116,8 +118,8 @@ export type RadarSignal = {
   volume72h: string | null; turnover72h: number | null; buySellImbalance: number | null;
   whaleBuyVolumeUsd: string | null; whaleSellVolumeUsd: string | null; whaleTradeCount: number | null;
   bidWallImbalance: number | null; openInterestChange: number | null; fundingRate: number | null;
-  shortLiquidationUsd: string | null; longLiquidationUsd: string | null;
-  dexVolume24h: string | null; dexLiquidityUsd: string | null; dexTurnover24h: number | null; dexBuySellImbalance: number | null;
+  shortLiquidationUsd: string | null; longLiquidationUsd: string | null; shortSqueezeDepth: number | null; shortSqueezeTimeframe: string | null;
+  dexVolume24h: string | null; dexLiquidityUsd: string | null; dexTurnover24h: number | null; dexBuySellImbalance: number | null; dexUniqueBuyers24h: number | null; dexUniqueSellers24h: number | null;
   cexConfirmations: number; channelConfirmations: number; channelMentions: string[] | null;
   onchainWhaleUsd: string | null; exchangeOutflowUsd: string | null; exchangeInflowUsd: string | null;
   chainId: string | null; dexUrl: string | null;

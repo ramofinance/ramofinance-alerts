@@ -9,6 +9,7 @@ import {
   type ChannelIntelligence,
   type DexSnapshot,
   enrichCexMetrics,
+  getBinanceShortSqueezeDepth,
   findDexSnapshot,
   loadCexUniverse,
   loadCoinGeckoMarkets,
@@ -51,10 +52,14 @@ type CandidateValues = {
   fundingRate: number;
   shortLiquidationUsd: number;
   longLiquidationUsd: number;
+  shortSqueezeDepth: number;
+  shortSqueezeTimeframe: string | null;
   dexVolume24h: number;
   dexLiquidityUsd: number;
   dexTurnover24h: number;
   dexBuySellImbalance: number;
+  dexUniqueBuyers24h: number;
+  dexUniqueSellers24h: number;
   cexConfirmations: number;
   channelConfirmations: number;
   channelMentions: string[];
@@ -81,6 +86,7 @@ type RadarSettings = {
   minVolumeAcceleration: number;
   minPriceChange24h: number;
   minTradeCount24h: number;
+  minDexUniqueBuyers24h: number;
   minTurnover72hPercent: number;
   minBuyImbalancePercent: number;
   minWhaleBuyVolumeUsd: number;
@@ -90,6 +96,7 @@ type RadarSettings = {
   minDexLiquidityUsd: number;
   minDexBuyImbalancePercent: number;
   minShortLiquidationUsd: number;
+  minShortSqueezeDepth: number;
   maxFundingRatePercent: number;
   minOnchainWhaleUsd: number;
   minExchangeOutflowUsd: number;
@@ -129,32 +136,45 @@ const scoreCandidate = (candidate: CandidateValues) => {
   else if (turnover >= 0.05) score += 7;
   if (turnover >= 0.1) reasons.push(`TURNOVER:${(turnover * 100).toFixed(1)}`);
 
-  if (turnover72 >= 1.5) score += 10;
-  else if (turnover72 >= 0.75) score += 7;
-  else if (turnover72 >= 0.3) score += 4;
+  if (turnover72 >= 1.5) score += 8;
+  else if (turnover72 >= 0.75) score += 6;
+  else if (turnover72 >= 0.3) score += 3;
   if (turnover72 >= 0.3) reasons.push(`TURNOVER72:${(turnover72 * 100).toFixed(1)}`);
 
-  if (acceleration >= 6) score += 13;
-  else if (acceleration >= 3) score += 10;
-  else if (acceleration >= 1.8) score += 7;
+  if (acceleration >= 6) score += 10;
+  else if (acceleration >= 3) score += 8;
+  else if (acceleration >= 1.8) score += 6;
   else if (acceleration >= 1.2) score += 3;
   if (acceleration >= 1.8) reasons.push(`ACCELERATION:${acceleration.toFixed(1)}`);
 
   const positiveChange = Math.max(change, 0);
-  if (positiveChange >= 12) score += 8;
-  else if (positiveChange >= 7) score += 6;
-  else if (positiveChange >= 3) score += 4;
+  if (positiveChange >= 12) score += 10;
+  else if (positiveChange >= 7) score += 8;
+  else if (positiveChange >= 3) score += 5;
   else if (positiveChange >= 1) score += 2;
   if (positiveChange >= 3) reasons.push(`PRICE:${positiveChange.toFixed(1)}`);
 
-  if (candidate.tradeCount24h >= 500_000) score += 5;
-  else if (candidate.tradeCount24h >= 100_000) score += 3;
-  else if (candidate.tradeCount24h >= 20_000) score += 2;
+  if (candidate.tradeCount24h >= 500_000) score += 12;
+  else if (candidate.tradeCount24h >= 100_000) score += 9;
+  else if (candidate.tradeCount24h >= 20_000) score += 5;
+  else if (candidate.tradeCount24h >= 5_000) score += 2;
   if (candidate.tradeCount24h >= 100_000) reasons.push("HIGH_TRADES");
 
-  if (candidate.marketCap >= 3_000_000 && candidate.marketCap <= 500_000_000) {
-    score += 5;
-    reasons.push("SMALL_CAP");
+  if (candidate.dexUniqueBuyers24h >= 2_000) score += 16;
+  else if (candidate.dexUniqueBuyers24h >= 750) score += 12;
+  else if (candidate.dexUniqueBuyers24h >= 250) score += 8;
+  else if (candidate.dexUniqueBuyers24h >= 75) score += 4;
+  if (candidate.dexUniqueBuyers24h >= 75) reasons.push(`DEX_UNIQUE_BUYERS:${candidate.dexUniqueBuyers24h}`);
+
+  if (candidate.marketCap >= 10_000 && candidate.marketCap < 1_000_000) {
+    score += 8;
+    reasons.push("LOW_CAP");
+  } else if (candidate.marketCap >= 1_000_000 && candidate.marketCap < 100_000_000) {
+    score += 6;
+    reasons.push("MID_CAP");
+  } else if (candidate.marketCap >= 100_000_000 && candidate.marketCap <= 500_000_000) {
+    score += 3;
+    reasons.push("HIGH_CAP");
   }
 
   if (candidate.buySellImbalance >= 40) score += 8;
@@ -180,6 +200,10 @@ const scoreCandidate = (candidate: CandidateValues) => {
   if (candidate.shortLiquidationUsd >= 1_000_000) score += 4;
   else if (candidate.shortLiquidationUsd >= 250_000) score += 2;
   if (candidate.shortLiquidationUsd >= 250_000) reasons.push(`SHORT_LIQ:${Math.round(candidate.shortLiquidationUsd)}`);
+  if (candidate.shortSqueezeDepth >= 10) score += 8;
+  else if (candidate.shortSqueezeDepth >= 5) score += 5;
+  else if (candidate.shortSqueezeDepth >= 2) score += 2;
+  if (candidate.shortSqueezeDepth >= 2) reasons.push(`SQUEEZE_DEPTH:${candidate.shortSqueezeDepth}:${candidate.shortSqueezeTimeframe ?? "1h"}`);
 
   if (candidate.dexTurnover24h >= 0.5) score += 12;
   else if (candidate.dexTurnover24h >= 0.2) score += 8;
@@ -199,8 +223,8 @@ const scoreCandidate = (candidate: CandidateValues) => {
   else if (candidate.dexVolume24h >= 500_000) score += 2;
   if (candidate.dexVolume24h >= 500_000) reasons.push(`DEX_VOLUME:${Math.round(candidate.dexVolume24h)}`);
 
-  if (candidate.cexConfirmations >= 3) score += 4;
-  else if (candidate.cexConfirmations === 2) score += 2;
+  if (candidate.cexConfirmations >= 3) score += 2;
+  else if (candidate.cexConfirmations === 2) score += 1;
   if (candidate.cexConfirmations >= 2) reasons.push(`CEX_CONFIRM:${candidate.cexConfirmations}`);
 
   if (candidate.channelConfirmations >= 3) score += 4;
@@ -241,6 +265,10 @@ const formatSignalMessage = (signal: any, language: string) => {
   const oi = pct(signal.openInterestChange);
   const whale = compactMoney(signal.whaleBuyVolumeUsd);
   const shortLiq = compactMoney(signal.shortLiquidationUsd);
+  const uniqueBuyers = Number(signal.dexUniqueBuyers24h ?? 0);
+  const uniqueSellers = Number(signal.dexUniqueSellers24h ?? 0);
+  const squeezeDepth = Number(signal.shortSqueezeDepth ?? 0);
+  const squeezeTimeframe = signal.shortSqueezeTimeframe ? String(signal.shortSqueezeTimeframe) : "—";
   const channels = Number(signal.channelConfirmations ?? 0);
   const isFa = language === "FA";
 
@@ -253,6 +281,8 @@ const formatSignalMessage = (signal: any, language: string) => {
       `🕒 گردش ۷۲ساعته: <b>${turnover72}</b>`, `⚡ شتاب حجم ۱۵دقیقه: <b>${acceleration}</b>`,
       `🟢 فشار خرید تیکر: <b>${buyPressure}</b>`, `🐋 خریدهای بزرگ اخیر: <b>${whale}</b>`,
       `📊 تغییر OI: <b>${oi}</b>`, `💥 لیکویید شورت ۱ساعته: <b>${shortLiq}</b>`,
+      ...(uniqueBuyers > 0 ? [`👥 خریداران یکتای DEX در ۲۴ساعت: <b>${uniqueBuyers.toLocaleString("en-US")}</b>${uniqueSellers > 0 ? ` · فروشندگان یکتا: <b>${uniqueSellers.toLocaleString("en-US")}</b>` : ""}`] : []),
+      ...(squeezeDepth > 0 ? [`🧹 عمق Short Squeeze: <b>${squeezeDepth}</b> کندل در <b>${escapeHtml(squeezeTimeframe)}</b>`] : []),
       `📡 تأیید کانال‌ها: <b>${channels}</b>`, `🏦 مارکت‌کپ: <b>${compactMoney(signal.marketCap)}</b>`, "",
       "این هشدار تشخیص فعالیت غیرعادی است و تضمین پامپ یا سیگنال خرید نیست."
     ].join("\n");
@@ -266,6 +296,8 @@ const formatSignalMessage = (signal: any, language: string) => {
     `🕒 72h turnover: <b>${turnover72}</b>`, `⚡ 15m acceleration: <b>${acceleration}</b>`,
     `🟢 Taker buy pressure: <b>${buyPressure}</b>`, `🐋 Recent large buys: <b>${whale}</b>`,
     `📊 OI change: <b>${oi}</b>`, `💥 1h short liquidations: <b>${shortLiq}</b>`,
+    ...(uniqueBuyers > 0 ? [`👥 Unique DEX buyers (24h): <b>${uniqueBuyers.toLocaleString("en-US")}</b>${uniqueSellers > 0 ? ` · unique sellers: <b>${uniqueSellers.toLocaleString("en-US")}</b>` : ""}`] : []),
+    ...(squeezeDepth > 0 ? [`🧹 Short-squeeze depth: <b>${squeezeDepth}</b> candles on <b>${escapeHtml(squeezeTimeframe)}</b>`] : []),
     `📡 Channel confirmations: <b>${channels}</b>`, `🏦 Market cap: <b>${compactMoney(signal.marketCap)}</b>`, "",
     "This detects abnormal activity; it is not a guaranteed pump or buy signal."
   ].join("\n");
@@ -276,27 +308,29 @@ const valueOrZero = (value: unknown) => safeNumber(value, 0);
 const matchesUserFilters = (signal: any, user: any) => {
   const marketCap = valueOrZero(signal.marketCap);
   if (signal.score < user.radarMinimumScore) return false;
-  if (marketCap < user.radarMinMarketCap) return false;
+  if (user.radarMinMarketCap > 0 && marketCap < user.radarMinMarketCap) return false;
   if (user.radarMaxMarketCap != null && user.radarMaxMarketCap > 0 && marketCap > user.radarMaxMarketCap) return false;
-  if (valueOrZero(signal.turnover24h) * 100 < user.radarMinTurnoverPercent) return false;
-  if (valueOrZero(signal.volumeAcceleration) < valueOrZero(user.radarMinVolumeAcceleration)) return false;
-  if (valueOrZero(signal.priceChange24h) < valueOrZero(user.radarMinPriceChange24h)) return false;
-  if (valueOrZero(signal.tradeCount24h) < valueOrZero(user.radarMinTradeCount24h)) return false;
-  if (valueOrZero(signal.turnover72h) * 100 < valueOrZero(user.radarMinTurnover72hPercent)) return false;
-  if (valueOrZero(signal.buySellImbalance) < valueOrZero(user.radarMinBuyImbalancePercent)) return false;
-  if (valueOrZero(signal.whaleBuyVolumeUsd) < valueOrZero(user.radarMinWhaleBuyVolumeUsd)) return false;
-  if (valueOrZero(signal.bidWallImbalance) < valueOrZero(user.radarMinBidWallImbalancePercent)) return false;
-  if (valueOrZero(signal.openInterestChange) < valueOrZero(user.radarMinOpenInterestChangePercent)) return false;
-  if (valueOrZero(signal.dexTurnover24h) * 100 < valueOrZero(user.radarMinDexTurnoverPercent)) return false;
-  if (valueOrZero(signal.dexLiquidityUsd) < valueOrZero(user.radarMinDexLiquidityUsd)) return false;
-  if (valueOrZero(signal.dexBuySellImbalance) < valueOrZero(user.radarMinDexBuyImbalancePercent)) return false;
-  if (valueOrZero(signal.shortLiquidationUsd) < valueOrZero(user.radarMinShortLiquidationUsd)) return false;
+  if (user.radarMinTurnoverPercent > 0 && valueOrZero(signal.turnover24h) * 100 < user.radarMinTurnoverPercent) return false;
+  if (valueOrZero(user.radarMinVolumeAcceleration) > 0 && valueOrZero(signal.volumeAcceleration) < valueOrZero(user.radarMinVolumeAcceleration)) return false;
+  if (valueOrZero(user.radarMinPriceChange24h) !== 0 && valueOrZero(signal.priceChange24h) < valueOrZero(user.radarMinPriceChange24h)) return false;
+  if (valueOrZero(user.radarMinTradeCount24h) > 0 && valueOrZero(signal.tradeCount24h) < valueOrZero(user.radarMinTradeCount24h)) return false;
+  if (valueOrZero(user.radarMinDexUniqueBuyers24h) > 0 && valueOrZero(signal.dexUniqueBuyers24h) < valueOrZero(user.radarMinDexUniqueBuyers24h)) return false;
+  if (valueOrZero(user.radarMinTurnover72hPercent) > 0 && valueOrZero(signal.turnover72h) * 100 < valueOrZero(user.radarMinTurnover72hPercent)) return false;
+  if (valueOrZero(user.radarMinBuyImbalancePercent) > 0 && valueOrZero(signal.buySellImbalance) < valueOrZero(user.radarMinBuyImbalancePercent)) return false;
+  if (valueOrZero(user.radarMinWhaleBuyVolumeUsd) > 0 && valueOrZero(signal.whaleBuyVolumeUsd) < valueOrZero(user.radarMinWhaleBuyVolumeUsd)) return false;
+  if (valueOrZero(user.radarMinBidWallImbalancePercent) > 0 && valueOrZero(signal.bidWallImbalance) < valueOrZero(user.radarMinBidWallImbalancePercent)) return false;
+  if (valueOrZero(user.radarMinOpenInterestChangePercent) > 0 && valueOrZero(signal.openInterestChange) < valueOrZero(user.radarMinOpenInterestChangePercent)) return false;
+  if (valueOrZero(user.radarMinDexTurnoverPercent) > 0 && valueOrZero(signal.dexTurnover24h) * 100 < valueOrZero(user.radarMinDexTurnoverPercent)) return false;
+  if (valueOrZero(user.radarMinDexLiquidityUsd) > 0 && valueOrZero(signal.dexLiquidityUsd) < valueOrZero(user.radarMinDexLiquidityUsd)) return false;
+  if (valueOrZero(user.radarMinDexBuyImbalancePercent) > 0 && valueOrZero(signal.dexBuySellImbalance) < valueOrZero(user.radarMinDexBuyImbalancePercent)) return false;
+  if (valueOrZero(user.radarMinShortLiquidationUsd) > 0 && valueOrZero(signal.shortLiquidationUsd) < valueOrZero(user.radarMinShortLiquidationUsd)) return false;
+  if (valueOrZero(user.radarMinShortSqueezeDepth) > 0 && valueOrZero(signal.shortSqueezeDepth) < valueOrZero(user.radarMinShortSqueezeDepth)) return false;
   const maxFunding = valueOrZero(user.radarMaxFundingRatePercent);
   if (maxFunding > 0 && Math.abs(valueOrZero(signal.fundingRate)) > maxFunding) return false;
-  if (valueOrZero(signal.onchainWhaleUsd) < valueOrZero(user.radarMinOnchainWhaleUsd)) return false;
-  if (valueOrZero(signal.exchangeOutflowUsd) < valueOrZero(user.radarMinExchangeOutflowUsd)) return false;
-  if (valueOrZero(signal.cexConfirmations) < valueOrZero(user.radarMinCexConfirmations)) return false;
-  if (valueOrZero(signal.channelConfirmations) < valueOrZero(user.radarMinChannelConfirmations)) return false;
+  if (valueOrZero(user.radarMinOnchainWhaleUsd) > 0 && valueOrZero(signal.onchainWhaleUsd) < valueOrZero(user.radarMinOnchainWhaleUsd)) return false;
+  if (valueOrZero(user.radarMinExchangeOutflowUsd) > 0 && valueOrZero(signal.exchangeOutflowUsd) < valueOrZero(user.radarMinExchangeOutflowUsd)) return false;
+  if (valueOrZero(user.radarMinCexConfirmations) > 0 && valueOrZero(signal.cexConfirmations) < valueOrZero(user.radarMinCexConfirmations)) return false;
+  if (valueOrZero(user.radarMinChannelConfirmations) > 0 && valueOrZero(signal.channelConfirmations) < valueOrZero(user.radarMinChannelConfirmations)) return false;
   return true;
 };
 
@@ -348,6 +382,9 @@ const makeCexCandidate = async (item: {
     findDexSnapshot(item.baseAsset)
   ]);
   const liquidation = getLiquidationMetrics(`${item.baseAsset}USDT`);
+  const squeeze = liquidation.shortLiquidationUsd >= 25_000
+    ? await getBinanceShortSqueezeDepth(`${item.baseAsset}USDT`)
+    : { depth: 0, timeframe: "1h" as const };
   const intel = mergeChannelAndDirectOnchain(item.baseAsset, channel);
   const values: CandidateValues = {
     symbol: `${item.baseAsset}USDT`,
@@ -370,10 +407,14 @@ const makeCexCandidate = async (item: {
     fundingRate: deep.fundingRate,
     shortLiquidationUsd: liquidation.shortLiquidationUsd,
     longLiquidationUsd: liquidation.longLiquidationUsd,
+    shortSqueezeDepth: squeeze.depth,
+    shortSqueezeTimeframe: squeeze.depth > 0 ? squeeze.timeframe : null,
     dexVolume24h: dex?.volume24h ?? 0,
     dexLiquidityUsd: dex?.liquidityUsd ?? 0,
     dexTurnover24h: dex?.turnover24h ?? 0,
     dexBuySellImbalance: dex?.buySellImbalance ?? 0,
+    dexUniqueBuyers24h: dex?.uniqueBuyers24h ?? 0,
+    dexUniqueSellers24h: dex?.uniqueSellers24h ?? 0,
     cexConfirmations: item.venues.length,
     ...intel,
     chainId: dex?.chainId ?? null,
@@ -411,10 +452,14 @@ const makeDexCandidate = (dex: DexSnapshot, channel?: ChannelIntelligence): Cand
     fundingRate: 0,
     shortLiquidationUsd: 0,
     longLiquidationUsd: 0,
+    shortSqueezeDepth: 0,
+    shortSqueezeTimeframe: null,
     dexVolume24h: dex.volume24h,
     dexLiquidityUsd: dex.liquidityUsd,
     dexTurnover24h: dex.turnover24h,
     dexBuySellImbalance: dex.buySellImbalance,
+    dexUniqueBuyers24h: dex.uniqueBuyers24h,
+    dexUniqueSellers24h: dex.uniqueSellers24h,
     cexConfirmations: 0,
     ...intel,
     chainId: dex.chainId,
@@ -519,10 +564,14 @@ export const runRadarScan = async () => {
             fundingRate: item.fundingRate,
             shortLiquidationUsd: item.shortLiquidationUsd || null,
             longLiquidationUsd: item.longLiquidationUsd || null,
+            shortSqueezeDepth: item.shortSqueezeDepth || null,
+            shortSqueezeTimeframe: item.shortSqueezeTimeframe,
             dexVolume24h: item.dexVolume24h || null,
             dexLiquidityUsd: item.dexLiquidityUsd || null,
             dexTurnover24h: item.dexTurnover24h,
             dexBuySellImbalance: item.dexBuySellImbalance,
+            dexUniqueBuyers24h: item.dexUniqueBuyers24h || null,
+            dexUniqueSellers24h: item.dexUniqueSellers24h || null,
             cexConfirmations: item.cexConfirmations,
             channelConfirmations: item.channelConfirmations,
             channelMentions: item.channelMentions,
@@ -543,7 +592,7 @@ export const runRadarScan = async () => {
         if (code !== "P2002") throw error;
       }
     }
-    logger.info({ candidates: candidates.length, qualified: qualified.length, created }, "Radar v3.3 multi-source scan completed");
+    logger.info({ candidates: candidates.length, qualified: qualified.length, created }, "Radar v3.4 multi-source scan completed");
     return { created, candidates: candidates.length };
   } catch (error) {
     logger.warn({ error: error instanceof Error ? error.message : error }, "Radar scan failed");
@@ -596,6 +645,7 @@ const settingsToData = (settings: RadarSettings) => ({
   radarMinVolumeAcceleration: settings.minVolumeAcceleration > 0 ? settings.minVolumeAcceleration : null,
   radarMinPriceChange24h: settings.minPriceChange24h !== 0 ? settings.minPriceChange24h : null,
   radarMinTradeCount24h: settings.minTradeCount24h > 0 ? settings.minTradeCount24h : null,
+  radarMinDexUniqueBuyers24h: settings.minDexUniqueBuyers24h,
   radarMinTurnover72hPercent: settings.minTurnover72hPercent,
   radarMinBuyImbalancePercent: settings.minBuyImbalancePercent,
   radarMinWhaleBuyVolumeUsd: settings.minWhaleBuyVolumeUsd,
@@ -605,6 +655,7 @@ const settingsToData = (settings: RadarSettings) => ({
   radarMinDexLiquidityUsd: settings.minDexLiquidityUsd,
   radarMinDexBuyImbalancePercent: settings.minDexBuyImbalancePercent,
   radarMinShortLiquidationUsd: settings.minShortLiquidationUsd,
+  radarMinShortSqueezeDepth: settings.minShortSqueezeDepth,
   radarMaxFundingRatePercent: settings.maxFundingRatePercent,
   radarMinOnchainWhaleUsd: settings.minOnchainWhaleUsd,
   radarMinExchangeOutflowUsd: settings.minExchangeOutflowUsd,
@@ -672,7 +723,7 @@ export const startRadarWorkers = () => {
   void processRadarNotifications().catch(() => undefined);
   scanTimer = setInterval(() => void runRadarScan().catch(() => undefined), env.RADAR_SCAN_INTERVAL_MS);
   notificationTimer = setInterval(() => void processRadarNotifications().catch(() => undefined), WORKER_INTERVAL_MS);
-  logger.info({ intervalMs: env.RADAR_SCAN_INTERVAL_MS, public: env.RADAR_PUBLIC_ENABLED }, "Abnormal activity radar v3.3 started");
+  logger.info({ intervalMs: env.RADAR_SCAN_INTERVAL_MS, public: env.RADAR_PUBLIC_ENABLED }, "Abnormal activity radar v3.4 started");
 };
 
 export const stopRadarWorkers = () => {

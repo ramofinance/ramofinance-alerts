@@ -6,21 +6,25 @@ without plans, payments, trials, or user-facing billing messages.
 
 ## Abnormal Activity Radar (private preview)
 
-Current Radar release: **v3.3.0 Multi-Source Intelligence**.
+Current Radar release: **v3.4.0 Gem Intelligence + Context Help**.
 
 - 5-minute automatic scans (the backend enforces a minimum 5-minute interval)
 - Binance + Bybit + OKX Spot activity with CoinGecko market-cap context
 - 24h and 72h turnover, 15m acceleration, taker flow, large trades and order-book imbalance
 - Derivatives enrichment: open interest, funding and Binance Futures liquidation flow
 - DEXScreener multi-chain discovery with DEX turnover, liquidity and buy/sell pressure
+- GeckoTerminal enrichment for real 24h unique DEX buyers/sellers (CEX unique-user identities are not public)
+- Gem market-cap presets and visible LOW / MID / HIGH CAP badges
+- Short-squeeze depth across 15m, 1h, 4h and 1D candle sweeps
 - Best-effort public intelligence from the configured whale/liquidation Telegram channels
 - Optional direct Whale Alert stream via `WHALE_ALERT_API_KEY`; no key is required for the core Radar
 - Per-user persisted filters; every numeric field stays visible and `0` disables optional filters
+- A contextual `!` help button beside every Radar setting explains the metric, alert behavior and exact zero-value semantics
 - Telegram delivery continues while the Mini App is closed
 - Four-hour per-symbol/chain cooldown and persisted retry queue reduce duplicate/noisy alerts
 - `RADAR_PUBLIC_ENABLED=false` preserves private admin/invite access during testing
 
-See `RADAR-V3.3.0-NOTES.md` for coverage details and limitations. Render applies the included additive Prisma migration automatically through the existing start command.
+See `RADAR-V3.4.0-NOTES.md` for coverage details and limitations. Render applies the included additive Prisma migration automatically through the existing start command.
 
 ## Stack
 

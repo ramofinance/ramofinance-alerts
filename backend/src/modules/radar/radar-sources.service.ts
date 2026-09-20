@@ -62,6 +62,8 @@ export type DexSnapshot = {
   name: string;
   chainId: string;
   dexId: string;
+  pairAddress: string | null;
+  tokenAddress: string | null;
   url: string | null;
   price: number;
   marketCap: number;
@@ -72,6 +74,8 @@ export type DexSnapshot = {
   priceChange24h: number;
   buys24h: number;
   sells24h: number;
+  uniqueBuyers24h: number;
+  uniqueSellers24h: number;
 };
 
 export type CexDeepMetrics = {
@@ -99,7 +103,7 @@ const fetchWithTimeout = async (url: string, accept = "application/json") => {
       signal: controller.signal,
       headers: {
         Accept: accept,
-        "User-Agent": "RAMO-Finance-Radar/3.3"
+        "User-Agent": "RAMO-Finance-Radar/3.4"
       }
     });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
@@ -334,6 +338,7 @@ type DexBoost = { chainId?: string; tokenAddress?: string; amount?: number; tota
 type DexPair = {
   chainId?: string;
   dexId?: string;
+  pairAddress?: string;
   url?: string;
   baseToken?: { address?: string; name?: string; symbol?: string };
   quoteToken?: { address?: string; symbol?: string };
@@ -363,6 +368,8 @@ const dexSnapshotFromPair = (pair: DexPair): DexSnapshot | null => {
     name: String(pair.baseToken?.name ?? symbol),
     chainId: String(pair.chainId ?? "unknown"),
     dexId: String(pair.dexId ?? "DEX"),
+    pairAddress: pair.pairAddress ?? null,
+    tokenAddress: pair.baseToken?.address ?? null,
     url: pair.url ?? null,
     price,
     marketCap,
@@ -372,8 +379,40 @@ const dexSnapshotFromPair = (pair: DexPair): DexSnapshot | null => {
     buySellImbalance: totalTx > 0 ? ((buys24h - sells24h) / totalTx) * 100 : 0,
     priceChange24h: safeNumber(pair.priceChange?.h24),
     buys24h,
-    sells24h
+    sells24h,
+    uniqueBuyers24h: 0,
+    uniqueSellers24h: 0
   };
+};
+
+
+const GECKOTERMINAL_NETWORK: Record<string, string> = {
+  ethereum: "eth", eth: "eth", bsc: "bsc", polygon: "polygon_pos", polygonpos: "polygon_pos",
+  arbitrum: "arbitrum", base: "base", optimism: "optimism", avalanche: "avax", avax: "avax",
+  solana: "solana", fantom: "ftm", linea: "linea", blast: "blast", sui: "sui", tron: "tron"
+};
+
+type GeckoPoolResponse = {
+  data?: { attributes?: { transactions?: { h24?: { buyers?: number; sellers?: number } } } };
+};
+
+const enrichDexUniqueParticipants = async (snapshot: DexSnapshot): Promise<DexSnapshot> => {
+  if (!snapshot.pairAddress) return snapshot;
+  const network = GECKOTERMINAL_NETWORK[snapshot.chainId.toLowerCase()];
+  if (!network) return snapshot;
+  try {
+    const response = await fetchJson<GeckoPoolResponse>(
+      `https://api.geckoterminal.com/api/v2/networks/${encodeURIComponent(network)}/pools/${encodeURIComponent(snapshot.pairAddress)}`
+    );
+    const h24 = response.data?.attributes?.transactions?.h24;
+    return {
+      ...snapshot,
+      uniqueBuyers24h: Math.max(0, Math.trunc(safeNumber(h24?.buyers))),
+      uniqueSellers24h: Math.max(0, Math.trunc(safeNumber(h24?.sellers)))
+    };
+  } catch {
+    return snapshot;
+  }
 };
 
 const chunk = <T>(items: T[], size: number) => {
@@ -421,14 +460,18 @@ export const loadDexDiscovery = async () => {
     const bestByToken = new Map<string, DexSnapshot>();
     for (const pair of pairResults) {
       const snapshot = dexSnapshotFromPair(pair);
-      if (!snapshot || snapshot.marketCap < 1_000_000 || snapshot.liquidityUsd < 100_000 || snapshot.turnover24h <= 0) continue;
+      if (!snapshot || snapshot.marketCap < 10_000 || snapshot.liquidityUsd < 10_000 || snapshot.turnover24h <= 0) continue;
       const key = `${snapshot.chainId}:${snapshot.symbol}`;
       const current = bestByToken.get(key);
       if (!current || snapshot.liquidityUsd > current.liquidityUsd) bestByToken.set(key, snapshot);
     }
-    return [...bestByToken.values()]
+    const selected = [...bestByToken.values()]
       .sort((a, b) => (b.turnover24h + Math.max(b.buySellImbalance, 0) / 200) - (a.turnover24h + Math.max(a.buySellImbalance, 0) / 200))
       .slice(0, 20);
+    // GeckoTerminal public pool data exposes real unique buyers/sellers on DEXs.
+    // Enrich only the highest-priority candidates to stay comfortably below the public rate limit.
+    const enriched = await Promise.all(selected.slice(0, 12).map(enrichDexUniqueParticipants));
+    return [...enriched, ...selected.slice(12)];
   } catch (error) {
     logger.warn({ error: error instanceof Error ? error.message : error }, "Radar DEX discovery unavailable");
     return [];
@@ -539,6 +582,28 @@ const getBybitDerivatives = async (symbol: string) => {
   } catch {
     return null;
   }
+};
+
+export const getBinanceShortSqueezeDepth = async (symbol: string) => {
+  const timeframes = ["15m", "1h", "4h", "1d"] as const;
+  const results = await Promise.all(timeframes.map(async (timeframe) => {
+    try {
+      const rows = await fetchJson<unknown[][]>(`https://fapi.binance.com/fapi/v1/klines?symbol=${encodeURIComponent(symbol)}&interval=${timeframe}&limit=22`);
+      if (rows.length < 3) return { timeframe, depth: 0 };
+      const currentHigh = safeNumber(rows.at(-1)?.[2]);
+      if (currentHigh <= 0) return { timeframe, depth: 0 };
+      let depth = 0;
+      for (let index = rows.length - 2; index >= 0; index -= 1) {
+        const priorHigh = safeNumber(rows[index]?.[2]);
+        if (priorHigh >= currentHigh) break;
+        depth += 1;
+      }
+      return { timeframe, depth };
+    } catch {
+      return { timeframe, depth: 0 };
+    }
+  }));
+  return results.sort((a, b) => b.depth - a.depth)[0] ?? { timeframe: "1h" as const, depth: 0 };
 };
 
 export const enrichCexMetrics = async (venues: CexQuote[], marketCap: number): Promise<CexDeepMetrics> => {

@@ -20,6 +20,7 @@ export type RadarSettingsInput = {
   minVolumeAcceleration: number;
   minPriceChange24h: number;
   minTradeCount24h: number;
+  minDexUniqueBuyers24h: number;
   minTurnover72hPercent: number;
   minBuyImbalancePercent: number;
   minWhaleBuyVolumeUsd: number;
@@ -29,6 +30,7 @@ export type RadarSettingsInput = {
   minDexLiquidityUsd: number;
   minDexBuyImbalancePercent: number;
   minShortLiquidationUsd: number;
+  minShortSqueezeDepth: number;
   maxFundingRatePercent: number;
   minOnchainWhaleUsd: number;
   minExchangeOutflowUsd: number;

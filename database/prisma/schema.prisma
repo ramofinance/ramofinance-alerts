@@ -85,6 +85,7 @@ model User {
   radarMinVolumeAcceleration       Float?
   radarMinPriceChange24h           Float?
   radarMinTradeCount24h            Int?
+  radarMinDexUniqueBuyers24h       Int                @default(0)
   radarMinTurnover72hPercent       Float              @default(0)
   radarMinBuyImbalancePercent      Float              @default(0)
   radarMinWhaleBuyVolumeUsd        Float              @default(0)
@@ -94,6 +95,7 @@ model User {
   radarMinDexLiquidityUsd          Float              @default(0)
   radarMinDexBuyImbalancePercent   Float              @default(0)
   radarMinShortLiquidationUsd      Float              @default(0)
+  radarMinShortSqueezeDepth        Int                @default(0)
   radarMaxFundingRatePercent       Float              @default(0)
   radarMinOnchainWhaleUsd          Float              @default(0)
   radarMinExchangeOutflowUsd       Float              @default(0)
@@ -151,10 +153,14 @@ model RadarSignal {
   fundingRate        Float?
   shortLiquidationUsd Decimal?
   longLiquidationUsd Decimal?
+  shortSqueezeDepth   Int?
+  shortSqueezeTimeframe String?
   dexVolume24h       Decimal?
   dexLiquidityUsd    Decimal?
   dexTurnover24h     Float?
   dexBuySellImbalance Float?
+  dexUniqueBuyers24h  Int?
+  dexUniqueSellers24h Int?
   cexConfirmations   Int      @default(0)
   channelConfirmations Int    @default(0)
   channelMentions    Json?
