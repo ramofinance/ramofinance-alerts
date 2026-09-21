@@ -2428,3 +2428,102 @@ select:focus {
 .radar-field-title{position:relative;display:flex;align-items:center;gap:6px;min-height:22px}.radar-field-title>span:first-child{min-width:0}.radar-info-button{width:18px;height:18px;display:inline-grid;place-items:center;flex:0 0 18px;padding:0;border:1px solid rgba(125,211,252,.5);border-radius:50%;background:rgba(56,189,248,.1);color:#7dd3fc;font-size:11px;font-weight:900;line-height:1;cursor:pointer}.radar-info-button:hover,.radar-info-button[aria-expanded="true"]{background:rgba(56,189,248,.2);border-color:#7dd3fc}.radar-help-popover{position:absolute;z-index:20;top:25px;inset-inline-start:0;width:min(310px,82vw);padding:11px 12px;border:1px solid rgba(125,211,252,.28);border-radius:12px;background:#071421;box-shadow:0 14px 35px rgba(0,0,0,.35);color:#d7e3f1;font-size:11px;font-weight:600;line-height:1.8;text-align:start}.radar-cap-presets{grid-column:1/-1;display:flex;gap:7px;flex-wrap:wrap}.radar-cap-presets button{padding:8px 10px;border:1px solid rgba(148,163,184,.2);border-radius:999px;background:rgba(255,255,255,.035);color:#cbd5e1;font-size:10px;font-weight:800;cursor:pointer}.radar-cap-presets button:hover{border-color:rgba(56,189,248,.5);color:#7dd3fc}.radar-cap-badge{display:inline-flex;align-items:center;width:max-content;margin-top:3px;padding:3px 7px;border-radius:999px;font-size:8px;font-style:normal;font-weight:900;letter-spacing:.06em}.radar-cap-badge.is-low{color:#fde68a;background:rgba(245,158,11,.13);border:1px solid rgba(245,158,11,.28)}.radar-cap-badge.is-mid{color:#7dd3fc;background:rgba(56,189,248,.11);border:1px solid rgba(56,189,248,.25)}.radar-cap-badge.is-high{color:#c4b5fd;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25)}.radar-cap-badge.is-large{color:#94a3b8;background:rgba(148,163,184,.08);border:1px solid rgba(148,163,184,.18)}
 .radar-heading-with-help{position:relative;display:flex;align-items:center;gap:7px}.radar-help-popover--heading{top:28px;inset-inline-start:0}
 .radar-choice-grid{grid-column:1/-1;display:grid;gap:8px}.radar-choice-grid--caps{grid-template-columns:repeat(3,minmax(0,1fr))}.radar-choice-grid--sources{grid-template-columns:repeat(2,minmax(0,1fr))}.radar-choice-chip{position:relative;display:flex!important;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:9px 10px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(255,255,255,.025);color:#94a3b8;cursor:pointer;text-align:center}.radar-choice-chip input{position:absolute;opacity:0;pointer-events:none}.radar-choice-chip>span{width:18px;height:18px;display:grid;place-items:center;border:1px solid rgba(148,163,184,.35);border-radius:6px;color:transparent;font-size:11px}.radar-choice-chip b{font-size:10px;line-height:1.35}.radar-choice-chip.is-active{border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.08);color:#e2f7ff}.radar-choice-chip.is-active>span{border-color:#22d3ee;background:#22d3ee;color:#06202a}.radar-choice-chip .radar-info-button{position:relative;z-index:2;margin-inline-start:2px}.radar-choice-chip .radar-help-popover{top:46px}.radar-filter-grid input:disabled{opacity:.45;cursor:not-allowed}.radar-filter-group-title .radar-field-title{display:inline-flex;margin-inline-start:4px}.radar-filter-group-title .radar-field-title>span:first-child:empty{display:none}@media(max-width:540px){.radar-choice-grid--caps{grid-template-columns:1fr}.radar-choice-grid--sources{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Radar v3.5.3 — mobile-safe help popovers + collapsible settings/guide */
+.radar-help-popover,
+.radar-help-popover--heading,
+.radar-choice-chip .radar-help-popover{
+  position:fixed!important;
+  z-index:1000!important;
+  top:auto!important;
+  bottom:max(22px,env(safe-area-inset-bottom))!important;
+  left:16px!important;
+  right:16px!important;
+  inset-inline-start:16px!important;
+  inset-inline-end:16px!important;
+  width:auto!important;
+  max-width:440px!important;
+  max-height:46vh;
+  margin-inline:auto;
+  box-sizing:border-box;
+  overflow:auto;
+  overscroll-behavior:contain;
+  padding:14px 15px;
+  border:1px solid rgba(125,211,252,.42);
+  border-radius:14px;
+  background:#071421!important;
+  box-shadow:0 18px 55px rgba(0,0,0,.62),0 0 0 1px rgba(15,23,42,.55);
+  color:#e2e8f0!important;
+  font-size:11px;
+  font-weight:650;
+  line-height:1.9;
+  text-align:start;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
+.radar-accordion{
+  grid-column:1/-1;
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  border:1px solid rgba(148,163,184,.16);
+  border-radius:16px;
+  background:rgba(255,255,255,.018);
+  overflow:visible;
+}
+.radar-accordion>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:46px;
+  padding:12px 14px;
+  box-sizing:border-box;
+  color:#dbeafe;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  list-style:none;
+  user-select:none;
+}
+.radar-accordion>summary::-webkit-details-marker{display:none}
+.radar-accordion-chevron{
+  flex:0 0 auto;
+  color:#7dd3fc;
+  font-size:18px;
+  line-height:1;
+  transition:transform .18s ease;
+}
+.radar-accordion[open] .radar-accordion-chevron{transform:rotate(180deg)}
+.radar-accordion[open]>summary{border-bottom:1px solid rgba(148,163,184,.12)}
+.radar-accordion-body{display:grid;gap:11px;padding:12px}
+.radar-accordion .radar-filter-grid{grid-column:auto}
+.radar-accordion .radar-filter-note{grid-column:auto;margin:0!important}
+.radar-accordion--guide{background:rgba(56,189,248,.025)}
+.radar-guide-intro{margin:0!important;color:#8fa6bd!important;font-size:10px!important;line-height:1.8!important}
+.radar-guide-list{display:grid;gap:8px}
+.radar-guide-item{
+  display:grid;
+  gap:5px;
+  padding:10px 11px;
+  border:1px solid rgba(148,163,184,.12);
+  border-radius:12px;
+  background:rgba(4,12,22,.32);
+}
+.radar-guide-item strong{color:#dbeafe;font-size:11px}
+.radar-guide-item p{margin:0!important;color:#9fb1c7!important;font-size:10px!important;line-height:1.8!important}
+
+@media(max-width:540px){
+  .radar-help-popover,
+  .radar-help-popover--heading,
+  .radar-choice-chip .radar-help-popover{
+    left:12px!important;
+    right:12px!important;
+    inset-inline-start:12px!important;
+    inset-inline-end:12px!important;
+    max-width:none!important;
+  }
+  .radar-accordion-body{padding:10px}
+  .radar-accordion .radar-filter-grid{grid-template-columns:1fr}
+}

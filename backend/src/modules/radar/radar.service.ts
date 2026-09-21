@@ -641,7 +641,7 @@ export const runRadarScan = async () => {
         if (code !== "P2002") throw error;
       }
     }
-    logger.info({ candidates: candidates.length, qualified: qualified.length, created }, "Radar v3.5.2 multi-source scan completed");
+    logger.info({ candidates: candidates.length, qualified: qualified.length, created }, "Radar v3.5.3 multi-source scan completed");
     return { created, candidates: candidates.length };
   } catch (error) {
     logger.warn({ error: error instanceof Error ? error.message : error }, "Radar scan failed");
@@ -732,7 +732,7 @@ export const radarService = {
   },
   async listSignals(limit = 20) {
     return prisma.radarSignal.findMany({
-      where: { marketAgeDays: { gte: MIN_MARKET_AGE_DAYS } },
+      where: { marketAgeDays: { gte: MIN_MARKET_AGE_DAYS }, score: { gte: 60 } },
       orderBy: { detectedAt: "desc" },
       take: Math.min(Math.max(limit, 1), 50)
     });

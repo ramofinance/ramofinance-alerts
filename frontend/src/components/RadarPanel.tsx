@@ -181,7 +181,12 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
     dex: "DEX",
     cex: "CEX",
     dexVolume: "حداقل حجم DEX در 24h",
-    scoreNote: "فقط فاکتورهای این بخش روی Score اصلی اثر دارند. بقیه داده‌ها همچنان بررسی و در جزئیات سیگنال نمایش داده می‌شوند."
+    scoreNote: "فقط فاکتورهای این بخش روی Score اصلی اثر دارند. بقیه داده‌ها همچنان بررسی و در جزئیات سیگنال نمایش داده می‌شوند.",
+    explanationsTitle: "توضیحات همه فاکتورهای Radar",
+    explanationsHint: "همه داده‌هایی که برای هر کوین بررسی می‌شوند؛ چه فاکتورهای امتیازدهی و چه اطلاعات تکمیلی.",
+    marketAge: "سابقه بازار",
+    marketIdentity: "شبکه، جفت و Contract",
+    uniqueSellers: "فروشندگان یکتای DEX"
   } : {
     capTitle: "Market-cap ranges",
     sourceTitle: "Market sources",
@@ -192,8 +197,44 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
     dex: "DEX",
     cex: "CEX",
     dexVolume: "Minimum DEX volume (24h)",
-    scoreNote: "Only the factors shown here affect the primary score. Other intelligence is still checked and shown as supplementary evidence."
+    scoreNote: "Only the factors shown here affect the primary score. Other intelligence is still checked and shown as supplementary evidence.",
+    explanationsTitle: "All Radar factor explanations",
+    explanationsHint: "Every data point checked for a coin, including scored factors and supplementary intelligence.",
+    marketAge: "Market history",
+    marketIdentity: "Network, pair and contract",
+    uniqueSellers: "Unique DEX sellers"
   };
+
+  const guideItems = [
+    { label: settingsText.marketAge, text: isFa ? "دارایی باید حداقل ۱۰ روز سابقه بازار قابل‌تأیید داشته باشد. توکن‌ها و Poolهای تازه‌ساخته‌شده قبل از ۱۰ روز اصلاً وارد Radar نمی‌شوند." : "The asset must have at least 10 days of verifiable market history. Newly created tokens/pools are excluded before they reach 10 days." },
+    { label: settingsText.marketIdentity, text: isFa ? "برای DEX شبکه، جفت معاملاتی، DEX و آدرس Contract ثبت می‌شود تا توکن‌های هم‌نام با هم اشتباه نشوند." : "For DEX assets, Radar records network, pair, DEX and contract address so same-name tokens are not confused." },
+    { label: settingsText.capTitle, text: help.capRanges },
+    { label: settingsText.sourceTitle + " — DEX", text: help.sourceDex },
+    { label: settingsText.sourceTitle + " — CEX", text: help.sourceCex },
+    { label: copy.radarMinimumScore, text: help.minimumScore },
+    { label: copy.radarMinTurnover, text: help.minTurnover24h },
+    { label: copy.radarMinTrades, text: help.minTrades },
+    { label: copy.radarMinUniqueBuyers ?? "Unique DEX buyers", text: help.minUniqueBuyers },
+    { label: settingsText.uniqueSellers, text: isFa ? "تعداد Walletهای یکتایی که در ۲۴ ساعت روی DEX فروش داشته‌اند. این داده برای سنجش توزیع واقعی فعالیت و مقایسه با خریداران یکتا نمایش داده می‌شود و به‌تنهایی امتیاز جداگانه ندارد." : "Unique wallets that sold on the DEX in 24h. It helps show how broadly activity is distributed and is supplementary rather than a separate score item." },
+    { label: copy.radarMinPriceChange, text: help.minPriceChange },
+    { label: copy.radarMinBuyImbalance, text: help.minBuyPressure },
+    { label: copy.radarMinDexLiquidity, text: help.minDexLiquidity },
+    { label: settingsText.dexVolume, text: help.minDexVolume },
+    { label: copy.radarMinShortLiq, text: help.minShortLiq },
+    { label: copy.radarMinSqueezeDepth ?? "Short-squeeze depth", text: help.minSqueezeDepth },
+    { label: copy.radarTurnover72, text: help.minTurnover72h },
+    { label: copy.radarAcceleration, text: help.minAcceleration },
+    { label: copy.radarWhaleBuys, text: help.minWhaleBuy },
+    { label: copy.radarBidWall, text: help.minBidWall },
+    { label: copy.radarOiChange, text: help.minOi },
+    { label: copy.radarFunding, text: help.maxFunding },
+    { label: copy.radarDexTurnover, text: help.minDexTurnover },
+    { label: copy.radarDexBuyPressure ?? "DEX buy pressure", text: help.minDexBuyPressure },
+    { label: copy.radarCexConfirmations, text: help.minCex },
+    { label: copy.radarChannelConfirmations, text: help.minChannels },
+    { label: copy.radarOnchainWhale, text: help.minOnchainWhale },
+    { label: copy.radarExchangeOutflow, text: help.minExchangeOutflow }
+  ];
 
   const toggleCap = (key: "includeLowCap" | "includeMidCap" | "includeHighCap") => {
     setDraft((current) => {
@@ -219,7 +260,10 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
 
 
   const signalMatchesSavedSettings = (signal: RadarSignal) => {
-    if (signal.score < user.radarMinimumScore) return false;
+    // The Mini App discovery list is intentionally broader than Telegram alerts.
+    // Any stored candidate scoring 60+ can be seen here; the user's minimumScore
+    // remains an alert-delivery threshold in matchesUserFilters on the backend.
+    if (signal.score < 60) return false;
     const cap = Number(signal.marketCap ?? 0);
     const tier = capTier(signal.marketCap);
     if (!tier || tier.key === "large") return false;
@@ -231,21 +275,9 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
     const hasDex = Boolean(signal.dexUrl || signal.chainId) || Number(signal.dexVolume24h ?? 0) > 0 || Number(signal.dexLiquidityUsd ?? 0) > 0;
     if (!((user.radarIncludeCex && hasCex) || (user.radarIncludeDex && hasDex))) return false;
 
-    if (user.radarMinTurnoverPercent > 0 && (signal.turnover24h ?? 0) * 100 < user.radarMinTurnoverPercent) return false;
-    if ((user.radarMinPriceChange24h ?? 0) !== 0 && (signal.priceChange24h ?? 0) < (user.radarMinPriceChange24h ?? 0)) return false;
-    if ((user.radarMinTradeCount24h ?? 0) > 0 && (signal.tradeCount24h ?? 0) < (user.radarMinTradeCount24h ?? 0)) return false;
-    if (user.radarIncludeDex && user.radarMinDexUniqueBuyers24h > 0 && (signal.dexUniqueBuyers24h ?? 0) < user.radarMinDexUniqueBuyers24h) return false;
-    if (user.radarIncludeDex && user.radarMinDexLiquidityUsd > 0 && Number(signal.dexLiquidityUsd ?? 0) < user.radarMinDexLiquidityUsd) return false;
-    if (user.radarIncludeDex && user.radarMinDexVolumeUsd > 0 && Number(signal.dexVolume24h ?? 0) < user.radarMinDexVolumeUsd) return false;
-
-    const buyPressure = user.radarIncludeDex && user.radarIncludeCex
-      ? Math.max(signal.buySellImbalance ?? 0, signal.dexBuySellImbalance ?? 0)
-      : user.radarIncludeDex
-        ? signal.dexBuySellImbalance ?? 0
-        : signal.buySellImbalance ?? 0;
-    if (user.radarMinBuyImbalancePercent > 0 && buyPressure < user.radarMinBuyImbalancePercent) return false;
-    if (user.radarMinShortLiquidationUsd > 0 && Number(signal.shortLiquidationUsd ?? 0) < user.radarMinShortLiquidationUsd) return false;
-    if (user.radarMinShortSqueezeDepth > 0 && (signal.shortSqueezeDepth ?? 0) < user.radarMinShortSqueezeDepth) return false;
+    // Numeric thresholds below are Telegram-alert filters only. They intentionally
+    // do not hide a 60+ discovery candidate from the Mini App. This lets users
+    // inspect near-threshold scans while keeping alert delivery as strict as they want.
     return cap > 0;
   };
 
@@ -288,36 +320,49 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
           <label className={`radar-choice-chip ${draft.includeDex ? "is-active" : ""}`}>
             <input type="checkbox" checked={draft.includeDex} disabled={busy} onChange={() => toggleSource("includeDex")} />
             <span>✓</span><b>{settingsText.dex}</b>
-            <button type="button" className="radar-info-button" aria-label="DEX info" onClick={(event) => { event.preventDefault(); setActiveHelp((current) => current === "sourceDex" ? null : "sourceDex"); }}>!</button>
+            <button type="button" className="radar-info-button" aria-label="DEX info" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setActiveHelp((current) => current === "sourceDex" ? null : "sourceDex"); }}>!</button>
             {activeHelp === "sourceDex" ? <span className="radar-help-popover" role="note">{help.sourceDex}</span> : null}
           </label>
           <label className={`radar-choice-chip ${draft.includeCex ? "is-active" : ""}`}>
             <input type="checkbox" checked={draft.includeCex} disabled={busy} onChange={() => toggleSource("includeCex")} />
             <span>✓</span><b>{settingsText.cex}</b>
-            <button type="button" className="radar-info-button" aria-label="CEX info" onClick={(event) => { event.preventDefault(); setActiveHelp((current) => current === "sourceCex" ? null : "sourceCex"); }}>!</button>
+            <button type="button" className="radar-info-button" aria-label="CEX info" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setActiveHelp((current) => current === "sourceCex" ? null : "sourceCex"); }}>!</button>
             {activeHelp === "sourceCex" ? <span className="radar-help-popover" role="note">{help.sourceCex}</span> : null}
           </label>
         </div>
 
-        <h3 className="radar-filter-group-title">{settingsText.priorityTitle}</h3>
-        <div className="radar-filter-grid">
-          <label>{fieldTitle(copy.radarMinimumScore, "minimumScore")}
-            <select value={draft.minimumScore} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minimumScore: Number(event.target.value) }))}>
-              {[60, 65, 70, 75, 80, 85, 90, 95].map((score) => <option key={score} value={score}>{score}/100</option>)}
-            </select>
-          </label>
-          {numberField("minTurnoverPercent", copy.radarMinTurnover, "%", "minTurnover24h", 0.5, 0)}
-          {numberField("minTradeCount24h", copy.radarMinTrades, "#", "minTrades", 1000, 0)}
-          {numberField("minDexUniqueBuyers24h", copy.radarMinUniqueBuyers ?? "Unique DEX buyers (24h)", "wallets", "minUniqueBuyers", 10, 0, undefined, !draft.includeDex)}
-          {numberField("minPriceChange24h", copy.radarMinPriceChange, "%", "minPriceChange", 0.5)}
-          {numberField("minBuyImbalancePercent", copy.radarMinBuyImbalance, "%", "minBuyPressure", 1, 0, 100)}
-          {numberField("minDexLiquidityK", copy.radarMinDexLiquidity, "$K", "minDexLiquidity", 10, 0, undefined, !draft.includeDex)}
-          {numberField("minDexVolumeK", settingsText.dexVolume, "$K", "minDexVolume", 10, 0, undefined, !draft.includeDex)}
-          {numberField("minShortLiquidationK", copy.radarMinShortLiq, "$K", "minShortLiq", 10, 0, undefined, !draft.includeCex)}
-          {numberField("minShortSqueezeDepth", copy.radarMinSqueezeDepth ?? "Minimum squeeze depth", "candles", "minSqueezeDepth", 1, 0, 100, !draft.includeCex)}
-        </div>
+        <details className="radar-accordion radar-accordion--settings">
+          <summary><span>{settingsText.priorityTitle}</span><span className="radar-accordion-chevron">⌄</span></summary>
+          <div className="radar-accordion-body">
+            <div className="radar-filter-grid">
+              <label>{fieldTitle(copy.radarMinimumScore, "minimumScore")}
+                <select value={draft.minimumScore} disabled={busy} onChange={(event) => setDraft((value) => ({ ...value, minimumScore: Number(event.target.value) }))}>
+                  {[60, 65, 70, 75, 80, 85, 90, 95].map((score) => <option key={score} value={score}>{score}/100</option>)}
+                </select>
+              </label>
+              {numberField("minTurnoverPercent", copy.radarMinTurnover, "%", "minTurnover24h", 0.5, 0)}
+              {numberField("minTradeCount24h", copy.radarMinTrades, "#", "minTrades", 1000, 0)}
+              {numberField("minDexUniqueBuyers24h", copy.radarMinUniqueBuyers ?? "Unique DEX buyers (24h)", "wallets", "minUniqueBuyers", 10, 0, undefined, !draft.includeDex)}
+              {numberField("minPriceChange24h", copy.radarMinPriceChange, "%", "minPriceChange", 0.5)}
+              {numberField("minBuyImbalancePercent", copy.radarMinBuyImbalance, "%", "minBuyPressure", 1, 0, 100)}
+              {numberField("minDexLiquidityK", copy.radarMinDexLiquidity, "$K", "minDexLiquidity", 10, 0, undefined, !draft.includeDex)}
+              {numberField("minDexVolumeK", settingsText.dexVolume, "$K", "minDexVolume", 10, 0, undefined, !draft.includeDex)}
+              {numberField("minShortLiquidationK", copy.radarMinShortLiq, "$K", "minShortLiq", 10, 0, undefined, !draft.includeCex)}
+              {numberField("minShortSqueezeDepth", copy.radarMinSqueezeDepth ?? "Minimum squeeze depth", "candles", "minSqueezeDepth", 1, 0, 100, !draft.includeCex)}
+            </div>
+            <p className="radar-filter-note">{settingsText.scoreNote}</p>
+          </div>
+        </details>
 
-        <p className="radar-filter-note">{settingsText.scoreNote}</p>
+        <details className="radar-accordion radar-accordion--guide">
+          <summary><span>{settingsText.explanationsTitle}</span><span className="radar-accordion-chevron">⌄</span></summary>
+          <div className="radar-accordion-body">
+            <p className="radar-guide-intro">{settingsText.explanationsHint}</p>
+            <div className="radar-guide-list">
+              {guideItems.map((item) => <div className="radar-guide-item" key={item.label}><strong>{item.label}</strong><p>{item.text}</p></div>)}
+            </div>
+          </div>
+        </details>
 
         <div className="radar-actions">
           <button type="button" disabled={busy} onClick={() => void saveSettings()}>{copy.radarSaveFilters}</button>
