@@ -92,7 +92,32 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
   const [message, setMessage] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(() => draftFromUser(user));
   const [activeHelp, setActiveHelp] = useState<RadarHelpKey | null>(null);
+  const [copiedContractId, setCopiedContractId] = useState<string | null>(null);
   const help = getRadarHelp(user.preferredLanguage ?? user.languageCode);
+
+  const copyContract = async (signal: RadarSignal) => {
+    const value = signal.tokenAddress?.trim();
+    if (!value) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+      } else {
+        const area = document.createElement("textarea");
+        area.value = value;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        document.body.removeChild(area);
+      }
+      setCopiedContractId(signal.id);
+      window.setTimeout(() => setCopiedContractId((current) => current === signal.id ? null : current), 1600);
+    } catch {
+      setMessage(isFa ? "کپی آدرس کانترکت انجام نشد." : "Could not copy contract address.");
+    }
+  };
 
   const load = async () => {
     try { setLoading(true); setSignals(await getRadarSignals(initData)); }
@@ -380,8 +405,11 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
         {visibleSignals.map((signal) => (
           <article className="radar-signal-card" key={signal.id}>
             <div className="radar-signal-head">
-              <div><strong>{signal.symbol.endsWith("USDT") ? signal.symbol.replace(/USDT$/, "/USDT") : signal.symbol}</strong>{capTier(signal.marketCap) ? <em className={`radar-cap-badge is-${capTier(signal.marketCap)!.key}`}>{capTier(signal.marketCap)!.label}</em> : null}<span>{new Date(signal.detectedAt).toLocaleString()}</span></div>
-              <b className={`radar-score ${signal.score >= 85 ? "is-hot" : ""}`}>{signal.score}<small>/100</small></b>
+              <div className="radar-signal-identity"><strong>{signal.symbol.endsWith("USDT") ? signal.symbol.replace(/USDT$/, "/USDT") : signal.symbol}</strong>{capTier(signal.marketCap) ? <em className={`radar-cap-badge is-${capTier(signal.marketCap)!.key}`}>{capTier(signal.marketCap)!.label}</em> : null}<span>{new Date(signal.detectedAt).toLocaleString()}</span></div>
+              <div className="radar-signal-score-cluster">
+                <b className={`radar-score ${signal.score >= 85 ? "is-hot" : ""}`}>{signal.score}<small>/100</small></b>
+                <span className="radar-head-market-cap"><small>{copy.radarMarketCap}</small><b>{money(signal.marketCap)}</b></span>
+              </div>
             </div>
             <div className="radar-metrics">
               <span><small>{copy.radarPrice}</small><b>{Number(signal.price).toLocaleString("en-US", { maximumSignificantDigits: 8 })}</b></span>
@@ -390,7 +418,6 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
               <span><small>{copy.radarTurnover72}</small><b>{signal.turnover72h == null || signal.turnover72h === 0 ? "—" : `${(signal.turnover72h * 100).toFixed(1)}%`}</b></span>
               <span><small>{copy.radarAcceleration}</small><b>{signal.volumeAcceleration == null ? "—" : `${signal.volumeAcceleration.toFixed(1)}x`}</b></span>
               <span><small>{copy.radarBuyPressure}</small><b>{pct(signal.buySellImbalance)}</b></span>
-              <span><small>{copy.radarMarketCap}</small><b>{money(signal.marketCap)}</b></span>
               {signal.tradeCount24h != null && signal.tradeCount24h > 0 ? <span><small>{copy.radarTradeCount ?? "24h trades"}</small><b>{signal.tradeCount24h.toLocaleString("en-US")}</b></span> : null}
               {signal.dexUniqueBuyers24h != null && signal.dexUniqueBuyers24h > 0 ? <span><small>{copy.radarUniqueBuyers ?? "Unique DEX buyers"}</small><b>{signal.dexUniqueBuyers24h.toLocaleString("en-US")}</b></span> : null}
               {signal.dexUniqueSellers24h != null && signal.dexUniqueSellers24h > 0 ? <span><small>{copy.radarUniqueSellers ?? "Unique DEX sellers"}</small><b>{signal.dexUniqueSellers24h.toLocaleString("en-US")}</b></span> : null}
@@ -411,6 +438,19 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
               {Number(signal.exchangeOutflowUsd ?? 0) > 0 ? <span><small>{copy.radarExchangeOutflow}</small><b>{money(signal.exchangeOutflowUsd)}</b></span> : null}
               <span><small>{copy.radarSource}</small><b>{signal.sourceSummary}</b></span>
             </div>
+            {signal.tokenAddress ? (
+              <div className="radar-contract-card">
+                <div className="radar-contract-meta">
+                  {signal.chainId ? <span><small>{isFa ? "شبکه" : "Network"}</small><b>{signal.chainId}</b></span> : null}
+                  {signal.quoteSymbol ? <span><small>{isFa ? "جفت DEX" : "DEX pair"}</small><b>{signal.symbol.replace(/USDT$/, "")}/{signal.quoteSymbol}{signal.dexId ? ` · ${signal.dexId}` : ""}</b></span> : null}
+                </div>
+                <button type="button" className={`radar-contract-copy ${copiedContractId === signal.id ? "is-copied" : ""}`} onClick={() => void copyContract(signal)} title={isFa ? "برای کپی آدرس کانترکت بزنید" : "Tap to copy contract address"}>
+                  <span className="radar-contract-label">{isFa ? "Contract" : "Contract"}</span>
+                  <code>{signal.tokenAddress}</code>
+                  <span className="radar-contract-copy-action">{copiedContractId === signal.id ? (isFa ? "✓ کپی شد" : "✓ Copied") : (isFa ? "کپی" : "Copy")}</span>
+                </button>
+              </div>
+            ) : null}
             <ul>{signal.reasons.map((reason) => <li key={reason}>{reasonText(reason, copy)}</li>)}</ul>
           </article>
         ))}

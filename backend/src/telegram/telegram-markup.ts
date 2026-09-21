@@ -2,7 +2,7 @@ import type { PreferredLanguage } from "@prisma/client";
 import { env } from "../config/env";
 import { telegramText } from "./telegram.i18n";
 
-const WEBAPP_VERSION = "3.5.3";
+const WEBAPP_VERSION = "3.5.4";
 
 const buildWebAppUrl = (service?: "radar") => {
   if (!env.TELEGRAM_WEBAPP_URL) return undefined;
