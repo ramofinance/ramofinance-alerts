@@ -10,6 +10,10 @@ type Props = {
   initData?: string;
 };
 
+// Price Alerts is switched off on the server (PRICE_POLLING_ENABLED=false), so alerts created
+// here would never fire. Flip this to true to show the card again once polling is back on.
+const SHOW_PRICE_ALERTS = false;
+
 const cleanSymbol = (symbol: string) => symbol.endsWith("USDT") ? symbol.replace(/USDT$/, "") : symbol;
 
 export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, radarEnabled, initData }: Props) {
@@ -68,20 +72,22 @@ export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, rad
           </button>
         ) : null}
 
-        <button
-          className="service-card service-card--alerts"
-          type="button"
-          onClick={openAlerts}
-        >
-          <div className="service-card__header">
-            <span className="service-card__icon-sm" aria-hidden="true">🔔</span>
-            <strong>{copy.priceAlertsTitle}</strong>
-            <span className="service-card__action">{copy.openService}</span>
-          </div>
-          <div className="service-card__preview service-card__preview--muted">
-            <span>{copy.priceAlertsDescription}</span>
-          </div>
-        </button>
+        {SHOW_PRICE_ALERTS ? (
+          <button
+            className="service-card service-card--alerts"
+            type="button"
+            onClick={openAlerts}
+          >
+            <div className="service-card__header">
+              <span className="service-card__icon-sm" aria-hidden="true">🔔</span>
+              <strong>{copy.priceAlertsTitle}</strong>
+              <span className="service-card__action">{copy.openService}</span>
+            </div>
+            <div className="service-card__preview service-card__preview--muted">
+              <span>{copy.priceAlertsDescription}</span>
+            </div>
+          </button>
+        ) : null}
       </div>
 
       <p className="services-note">{copy.servicesFreeNote}</p>
