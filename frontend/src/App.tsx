@@ -501,6 +501,7 @@ export default function App() {
           openAlerts={openAlertsService}
           openRadar={() => setActiveTab("RADAR")}
           radarEnabled={hasRadarAccess}
+          initData={telegramMiniApp.initData}
         />
       ) : null}
       {activeTab === "CRYPTOFLOW" ? (
@@ -518,6 +519,20 @@ export default function App() {
           onBack={openServices}
           onUserUpdated={setBackendUser}
         />
+      ) : null}
+      {activeTab === "RADAR" && !backendUser ? (
+        <section className="cryptoflow-frame-screen" dir="ltr">
+          <header className="cryptoflow-frame-header">
+            <button type="button" onClick={openServices} aria-label={copy.backToServices}>
+              <span aria-hidden="true">←</span>
+              <span>{copy.backToServices}</span>
+            </button>
+            <strong>Radar</strong>
+          </header>
+          <p style={{ padding: "24px 20px", opacity: 0.85 }}>
+            {error ?? copy.telegramUserFailed}
+          </p>
+        </section>
       ) : null}
       {activeTab === "HOME" ? (
       <>

@@ -93,6 +93,7 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
   const [draft, setDraft] = useState<Draft>(() => draftFromUser(user));
   const [activeHelp, setActiveHelp] = useState<RadarHelpKey | null>(null);
   const [copiedContractId, setCopiedContractId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const help = getRadarHelp(user.preferredLanguage ?? user.languageCode);
 
   const copyContract = async (signal: RadarSignal) => {
@@ -126,10 +127,12 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
   };
 
   useEffect(() => {
+    if (!initData) return;
+
     void load();
     const timer = window.setInterval(() => void load(), 300_000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [initData]);
 
   const n = (value: number) => Number.isFinite(value) ? value : 0;
   const settingsPayload = (enabled = user.radarNotificationsEnabled): RadarSettingsInput => ({
@@ -411,47 +414,64 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
                 <span className="radar-head-market-cap"><small>{copy.radarMarketCap}</small><b>{money(signal.marketCap)}</b></span>
               </div>
             </div>
-            <div className="radar-metrics">
+            <div className="radar-metrics radar-metrics--summary">
               <span><small>{copy.radarPrice}</small><b>{Number(signal.price).toLocaleString("en-US", { maximumSignificantDigits: 8 })}</b></span>
               <span><small>{copy.radarChange}</small><b className={(signal.priceChange24h ?? 0) >= 0 ? "positive" : "negative"}>{pct(signal.priceChange24h, 2)}</b></span>
               <span><small>{copy.radarTurnover}</small><b>{signal.turnover24h == null ? "—" : `${(signal.turnover24h * 100).toFixed(1)}%`}</b></span>
-              <span><small>{copy.radarTurnover72}</small><b>{signal.turnover72h == null || signal.turnover72h === 0 ? "—" : `${(signal.turnover72h * 100).toFixed(1)}%`}</b></span>
-              <span><small>{copy.radarAcceleration}</small><b>{signal.volumeAcceleration == null ? "—" : `${signal.volumeAcceleration.toFixed(1)}x`}</b></span>
               <span><small>{copy.radarBuyPressure}</small><b>{pct(signal.buySellImbalance)}</b></span>
-              {signal.tradeCount24h != null && signal.tradeCount24h > 0 ? <span><small>{copy.radarTradeCount ?? "24h trades"}</small><b>{signal.tradeCount24h.toLocaleString("en-US")}</b></span> : null}
-              {signal.dexUniqueBuyers24h != null && signal.dexUniqueBuyers24h > 0 ? <span><small>{copy.radarUniqueBuyers ?? "Unique DEX buyers"}</small><b>{signal.dexUniqueBuyers24h.toLocaleString("en-US")}</b></span> : null}
-              {signal.dexUniqueSellers24h != null && signal.dexUniqueSellers24h > 0 ? <span><small>{copy.radarUniqueSellers ?? "Unique DEX sellers"}</small><b>{signal.dexUniqueSellers24h.toLocaleString("en-US")}</b></span> : null}
-              {signal.shortSqueezeDepth != null && signal.shortSqueezeDepth > 0 ? <span><small>{copy.radarSqueezeDepth ?? "Squeeze depth"}</small><b>{signal.shortSqueezeDepth} × {signal.shortSqueezeTimeframe ?? "—"}</b></span> : null}
-              <span><small>{copy.radarCexConfirmations}</small><b>{signal.cexConfirmations}/3</b></span>
-              {signal.chainId ? <span><small>{copy.radarChain}</small><b>{signal.chainId}</b></span> : null}
-              {Number(signal.whaleBuyVolumeUsd ?? 0) > 0 ? <span><small>{copy.radarWhaleBuys}</small><b>{money(signal.whaleBuyVolumeUsd)}</b></span> : null}
-              {Math.abs(signal.bidWallImbalance ?? 0) > 0.1 ? <span><small>{copy.radarBidWall}</small><b>{pct(signal.bidWallImbalance)}</b></span> : null}
-              {Math.abs(signal.openInterestChange ?? 0) > 0.01 ? <span><small>{copy.radarOiChange}</small><b>{pct(signal.openInterestChange)}</b></span> : null}
-              {Math.abs(signal.fundingRate ?? 0) > 0.0001 ? <span><small>{copy.radarFunding}</small><b>{pct(signal.fundingRate, 3)}</b></span> : null}
-              {Number(signal.shortLiquidationUsd ?? 0) > 0 ? <span><small>{copy.radarShortLiq}</small><b>{money(signal.shortLiquidationUsd)}</b></span> : null}
-              {signal.dexTurnover24h != null && signal.dexTurnover24h > 0 ? <span><small>{copy.radarDexTurnover}</small><b>{(signal.dexTurnover24h * 100).toFixed(1)}%</b></span> : null}
-              {Number(signal.dexVolume24h ?? 0) > 0 ? <span><small>{copy.radarDexVolume ?? "DEX volume (24h)"}</small><b>{money(signal.dexVolume24h)}</b></span> : null}
-              {Math.abs(signal.dexBuySellImbalance ?? 0) > 0.1 ? <span><small>{copy.radarDexBuyPressure ?? "DEX buy pressure"}</small><b>{pct(signal.dexBuySellImbalance)}</b></span> : null}
-              {Number(signal.dexLiquidityUsd ?? 0) > 0 ? <span><small>{copy.radarDexLiquidity}</small><b>{money(signal.dexLiquidityUsd)}</b></span> : null}
-              {signal.channelConfirmations > 0 ? <span><small>{copy.radarChannelConfirmations}</small><b>{signal.channelConfirmations}</b></span> : null}
-              {Number(signal.onchainWhaleUsd ?? 0) > 0 ? <span><small>{copy.radarOnchainWhale}</small><b>{money(signal.onchainWhaleUsd)}</b></span> : null}
-              {Number(signal.exchangeOutflowUsd ?? 0) > 0 ? <span><small>{copy.radarExchangeOutflow}</small><b>{money(signal.exchangeOutflowUsd)}</b></span> : null}
-              <span><small>{copy.radarSource}</small><b>{signal.sourceSummary}</b></span>
             </div>
-            {signal.tokenAddress ? (
-              <div className="radar-contract-card">
-                <div className="radar-contract-meta">
-                  {signal.chainId ? <span><small>{isFa ? "شبکه" : "Network"}</small><b>{signal.chainId}</b></span> : null}
-                  {signal.quoteSymbol ? <span><small>{isFa ? "جفت DEX" : "DEX pair"}</small><b>{signal.symbol.replace(/USDT$/, "")}/{signal.quoteSymbol}{signal.dexId ? ` · ${signal.dexId}` : ""}</b></span> : null}
+            <button
+              type="button"
+              className="radar-more-toggle"
+              onClick={() => setExpandedIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(signal.id)) next.delete(signal.id); else next.add(signal.id);
+                return next;
+              })}
+            >
+              {expandedIds.has(signal.id) ? (isFa ? "▲ بستن جزئیات" : "▲ Hide details") : (isFa ? "▼ اطلاعات بیشتر" : "▼ More info")}
+            </button>
+            {expandedIds.has(signal.id) ? (
+              <>
+                <div className="radar-metrics radar-metrics--details">
+                  <span><small>{copy.radarTurnover72}</small><b>{signal.turnover72h == null || signal.turnover72h === 0 ? "—" : `${(signal.turnover72h * 100).toFixed(1)}%`}</b></span>
+                  <span><small>{copy.radarAcceleration}</small><b>{signal.volumeAcceleration == null ? "—" : `${signal.volumeAcceleration.toFixed(1)}x`}</b></span>
+                  {signal.tradeCount24h != null && signal.tradeCount24h > 0 ? <span className="radar-metric-highlight"><small>{copy.radarTradeCount ?? "24h trades"}</small><b>{signal.tradeCount24h.toLocaleString("en-US")}</b></span> : null}
+                  {signal.dexUniqueBuyers24h != null && signal.dexUniqueBuyers24h > 0 ? <span className="radar-metric-highlight"><small>{copy.radarUniqueBuyers ?? "Unique DEX buyers"}</small><b>{signal.dexUniqueBuyers24h.toLocaleString("en-US")}</b></span> : null}
+                  {signal.dexUniqueSellers24h != null && signal.dexUniqueSellers24h > 0 ? <span className="radar-metric-highlight"><small>{copy.radarUniqueSellers ?? "Unique DEX sellers"}</small><b>{signal.dexUniqueSellers24h.toLocaleString("en-US")}</b></span> : null}
+                  {signal.shortSqueezeDepth != null && signal.shortSqueezeDepth > 0 ? <span><small>{copy.radarSqueezeDepth ?? "Squeeze depth"}</small><b>{signal.shortSqueezeDepth} × {signal.shortSqueezeTimeframe ?? "—"}</b></span> : null}
+                  <span><small>{copy.radarCexConfirmations}</small><b>{signal.cexConfirmations}/3</b></span>
+                  {signal.chainId ? <span><small>{copy.radarChain}</small><b>{signal.chainId}</b></span> : null}
+                  {Number(signal.whaleBuyVolumeUsd ?? 0) > 0 ? <span><small>{copy.radarWhaleBuys}</small><b>{money(signal.whaleBuyVolumeUsd)}</b></span> : null}
+                  {Math.abs(signal.bidWallImbalance ?? 0) > 0.1 ? <span><small>{copy.radarBidWall}</small><b>{pct(signal.bidWallImbalance)}</b></span> : null}
+                  {Math.abs(signal.openInterestChange ?? 0) > 0.01 ? <span><small>{copy.radarOiChange}</small><b>{pct(signal.openInterestChange)}</b></span> : null}
+                  {Math.abs(signal.fundingRate ?? 0) > 0.0001 ? <span><small>{copy.radarFunding}</small><b>{pct(signal.fundingRate, 3)}</b></span> : null}
+                  {Number(signal.shortLiquidationUsd ?? 0) > 0 ? <span><small>{copy.radarShortLiq}</small><b>{money(signal.shortLiquidationUsd)}</b></span> : null}
+                  {signal.dexTurnover24h != null && signal.dexTurnover24h > 0 ? <span><small>{copy.radarDexTurnover}</small><b>{(signal.dexTurnover24h * 100).toFixed(1)}%</b></span> : null}
+                  {Number(signal.dexVolume24h ?? 0) > 0 ? <span><small>{copy.radarDexVolume ?? "DEX volume (24h)"}</small><b>{money(signal.dexVolume24h)}</b></span> : null}
+                  {Math.abs(signal.dexBuySellImbalance ?? 0) > 0.1 ? <span><small>{copy.radarDexBuyPressure ?? "DEX buy pressure"}</small><b>{pct(signal.dexBuySellImbalance)}</b></span> : null}
+                  {Number(signal.dexLiquidityUsd ?? 0) > 0 ? <span><small>{copy.radarDexLiquidity}</small><b>{money(signal.dexLiquidityUsd)}</b></span> : null}
+                  {signal.channelConfirmations > 0 ? <span><small>{copy.radarChannelConfirmations}</small><b>{signal.channelConfirmations}</b></span> : null}
+                  {Number(signal.onchainWhaleUsd ?? 0) > 0 ? <span><small>{copy.radarOnchainWhale}</small><b>{money(signal.onchainWhaleUsd)}</b></span> : null}
+                  {Number(signal.exchangeOutflowUsd ?? 0) > 0 ? <span><small>{copy.radarExchangeOutflow}</small><b>{money(signal.exchangeOutflowUsd)}</b></span> : null}
+                  <span><small>{copy.radarSource}</small><b>{signal.sourceSummary}</b></span>
                 </div>
-                <button type="button" className={`radar-contract-copy ${copiedContractId === signal.id ? "is-copied" : ""}`} onClick={() => void copyContract(signal)} title={isFa ? "برای کپی آدرس کانترکت بزنید" : "Tap to copy contract address"}>
-                  <span className="radar-contract-label">{isFa ? "Contract" : "Contract"}</span>
-                  <code>{signal.tokenAddress}</code>
-                  <span className="radar-contract-copy-action">{copiedContractId === signal.id ? (isFa ? "✓ کپی شد" : "✓ Copied") : (isFa ? "کپی" : "Copy")}</span>
-                </button>
-              </div>
+                {signal.tokenAddress ? (
+                  <div className="radar-contract-card">
+                    <div className="radar-contract-meta">
+                      {signal.chainId ? <span><small>{isFa ? "شبکه" : "Network"}</small><b>{signal.chainId}</b></span> : null}
+                      {signal.quoteSymbol ? <span><small>{isFa ? "جفت DEX" : "DEX pair"}</small><b>{signal.symbol.replace(/USDT$/, "")}/{signal.quoteSymbol}{signal.dexId ? ` · ${signal.dexId}` : ""}</b></span> : null}
+                    </div>
+                    <button type="button" className={`radar-contract-copy ${copiedContractId === signal.id ? "is-copied" : ""}`} onClick={() => void copyContract(signal)} title={isFa ? "برای کپی آدرس کانترکت بزنید" : "Tap to copy contract address"}>
+                      <span className="radar-contract-label">{isFa ? "Contract" : "Contract"}</span>
+                      <code>{signal.tokenAddress}</code>
+                      <span className="radar-contract-copy-action">{copiedContractId === signal.id ? (isFa ? "✓ کپی شد" : "✓ Copied") : (isFa ? "کپی" : "Copy")}</span>
+                    </button>
+                  </div>
+                ) : null}
+                <ul>{signal.reasons.map((reason) => <li key={reason}>{reasonText(reason, copy)}</li>)}</ul>
+              </>
             ) : null}
-            <ul>{signal.reasons.map((reason) => <li key={reason}>{reasonText(reason, copy)}</li>)}</ul>
           </article>
         ))}
       </div>
