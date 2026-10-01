@@ -321,11 +321,17 @@ export function RadarPanel({ copy, user, initData, onBack, onUserUpdated }: Prop
       </header>
 
       <article className="radar-settings-card radar-settings-card--advanced">
-        <div className="radar-settings-heading"><strong className="radar-heading-with-help">🔔 {copy.radarTelegramTitle}<button type="button" className="radar-info-button" aria-label="Telegram alert info" aria-expanded={activeHelp === "notifications"} onClick={() => setActiveHelp((current) => current === "notifications" ? null : "notifications")}>!</button>{activeHelp === "notifications" ? <span className="radar-help-popover radar-help-popover--heading" role="note">{help.notifications}</span> : null}</strong><p>{copy.radarTelegramHint}</p></div>
-        <label className="radar-switch">
-          <input type="checkbox" checked={user.radarNotificationsEnabled} disabled={busy} onChange={(event) => void saveSettings(event.target.checked)} />
-          <span>{user.radarNotificationsEnabled ? copy.radarEnabled : copy.radarDisabled}</span>
-        </label>
+        <div className="radar-settings-heading radar-settings-heading--row">
+          <div>
+            <strong className="radar-heading-with-help">🔔 {copy.radarTelegramTitle}<button type="button" className="radar-info-button" aria-label="Telegram alert info" aria-expanded={activeHelp === "notifications"} onClick={() => setActiveHelp((current) => current === "notifications" ? null : "notifications")}>!</button>{activeHelp === "notifications" ? <span className="radar-help-popover radar-help-popover--heading" role="note">{help.notifications}</span> : null}</strong>
+            <p>{copy.radarTelegramHint}</p>
+          </div>
+          <label className="radar-switch">
+            <input type="checkbox" className="radar-switch-input" checked={user.radarNotificationsEnabled} disabled={busy} onChange={(event) => void saveSettings(event.target.checked)} />
+            <span className="radar-switch-track" aria-hidden="true"><span className="radar-switch-thumb" /></span>
+            <span className="radar-switch-label">{user.radarNotificationsEnabled ? copy.radarEnabled : copy.radarDisabled}</span>
+          </label>
+        </div>
 
         <h3 className="radar-filter-group-title">{settingsText.capTitle} {fieldTitle("", "capRanges")}</h3>
         <div className="radar-choice-grid radar-choice-grid--caps">
