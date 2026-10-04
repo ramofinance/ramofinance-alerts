@@ -127,14 +127,36 @@ const fetchText = async (url: string) => {
   return response.text();
 };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Render's outbound IP is shared across many customers, so CoinGecko's public per-IP rate
+// limit gets hit far more often here than it would from a single dedicated IP (confirmed by
+// production logs: ~70% of scans were failing outright with all 4 pages rejected at once).
+// Firing all 4 pages in parallel makes this worse. Fetching them one at a time with a short
+// gap, and retrying a failed page with backoff, keeps each scan comfortably under the limit
+// most of the time instead of losing the whole scan to a single burst of 429s.
+const fetchCoinGeckoPage = async (page: number, attempt = 1): Promise<CoinGeckoMarket[]> => {
+  const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${COINGECKO_PAGE_SIZE}&page=${page}&sparkline=false`;
+  try {
+    return await fetchJson<CoinGeckoMarket[]>(url);
+  } catch (error) {
+    if (attempt < 4) {
+      const backoffMs = 2000 * attempt;
+      logger.warn({ page, attempt, error: error instanceof Error ? error.message : String(error) }, "CoinGecko page failed, retrying");
+      await sleep(backoffMs);
+      return fetchCoinGeckoPage(page, attempt + 1);
+    }
+    logger.warn({ page, attempts: attempt, error: error instanceof Error ? error.message : String(error) }, "CoinGecko page failed after retries");
+    return [];
+  }
+};
+
 export const loadCoinGeckoMarkets = async () => {
-  const requests = Array.from({ length: COINGECKO_PAGES }, (_, index) => {
-    const page = index + 1;
-    const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${COINGECKO_PAGE_SIZE}&page=${page}&sparkline=false`;
-    return fetchJson<CoinGeckoMarket[]>(url);
-  });
-  const settled = await Promise.allSettled(requests);
-  const items = settled.flatMap((result) => result.status === "fulfilled" ? result.value : []);
+  const items: CoinGeckoMarket[] = [];
+  for (let page = 1; page <= COINGECKO_PAGES; page += 1) {
+    items.push(...(await fetchCoinGeckoPage(page)));
+    if (page < COINGECKO_PAGES) await sleep(1200);
+  }
   if (!items.length) throw new Error("CoinGecko market universe unavailable");
 
   const map = new Map<string, CoinGeckoMarket>();
