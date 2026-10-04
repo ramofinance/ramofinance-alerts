@@ -1,4 +1,5 @@
 import { logger } from "../../utils/logger";
+import { env } from "../../config/env";
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const COINGECKO_PAGE_SIZE = 250;
@@ -99,7 +100,7 @@ const safeNumber = (value: unknown, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-const fetchWithTimeout = async (url: string, accept = "application/json") => {
+const fetchWithTimeout = async (url: string, accept = "application/json", extraHeaders: Record<string, string> = {}) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
@@ -107,7 +108,8 @@ const fetchWithTimeout = async (url: string, accept = "application/json") => {
       signal: controller.signal,
       headers: {
         Accept: accept,
-        "User-Agent": "RAMO-Finance-Radar/3.5.3"
+        "User-Agent": "RAMO-Finance-Radar/3.5.3",
+        ...extraHeaders
       }
     });
     if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
@@ -117,8 +119,8 @@ const fetchWithTimeout = async (url: string, accept = "application/json") => {
   }
 };
 
-export const fetchJson = async <T>(url: string): Promise<T> => {
-  const response = await fetchWithTimeout(url);
+export const fetchJson = async <T>(url: string, extraHeaders: Record<string, string> = {}): Promise<T> => {
+  const response = await fetchWithTimeout(url, "application/json", extraHeaders);
   return await response.json() as T;
 };
 
@@ -135,10 +137,15 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // Firing all 4 pages in parallel makes this worse. Fetching them one at a time with a short
 // gap, and retrying a failed page with backoff, keeps each scan comfortably under the limit
 // most of the time instead of losing the whole scan to a single burst of 429s.
+const coinGeckoHeaders: Record<string, string> = env.COINGECKO_API_KEY ? { "x-cg-demo-api-key": env.COINGECKO_API_KEY } : {};
+if (!env.COINGECKO_API_KEY) {
+  logger.warn("COINGECKO_API_KEY is not set - radar will use CoinGecko's shared, unauthenticated rate limit and may fail scans frequently");
+}
+
 const fetchCoinGeckoPage = async (page: number, attempt = 1): Promise<CoinGeckoMarket[]> => {
   const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=${COINGECKO_PAGE_SIZE}&page=${page}&sparkline=false`;
   try {
-    return await fetchJson<CoinGeckoMarket[]>(url);
+    return await fetchJson<CoinGeckoMarket[]>(url, coinGeckoHeaders);
   } catch (error) {
     if (attempt < 4) {
       const backoffMs = 2000 * attempt;
