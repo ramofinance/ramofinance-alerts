@@ -29,6 +29,8 @@ import { ChartPanel } from "./components/ChartPanel";
 import { ServicesPanel } from "./components/ServicesPanel";
 import { CryptoFlowPanel } from "./components/CryptoFlowPanel";
 import { RadarPanel } from "./components/RadarPanel";
+import { PortfolioPanel } from "./components/PortfolioPanel";
+import { getPortfolioCopy } from "./portfolio/portfolio-copy";
 import { getRadarStatus } from "./api/radar";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp, useTelegramBackButton } from "./services/telegram-mini-app";
@@ -42,7 +44,7 @@ import type {
 } from "./types/api";
 
 export default function App() {
-  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR";
+  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR" | "PORTFOLIO";
   const initialService = new URLSearchParams(window.location.search).get("service");
   const startsInAlerts = initialService === "alerts";
   const startsInRadar = initialService === "radar";
@@ -123,7 +125,7 @@ export default function App() {
   const appDirection = getAppDirection(appLanguage);
 
   useEffect(() => useTelegramBackButton(
-    activeTab === "CRYPTOFLOW" || activeTab === "RADAR" || activeModule === "alerts",
+    activeTab === "CRYPTOFLOW" || activeTab === "RADAR" || activeTab === "PORTFOLIO" || activeModule === "alerts",
     () => {
       setActiveModule("hub");
       setActiveTab("SERVICES");
@@ -486,7 +488,7 @@ export default function App() {
     <main className="app-shell" dir={appDirection}>
         <SplashScreen visible={splashVisible} />
 
-      {activeTab !== "CRYPTOFLOW" && activeTab !== "RADAR" ? (
+      {activeTab !== "CRYPTOFLOW" && activeTab !== "RADAR" && activeTab !== "PORTFOLIO" ? (
         <BottomTabs
           activeTab={activeTab}
           setActiveTab={(tab) => tab === "SERVICES" ? openServices() : setActiveTab(tab)}
@@ -500,6 +502,8 @@ export default function App() {
           openCryptoFlow={() => setActiveTab("CRYPTOFLOW")}
           openAlerts={openAlertsService}
           openRadar={() => setActiveTab("RADAR")}
+          openPortfolio={() => setActiveTab("PORTFOLIO")}
+          portfolioCopy={getPortfolioCopy(appLanguage)}
           radarEnabled={hasRadarAccess}
           initData={telegramMiniApp.initData}
         />
@@ -508,6 +512,13 @@ export default function App() {
         <CryptoFlowPanel
           copy={copy}
           src={cryptoFlowFrameUrl}
+          onBack={openServices}
+        />
+      ) : null}
+      {activeTab === "PORTFOLIO" ? (
+        <PortfolioPanel
+          copy={copy}
+          pf={getPortfolioCopy(appLanguage)}
           onBack={openServices}
         />
       ) : null}

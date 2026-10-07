@@ -1,4 +1,4 @@
-type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR";
+type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR" | "PORTFOLIO";
 
 type Props = {
   activeTab: TabKey;

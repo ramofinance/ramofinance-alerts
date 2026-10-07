@@ -7,6 +7,8 @@ type Props = {
   openCryptoFlow: () => void;
   openAlerts: () => void;
   openRadar: () => void;
+  openPortfolio: () => void;
+  portfolioCopy: { cardTitle: string; cardDescription: string };
   radarEnabled: boolean;
   initData?: string;
 };
@@ -17,7 +19,7 @@ const cleanSymbol = (symbol: string) => symbol.endsWith("USDT") ? symbol.replace
 // here would never fire. Flip this to true to show the card again once polling is back on.
 const SHOW_PRICE_ALERTS = false;
 
-export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, radarEnabled, initData }: Props) {
+export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, openPortfolio, portfolioCopy, radarEnabled, initData }: Props) {
   const [radarPreview, setRadarPreview] = useState<string[]>([]);
 
   useEffect(() => {
@@ -78,6 +80,17 @@ export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, rad
             </div>
           </button>
         ) : null}
+
+        <button className="service-card service-card--portfolio" type="button" onClick={openPortfolio}>
+          <div className="service-card__header">
+            <span className="service-card__icon-sm" aria-hidden="true">💼</span>
+            <strong>{portfolioCopy.cardTitle}</strong>
+            <span className="service-card__action">{copy.openService}</span>
+          </div>
+          <div className="service-card__preview service-card__preview--muted">
+            <span>{portfolioCopy.cardDescription}</span>
+          </div>
+        </button>
 
         {SHOW_PRICE_ALERTS ? (
           <button
