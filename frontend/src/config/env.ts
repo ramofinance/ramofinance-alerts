@@ -22,6 +22,8 @@ export const frontendEnv = {
   cryptoFlowUrl:
     import.meta.env.VITE_CRYPTOFLOW_URL ||
     "https://cryptoflow.ramo-fin-group.workers.dev/",
+  // Cloudflare Worker that serves live portfolio balances. Empty = sample data preview.
+  portfolioApiUrl: (import.meta.env.VITE_PORTFOLIO_API_URL as string | undefined) || "",
   upcomingServicesEnabled:
     import.meta.env.VITE_UPCOMING_SERVICES_ENABLED === "true"
 };

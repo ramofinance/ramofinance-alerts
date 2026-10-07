@@ -37,6 +37,8 @@ jobs:
           VITE_BASE_PATH: /ramofinance-alerts/
           VITE_API_URL: https://ramofinance-miniapp-backend.onrender.com
           VITE_WS_URL: wss://ramofinance-miniapp-backend.onrender.com/ws
+          # Paste the Cloudflare Worker URL here to turn on live portfolio balances (empty = sample preview)
+          VITE_PORTFOLIO_API_URL: ''
         run: npm run build -w frontend
 
       - name: Setup Pages

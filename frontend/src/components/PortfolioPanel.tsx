@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../styles/portfolio.css";
 import {
   CHAINS,
   CHAIN_BY_ID,
-  IS_SAMPLE_DATA,
+  isSampleMode,
   MAX_WALLETS,
   assetColor,
   detectFamily,
@@ -32,6 +32,11 @@ const newId = () => `w${Date.now().toString(36).slice(-4)}${Math.random().toStri
 export function PortfolioPanel({ copy, pf, onBack }: Props) {
   const [wallets, setWallets] = useState<StoredWallet[]>([]);
   const [snapshot, setSnapshot] = useState<PortfolioSnapshot | null>(null);
+  const snapshotRef = useRef<PortfolioSnapshot | null>(null);
+  const commit = useCallback((next: PortfolioSnapshot | null) => {
+    snapshotRef.current = next;
+    setSnapshot(next);
+  }, []);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"wallet" | "network">("wallet");
@@ -42,20 +47,28 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
 
   const refresh = useCallback(async (list: StoredWallet[]) => {
     if (!list.length) {
-      setSnapshot(null);
+      commit(null);
       return;
     }
     setLoading(true);
     try {
-      const next = await fetchPortfolio(list);
-      setSnapshot(next);
+      const fetched = await fetchPortfolio(list);
+      // A failed lookup must not wipe balances we already have: keep the last good copy of that wallet.
+      const previous = snapshotRef.current;
+      const next = {
+        ...fetched,
+        wallets: fetched.wallets.map((w) =>
+          w.status === "error" ? previous?.wallets.find((p) => p.id === w.id && p.status === "ok") ?? w : w
+        )
+      };
+      commit(next);
       void saveSnapshot(next);
     } catch {
       // keep showing the last snapshot
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [commit]);
 
   // Data is requested only when the user enters the service.
   useEffect(() => {
@@ -66,11 +79,11 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
       setWallets(list);
       setReady(true);
       const cached = await loadSnapshot();
-      if (!cancelled && cached) setSnapshot(cached);
+      if (!cancelled && cached) commit(cached);
       if (!cancelled) await refresh(list);
     })();
     return () => { cancelled = true; };
-  }, [refresh]);
+  }, [refresh, commit]);
 
   const live = useMemo(
     () => (snapshot?.wallets ?? []).filter((s) => wallets.some((w) => w.id === s.id)),
@@ -126,11 +139,13 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
           <div className="pf-hero">
             <p className="pf-hero__label">{pf.total}</p>
             <div className="pf-hero__value pf-num">{usd.format(sum.total)}</div>
-            <div className={`pf-change pf-num ${sum.change >= 0 ? "up" : "down"}`}>
-              <span>{percent(sum.pct)}</span>
-              <span>{usd.format(Math.abs(sum.change))}</span>
-              <small>{pf.h24}</small>
-            </div>
+            {sum.pct !== null ? (
+              <div className={`pf-change pf-num ${sum.change >= 0 ? "up" : "down"}`}>
+                <span>{percent(sum.pct)}</span>
+                <span>{usd.format(Math.abs(sum.change))}</span>
+                <small>{pf.h24}</small>
+              </div>
+            ) : null}
             {sum.total > 0 ? (
               <>
                 <div className="pf-alloc" aria-hidden="true">
@@ -164,7 +179,7 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
           </div>
         ) : null}
 
-        {IS_SAMPLE_DATA && wallets.length > 0 ? <p className="pf-note pf-note--sample">{pf.sample}</p> : null}
+        {isSampleMode() && wallets.length > 0 ? <p className="pf-note pf-note--sample">{pf.sample}</p> : null}
 
         {wallets.length > 0 ? (
           <div className="pf-section">
@@ -204,9 +219,15 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
                             <span className="pf-num">{shortAddress(w.address)}</span>
                           </span>
                         </span>
-                        <span className="pf-row__val pf-num">
-                          {total === null ? "…" : usd.format(total)}
-                          {snap && sum.total > 0 ? <small>{((total! / sum.total) * 100).toFixed(1)}%</small> : null}
+                        <span className="pf-row__val">
+                          {!snap ? "…" : snap.status === "ok" ? (
+                            <>
+                              <span className="pf-num">{usd.format(total ?? 0)}</span>
+                              {sum.total > 0 ? <small className="pf-num">{(((total ?? 0) / sum.total) * 100).toFixed(1)}%</small> : null}
+                            </>
+                          ) : (
+                            <small className="pf-soon">{snap.status === "soon" ? pf.soon : pf.unavailable}</small>
+                          )}
                         </span>
                       </button>
 

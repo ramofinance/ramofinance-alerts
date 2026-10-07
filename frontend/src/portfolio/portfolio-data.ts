@@ -1,3 +1,5 @@
+import { frontendEnv } from "../config/env";
+
 export type Family = "evm" | "tron" | "solana" | "ton" | "bitcoin" | "sui";
 
 export type ChainId =
@@ -14,12 +16,13 @@ export type ChainMeta = {
 };
 
 export type StoredWallet = { id: string; address: string; label: string };
-export type Holding = { chain: ChainId; symbol: string; amount: number; usd: number; change24h: number };
-export type WalletSnapshot = { id: string; address: string; family: Family; holdings: Holding[] };
+export type Holding = { chain: ChainId; symbol: string; amount: number; usd: number; change24h: number | null };
+// "soon" = network not live yet, "error" = the lookup failed (balances are not shown for either).
+export type WalletSnapshot = { id: string; address: string; family: Family; status: "ok" | "soon" | "error"; holdings: Holding[] };
 export type PortfolioSnapshot = { updatedAt: number; wallets: WalletSnapshot[] };
 
-// The sample-data switch. Set to false (and implement fetchPortfolio) when live balances land.
-export const IS_SAMPLE_DATA = true;
+// Sample numbers are shown until VITE_PORTFOLIO_API_URL points at the portfolio Worker.
+export const isSampleMode = () => !frontendEnv.portfolioApiUrl;
 export const MAX_WALLETS = 20;
 
 export const CHAINS: ChainMeta[] = [
@@ -111,13 +114,61 @@ const sampleWallet = (w: StoredWallet): WalletSnapshot => {
       holdings.push(holding(chain.id, EXTRA_TOKENS[Math.floor(r() * EXTRA_TOKENS.length)], 15 + r() * 600, r));
     }
   }
-  return { id: w.id, address: w.address, family, holdings };
+  return { id: w.id, address: w.address, family, status: "ok", holdings };
 };
 
-// Replace this body with a POST to the stateless backend proxy when live data is added.
+const WORKER_BATCH = 8;
+
+const toSnapshot = (w: StoredWallet, r: any): WalletSnapshot => ({
+  id: w.id,
+  address: w.address,
+  family: detectFamily(w.address) ?? "evm",
+  status: r?.status === "ok" ? "ok" : r?.status === "soon" ? "soon" : "error",
+  holdings: (Array.isArray(r?.holdings) ? r.holdings : [])
+    .filter((h: any) => h && h.chain in CHAIN_BY_ID)
+    .map((h: any) => ({
+      chain: h.chain as ChainId,
+      symbol: String(h.symbol),
+      amount: Number(h.amount) || 0,
+      usd: Number(h.usd) || 0,
+      change24h: null
+    }))
+});
+
+// Live mode asks the portfolio Worker (stateless, not on Render). Nothing is stored server-side.
 export const fetchPortfolio = async (wallets: StoredWallet[]): Promise<PortfolioSnapshot> => {
-  await new Promise((resolve) => setTimeout(resolve, 450));
-  return { updatedAt: Date.now(), wallets: wallets.map(sampleWallet) };
+  const base = frontendEnv.portfolioApiUrl.replace(/\/$/, "");
+  if (!base) {
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    return { updatedAt: Date.now(), wallets: wallets.map(sampleWallet) };
+  }
+
+  const initData = window.Telegram?.WebApp?.initData ?? "";
+  const batches: StoredWallet[][] = [];
+  for (let i = 0; i < wallets.length; i += WORKER_BATCH) batches.push(wallets.slice(i, i + WORKER_BATCH));
+
+  const parts = await Promise.all(
+    batches.map(async (batch) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+      try {
+        const res = await fetch(`${base}/portfolio`, {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json", "X-Telegram-Init-Data": initData },
+          body: JSON.stringify({ wallets: batch.map((w) => ({ id: w.id, address: w.address })) })
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const data = await res.json();
+        return batch.map((w) => toSnapshot(w, (data.wallets ?? []).find((x: any) => x.id === w.id)));
+      } catch {
+        return batch.map((w) => toSnapshot(w, undefined));
+      } finally {
+        clearTimeout(timer);
+      }
+    })
+  );
+  return { updatedAt: Date.now(), wallets: parts.flat() };
 };
 
 export const walletTotal = (w: WalletSnapshot) => w.holdings.reduce((sum, h) => sum + h.usd, 0);
@@ -125,13 +176,19 @@ export const walletTotal = (w: WalletSnapshot) => w.holdings.reduce((sum, h) => 
 export const summarize = (wallets: WalletSnapshot[]) => {
   let total = 0;
   let previous = 0;
+  let tracked = false;
   const byChain = new Map<ChainId, number>();
   const byAsset = new Map<string, number>();
 
   for (const w of wallets) {
     for (const h of w.holdings) {
       total += h.usd;
-      previous += h.usd / (1 + h.change24h / 100);
+      if (h.change24h === null) {
+        previous += h.usd;
+      } else {
+        previous += h.usd / (1 + h.change24h / 100);
+        tracked = true;
+      }
       byChain.set(h.chain, (byChain.get(h.chain) ?? 0) + h.usd);
       byAsset.set(h.symbol, (byAsset.get(h.symbol) ?? 0) + h.usd);
     }
@@ -140,7 +197,7 @@ export const summarize = (wallets: WalletSnapshot[]) => {
   return {
     total,
     change,
-    pct: previous > 0 ? (change / previous) * 100 : 0,
+    pct: tracked && previous > 0 ? (change / previous) * 100 : null,
     byChain: [...byChain.entries()].sort((a, b) => b[1] - a[1]),
     byAsset: [...byAsset.entries()].sort((a, b) => b[1] - a[1])
   };

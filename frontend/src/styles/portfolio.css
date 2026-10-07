@@ -67,3 +67,4 @@
 
 .pf-scroll button:focus-visible,.pf-scroll input:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.pf-alloc i{transition:none}}
+.pf-row__val .pf-soon{max-width:150px;margin:0;line-height:1.5}

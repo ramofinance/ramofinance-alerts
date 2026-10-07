@@ -25,6 +25,8 @@ const en = {
   emptyText: "Add a wallet address to see its balance. One EVM address covers all 10 EVM networks.",
   supported: "Supported networks",
   assets: "assets",
+  soon: "Not available for this network yet",
+  unavailable: "Couldn't load this wallet. Try Refresh.",
   privacy: "View-only. Your wallet list is kept in your Telegram account, not on our servers.",
   seedWarning: "Never enter a seed phrase or private key."
 };
@@ -54,6 +56,8 @@ const fa: typeof en = {
   emptyText: "برای دیدن موجودی، آدرس یک کیف‌پول اضافه کنید. یک آدرس EVM هر ۱۰ شبکه‌ی EVM را پوشش می‌دهد.",
   supported: "شبکه‌های پشتیبانی‌شده",
   assets: "دارایی",
+  soon: "برای این شبکه هنوز در دسترس نیست",
+  unavailable: "بارگذاری این کیف‌پول ممکن نشد. دوباره به‌روزرسانی کنید.",
   privacy: "فقط مشاهده. لیست کیف‌پول‌ها در حساب تلگرام خودتان می‌ماند و روی سرورهای ما ذخیره نمی‌شود.",
   seedWarning: "هرگز seed phrase یا کلید خصوصی وارد نکنید."
 };
