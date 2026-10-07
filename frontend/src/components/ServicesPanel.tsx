@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getRadarSignals } from "../api/radar";
+import cryptoFlowLogo from "../assets/cryptoflow-logo.png";
 
 type Props = {
   copy: any;
@@ -52,7 +53,7 @@ export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, rad
           onClick={openCryptoFlow}
         >
           <div className="service-card__header">
-            <span className="service-card__icon-sm" aria-hidden="true">📊</span>
+            <span className="service-card__icon-sm service-card__icon-sm--logo" aria-hidden="true"><img src={cryptoFlowLogo} alt="" /></span>
             <strong>CryptoFlow</strong>
             <span className="service-card__action">{copy.openService}</span>
           </div>

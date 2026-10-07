@@ -2553,3 +2553,4 @@ select:focus {
   }
   .radar-head-market-cap{min-width:78px}
 }
+.service-card__icon-sm--logo{background:transparent;overflow:hidden}.service-card__icon-sm--logo img{display:block;width:100%;height:100%;object-fit:cover;border-radius:10px}
