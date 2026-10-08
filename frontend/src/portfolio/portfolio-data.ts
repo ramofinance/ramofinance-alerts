@@ -18,7 +18,7 @@ export type ChainMeta = {
 export type StoredWallet = { id: string; address: string; label: string };
 export type Holding = { chain: ChainId; symbol: string; amount: number; usd: number; change24h: number | null };
 // "soon" = network not live yet, "error" = the lookup failed (balances are not shown for either).
-export type WalletSnapshot = { id: string; address: string; family: Family; status: "ok" | "soon" | "error"; holdings: Holding[] };
+export type WalletSnapshot = { id: string; address: string; family: Family; status: "ok" | "soon" | "error"; holdings: Holding[]; partial?: boolean };
 // error: set only when a whole request to the Worker failed ("401", "500", ... or "network").
 export type PortfolioSnapshot = { updatedAt: number; wallets: WalletSnapshot[]; error?: string };
 
@@ -126,6 +126,8 @@ const toSnapshot = (w: StoredWallet, r: any): WalletSnapshot => ({
   address: w.address,
   family: detectFamily(w.address) ?? "evm",
   status: r?.status === "ok" ? "ok" : r?.status === "soon" ? "soon" : "error",
+  // the Worker reports problems it could not fully recover from (e.g. a price source was down)
+  partial: Array.isArray(r?.errors) && r.errors.length > 0,
   holdings: (Array.isArray(r?.holdings) ? r.holdings : [])
     .filter((h: any) => h && h.chain in CHAIN_BY_ID)
     .map((h: any) => ({

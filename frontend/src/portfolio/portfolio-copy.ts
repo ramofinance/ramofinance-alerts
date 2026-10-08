@@ -28,6 +28,7 @@ const en = {
   soon: "Not available for this network yet",
   unavailable: "Couldn't load this wallet. Try Refresh.",
   refreshFailed: "Couldn't refresh. Showing your last saved data.",
+  partial: "Some tokens couldn't be priced right now, so the list may be incomplete. Try Refresh in a moment.",
   sessionExpired: "Your Telegram session expired. Close the Mini App completely and open it again.",
   privacy: "View-only. Your wallet list is kept in your Telegram account, not on our servers.",
   seedWarning: "Never enter a seed phrase or private key."
@@ -61,6 +62,7 @@ const fa: typeof en = {
   soon: "برای این شبکه هنوز در دسترس نیست",
   unavailable: "بارگذاری این کیف‌پول ممکن نشد. دوباره به‌روزرسانی کنید.",
   refreshFailed: "به‌روزرسانی انجام نشد. آخرین داده‌ی ذخیره‌شده نمایش داده می‌شود.",
+  partial: "قیمت بعضی توکن‌ها الان دریافت نشد و ممکن است لیست ناقص باشد. چند لحظه بعد دوباره به‌روزرسانی کنید.",
   sessionExpired: "نشست تلگرام منقضی شده. مینی‌اپ را کامل ببندید و دوباره باز کنید.",
   privacy: "فقط مشاهده. لیست کیف‌پول‌ها در حساب تلگرام خودتان می‌ماند و روی سرورهای ما ذخیره نمی‌شود.",
   seedWarning: "هرگز seed phrase یا کلید خصوصی وارد نکنید."

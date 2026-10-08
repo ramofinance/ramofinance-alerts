@@ -189,6 +189,8 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
           </p>
         ) : null}
 
+        {live.some((w) => w.partial) ? <p className="pf-note pf-note--sample">{pf.partial}</p> : null}
+
         {isSampleMode() && wallets.length > 0 ? <p className="pf-note pf-note--sample">{pf.sample}</p> : null}
 
         {wallets.length > 0 ? (

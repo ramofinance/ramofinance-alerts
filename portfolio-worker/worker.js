@@ -152,34 +152,38 @@ const SOL_STABLES = new Set([
 const hasUsdPrice = (t) =>
   (t.tokenPrices || []).some((p) => String(p.currency).toLowerCase() === "usd" && Number(p.value) > 0);
 
-// One retry; successful answers are also cached at Cloudflare's edge for 2 minutes (the URL only contains public mints).
-async function dexFetch(url) {
-  const opts = { headers: { Accept: "application/json" }, cf: { cacheEverything: true, cacheTtlByStatus: { "200-299": 120, "400-599": 0 } } };
-  let lastError;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+// Up to 3 attempts, alternating between DexScreener's two token endpoints (they are rate-limited separately).
+// Successful answers are also cached at Cloudflare's edge for 10 minutes (the URL only contains public mints).
+async function dexFetch(mints) {
+  const list = mints.join(",");
+  const sources = [
+    [`https://api.dexscreener.com/tokens/v1/solana/${list}`, (j) => (Array.isArray(j) ? j : j?.pairs || [])],
+    [`https://api.dexscreener.com/latest/dex/tokens/${list}`, (j) => (j?.pairs || []).filter((p) => p?.chainId === "solana")]
+  ];
+  const opts = { headers: { Accept: "application/json" }, cf: { cacheEverything: true, cacheTtlByStatus: { "200-299": 600, "400-599": 0 } } };
+  let last = "unknown";
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const [url, parse] = sources[attempt % 2];
     try {
       const res = await fetch(url, opts);
-      if (res.ok) {
-        const json = await res.json();
-        return Array.isArray(json) ? json : json?.pairs || [];
-      }
-      lastError = new Error(`dexscreener ${res.status}`);
+      if (res.ok) return parse(await res.json());
+      last = `http ${res.status}`;
     } catch (e) {
-      lastError = e;
+      last = String((e && e.message) || "error").slice(0, 60);
     }
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }
-  throw lastError;
+  throw new Error(last);
 }
 
 async function dexPrices(mints) {
   const best = {};
   const batches = [];
   for (let i = 0; i < mints.length; i += DEX_BATCH) batches.push(mints.slice(i, i + DEX_BATCH));
-  const results = await Promise.allSettled(batches.map((b) => dexFetch(`https://api.dexscreener.com/tokens/v1/solana/${b.join(",")}`)));
-  let failed = false;
+  const results = await Promise.allSettled(batches.map((b) => dexFetch(b)));
+  let failed = null; // reason of the first failure, or null
   for (const r of results) {
-    if (r.status !== "fulfilled") { failed = true; continue; }
+    if (r.status !== "fulfilled") { failed = failed || (r.reason && r.reason.message) || "error"; continue; }
     for (const pair of r.value) {
       const mint = pair?.baseToken?.address; // priceUsd is the base token's price
       const price = Number(pair?.priceUsd);
@@ -199,10 +203,10 @@ async function solanaDexHoldings(tokens) {
     .map((t) => ({ t, amount: parseAmount(t.tokenBalance, Number(t.tokenMetadata.decimals)) }))
     .filter((c) => c.amount > 0)
     .slice(0, DEX_MAX_MINTS);
-  if (!candidates.length) return { holdings: [], failed: false };
+  if (!candidates.length) return { holdings: [], failed: null };
 
   const needDex = [...new Set(candidates.filter((c) => !SOL_STABLES.has(c.t.tokenAddress)).map((c) => c.t.tokenAddress))];
-  const { best, failed } = needDex.length ? await dexPrices(needDex) : { best: {}, failed: false };
+  const { best, failed } = needDex.length ? await dexPrices(needDex) : { best: {}, failed: null };
 
   const holdings = candidates.flatMap(({ t, amount }) => {
     const price = SOL_STABLES.has(t.tokenAddress) ? 1 : best[t.tokenAddress]?.price;
@@ -221,7 +225,7 @@ async function solanaWallet(env, address) {
   try {
     const extra = await solanaDexHoldings(tokens);
     holdings.push(...extra.holdings);
-    if (extra.failed) errors.push("dexscreener unavailable");
+    if (extra.failed) errors.push(`dexscreener unavailable: ${extra.failed}`);
   } catch {
     errors.push("dexscreener error");
   }
