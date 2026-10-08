@@ -6,6 +6,7 @@
 //   ALCHEMY_API_KEY     secret  free key from dashboard.alchemy.com (EVM + Solana balances and prices)
 //   TELEGRAM_BOT_TOKEN  secret  only used to verify Telegram initData, so only your Mini App can call this
 //   ALLOWED_ORIGIN      text    optional, defaults to https://ramofinance.github.io
+//   DEBUG_KEY           secret  OPTIONAL. Leave it unset normally; the diagnostic route below is inert without it.
 //
 // POST /portfolio   { wallets: [{ id, address }] }  (max 8 per request)
 //   -> { updatedAt, wallets: [{ id, status: "ok" | "soon" | "error", holdings: [{ chain, symbol, amount, usd }], errors? }] }
@@ -59,7 +60,7 @@ async function validInitData(initData, botToken) {
   const sig = await hmac(secret, enc.encode(data));
   const hex = [...sig].map((b) => b.toString(16).padStart(2, "0")).join("");
   const age = Date.now() / 1000 - Number(params.get("auth_date"));
-  return hex === hash && age < 86400;
+  return hex === hash && age >= 0 && age < 86400;
 }
 
 const parseAmount = (raw, decimals) => {
@@ -120,9 +121,95 @@ async function evmWallet(env, address) {
   return { status: errors.length === chunks.length ? "error" : "ok", holdings, errors };
 }
 
+// Alchemy gives no USD price for most SPL tokens (POLIS, ATLAS, ...). Only for those, ask DexScreener, and accept a
+// price only if the token has a real pool (liquidity >= $10k, the same bar the Radar uses). Airdrop spam has no pool,
+// so it stays hidden. Native SOL and everything Alchemy already priced never go through this path.
+const DEX_MIN_LIQUIDITY = 10000;
+const DEX_BATCH = 30;
+const DEX_MAX_MINTS = 60;
+// Stablecoin mints on Solana. DexScreener lists them almost only as the quote side of a pair, so they are priced at $1.
+const SOL_STABLES = new Set([
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
+  "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"  // USDT
+]);
+
+const hasUsdPrice = (t) =>
+  (t.tokenPrices || []).some((p) => String(p.currency).toLowerCase() === "usd" && Number(p.value) > 0);
+
+// One retry; successful answers are also cached at Cloudflare's edge for 2 minutes (the URL only contains public mints).
+async function dexFetch(url) {
+  const opts = { headers: { Accept: "application/json" }, cf: { cacheEverything: true, cacheTtlByStatus: { "200-299": 120, "400-599": 0 } } };
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const res = await fetch(url, opts);
+      if (res.ok) {
+        const json = await res.json();
+        return Array.isArray(json) ? json : json?.pairs || [];
+      }
+      lastError = new Error(`dexscreener ${res.status}`);
+    } catch (e) {
+      lastError = e;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw lastError;
+}
+
+async function dexPrices(mints) {
+  const best = {};
+  const batches = [];
+  for (let i = 0; i < mints.length; i += DEX_BATCH) batches.push(mints.slice(i, i + DEX_BATCH));
+  const results = await Promise.allSettled(batches.map((b) => dexFetch(`https://api.dexscreener.com/tokens/v1/solana/${b.join(",")}`)));
+  let failed = false;
+  for (const r of results) {
+    if (r.status !== "fulfilled") { failed = true; continue; }
+    for (const pair of r.value) {
+      const mint = pair?.baseToken?.address; // priceUsd is the base token's price
+      const price = Number(pair?.priceUsd);
+      const liquidity = Number(pair?.liquidity?.usd);
+      if (!mint || !(price > 0) || !(liquidity >= DEX_MIN_LIQUIDITY)) continue;
+      if (!best[mint] || liquidity > best[mint].liquidity) best[mint] = { price, liquidity };
+    }
+  }
+  return { best, failed };
+}
+
+// Alchemy gives no USD price for most SPL tokens (POLIS, ATLAS, ...). Only for those, ask DexScreener and accept a price
+// only if the token has a real pool (liquidity >= $10k, the bar the Radar uses). Airdrop spam has no pool, so it stays hidden.
+async function solanaDexHoldings(tokens) {
+  const candidates = tokens
+    .filter((t) => t.network === "solana-mainnet" && t.tokenAddress && !hasUsdPrice(t) && t.tokenMetadata?.decimals != null)
+    .map((t) => ({ t, amount: parseAmount(t.tokenBalance, Number(t.tokenMetadata.decimals)) }))
+    .filter((c) => c.amount > 0)
+    .slice(0, DEX_MAX_MINTS);
+  if (!candidates.length) return { holdings: [], failed: false };
+
+  const needDex = [...new Set(candidates.filter((c) => !SOL_STABLES.has(c.t.tokenAddress)).map((c) => c.t.tokenAddress))];
+  const { best, failed } = needDex.length ? await dexPrices(needDex) : { best: {}, failed: false };
+
+  const holdings = candidates.flatMap(({ t, amount }) => {
+    const price = SOL_STABLES.has(t.tokenAddress) ? 1 : best[t.tokenAddress]?.price;
+    const usd = price ? amount * price : 0;
+    return usd >= 0.01
+      ? [{ chain: "solana", symbol: String(t.tokenMetadata.symbol || "?").trim().slice(0, 12), amount, usd: Math.round(usd * 100) / 100 }]
+      : [];
+  });
+  return { holdings, failed };
+}
+
 async function solanaWallet(env, address) {
   const tokens = await alchemyTokens(env, address, ["solana-mainnet"]);
-  return { status: "ok", holdings: tokens.map(fromToken).filter(Boolean) };
+  const holdings = tokens.map(fromToken).filter(Boolean); // unchanged baseline
+  const errors = [];
+  try {
+    const extra = await solanaDexHoldings(tokens);
+    holdings.push(...extra.holdings);
+    if (extra.failed) errors.push("dexscreener unavailable");
+  } catch {
+    errors.push("dexscreener error");
+  }
+  return { status: "ok", holdings, errors };
 }
 
 async function bitcoinWallet(address, getPrices) {
@@ -156,6 +243,47 @@ async function tronWallet(address, getPrices) {
   return { status: "ok", holdings };
 }
 
+// Diagnostic: for every token Alchemy returns for a wallet, shows what Alchemy sent and whether our filter keeps it.
+async function debugTokens(env, address, groups) {
+  const out = { build: "reliability-v1", pages: [], lines: [] };
+  const mask = (t) => String(t).split(env.ALCHEMY_API_KEY).join("***").slice(0, 300);
+  for (const networks of groups) {
+    let pageKey;
+    for (let page = 1; page <= 3; page += 1) {
+      const res = await fetch(`https://api.g.alchemy.com/data/v1/${env.ALCHEMY_API_KEY}/assets/tokens/by-address`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          addresses: [{ address, networks }],
+          withMetadata: true, withPrices: true, includeNativeTokens: true, includeErc20Tokens: true,
+          ...(pageKey ? { pageKey } : {})
+        })
+      });
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { out.pages.push({ networks: networks.length, page, status: res.status, body: mask(text) }); break; }
+      if (!res.ok) { out.pages.push({ networks: networks.length, page, status: res.status, body: mask(text) }); break; }
+      const tokens = json?.data?.tokens ?? [];
+      out.pages.push({ networks: networks.length, page, status: res.status, tokens: tokens.length, nextPage: Boolean(json?.data?.pageKey) });
+      for (const t of tokens) {
+        const kept = fromToken(t);
+        const hasUsd = hasUsdPrice(t);
+        const meta = t.tokenMetadata || {};
+        out.lines.push(
+          `${kept ? "1" : "0"} | ${t.network} | ${meta.symbol ?? "(no symbol)"} | mint ${t.tokenAddress || "native"} | ` +
+          `balance ${t.tokenBalance} | decimals ${meta.decimals ?? "null"} | prices ${JSON.stringify(t.tokenPrices ?? null)} | ` +
+          `${kept ? "KEPT" : !hasUsd ? "DROPPED: no usd price" : "DROPPED: value below $0.01 or zero balance"}`
+        );
+      }
+      pageKey = json?.data?.pageKey;
+      if (!pageKey) break;
+    }
+  }
+  out.lines.sort(); // dropped tokens (0 |) first
+  out.lines = out.lines.slice(0, 80);
+  return out;
+}
+
 export default {
   async fetch(request, env) {
     const allowed = env.ALLOWED_ORIGIN || "https://ramofinance.github.io";
@@ -175,13 +303,21 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
     if (request.method !== "POST") return reply({ error: "method" }, 405);
     if (origin && origin !== allowed) return reply({ error: "origin" }, 403);
-    if (env.TELEGRAM_BOT_TOKEN && !(await validInitData(request.headers.get("X-Telegram-Init-Data"), env.TELEGRAM_BOT_TOKEN))) {
+    const debugAllowed = Boolean(env.DEBUG_KEY) && request.headers.get("X-Debug-Key") === env.DEBUG_KEY;
+    if (!debugAllowed && env.TELEGRAM_BOT_TOKEN && !(await validInitData(request.headers.get("X-Telegram-Init-Data"), env.TELEGRAM_BOT_TOKEN))) {
       return reply({ error: "auth" }, 401);
     }
     if (!env.ALCHEMY_API_KEY) return reply({ error: "not configured" }, 500);
 
     let body;
     try { body = await request.json(); } catch { return reply({ error: "json" }, 400); }
+    if (debugAllowed && body.debug === true) {
+      const first = String(body.wallets?.[0]?.address || "").trim();
+      const nets = Object.keys(EVM_NETWORKS);
+      const groups = family(first) === "evm" ? [nets.slice(0, 5), nets.slice(5)] : family(first) === "solana" ? [["solana-mainnet"]] : null;
+      if (!groups) return reply({ error: "debug needs an EVM or Solana address" }, 400);
+      try { return reply(await debugTokens(env, first, groups)); } catch (e) { return reply({ error: String(e && e.message).slice(0, 200) }, 500); }
+    }
     const list = (Array.isArray(body.wallets) ? body.wallets : []).slice(0, MAX_WALLETS);
 
     // BTC and TRX prices from the same Alchemy key, fetched at most once per request.
@@ -217,7 +353,7 @@ export default {
           : fam === "solana" ? await solanaWallet(env, address)
           : fam === "bitcoin" ? await bitcoinWallet(address, getPrices)
           : await tronWallet(address, getPrices);
-        if (result.status === "ok") {
+        if (result.status === "ok" && !(result.errors && result.errors.length)) {
           if (cache.size > 500) cache.clear();
           cache.set(key, { at: Date.now(), result });
         }

@@ -118,7 +118,8 @@ const sampleWallet = (w: StoredWallet): WalletSnapshot => {
   return { id: w.id, address: w.address, family, status: "ok", holdings };
 };
 
-const WORKER_BATCH = 8;
+// Small batches keep each Worker invocation light (free plan allows only 10 ms of CPU per request).
+const WORKER_BATCH = 3;
 
 const toSnapshot = (w: StoredWallet, r: any): WalletSnapshot => ({
   id: w.id,
