@@ -44,6 +44,7 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
   const [address, setAddress] = useState("");
   const [label, setLabel] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
 
   const refresh = useCallback(async (list: StoredWallet[]) => {
     if (!list.length) {
@@ -55,12 +56,14 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
       const fetched = await fetchPortfolio(list);
       // A failed lookup must not wipe balances we already have: keep the last good copy of that wallet.
       const previous = snapshotRef.current;
-      const next = {
-        ...fetched,
+      const next: PortfolioSnapshot = {
+        // If the whole request failed, do not pretend the saved data is fresh.
+        updatedAt: fetched.error && previous ? previous.updatedAt : fetched.updatedAt,
         wallets: fetched.wallets.map((w) =>
           w.status === "error" ? previous?.wallets.find((p) => p.id === w.id && p.status === "ok") ?? w : w
         )
       };
+      setRefreshError(fetched.error ?? (fetched.wallets.some((w) => w.status === "error") ? "wallet" : null));
       commit(next);
       void saveSnapshot(next);
     } catch {
@@ -177,6 +180,13 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
               ))}
             </div>
           </div>
+        ) : null}
+
+        {refreshError ? (
+          <p className="pf-error" role="status">
+            {refreshError === "401" ? pf.sessionExpired : pf.refreshFailed}
+            {refreshError !== "401" && refreshError !== "wallet" ? ` (${refreshError})` : ""}
+          </p>
         ) : null}
 
         {isSampleMode() && wallets.length > 0 ? <p className="pf-note pf-note--sample">{pf.sample}</p> : null}

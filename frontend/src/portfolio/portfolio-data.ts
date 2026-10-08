@@ -19,7 +19,8 @@ export type StoredWallet = { id: string; address: string; label: string };
 export type Holding = { chain: ChainId; symbol: string; amount: number; usd: number; change24h: number | null };
 // "soon" = network not live yet, "error" = the lookup failed (balances are not shown for either).
 export type WalletSnapshot = { id: string; address: string; family: Family; status: "ok" | "soon" | "error"; holdings: Holding[] };
-export type PortfolioSnapshot = { updatedAt: number; wallets: WalletSnapshot[] };
+// error: set only when a whole request to the Worker failed ("401", "500", ... or "network").
+export type PortfolioSnapshot = { updatedAt: number; wallets: WalletSnapshot[]; error?: string };
 
 // Sample numbers are shown until VITE_PORTFOLIO_API_URL points at the portfolio Worker.
 export const isSampleMode = () => !frontendEnv.portfolioApiUrl;
@@ -147,6 +148,7 @@ export const fetchPortfolio = async (wallets: StoredWallet[]): Promise<Portfolio
   const batches: StoredWallet[][] = [];
   for (let i = 0; i < wallets.length; i += WORKER_BATCH) batches.push(wallets.slice(i, i + WORKER_BATCH));
 
+  let firstError: string | undefined;
   const parts = await Promise.all(
     batches.map(async (batch) => {
       const controller = new AbortController();
@@ -161,14 +163,16 @@ export const fetchPortfolio = async (wallets: StoredWallet[]): Promise<Portfolio
         if (!res.ok) throw new Error(String(res.status));
         const data = await res.json();
         return batch.map((w) => toSnapshot(w, (data.wallets ?? []).find((x: any) => x.id === w.id)));
-      } catch {
+      } catch (e) {
+        const code = e instanceof Error ? e.message : "";
+        firstError = firstError ?? (/^\d{3}$/.test(code) ? code : "network");
         return batch.map((w) => toSnapshot(w, undefined));
       } finally {
         clearTimeout(timer);
       }
     })
   );
-  return { updatedAt: Date.now(), wallets: parts.flat() };
+  return { updatedAt: Date.now(), wallets: parts.flat(), error: firstError };
 };
 
 export const walletTotal = (w: WalletSnapshot) => w.holdings.reduce((sum, h) => sum + h.usd, 0);

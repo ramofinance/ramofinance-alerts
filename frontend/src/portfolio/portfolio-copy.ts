@@ -27,6 +27,8 @@ const en = {
   assets: "assets",
   soon: "Not available for this network yet",
   unavailable: "Couldn't load this wallet. Try Refresh.",
+  refreshFailed: "Couldn't refresh. Showing your last saved data.",
+  sessionExpired: "Your Telegram session expired. Close the Mini App completely and open it again.",
   privacy: "View-only. Your wallet list is kept in your Telegram account, not on our servers.",
   seedWarning: "Never enter a seed phrase or private key."
 };
@@ -58,6 +60,8 @@ const fa: typeof en = {
   assets: "دارایی",
   soon: "برای این شبکه هنوز در دسترس نیست",
   unavailable: "بارگذاری این کیف‌پول ممکن نشد. دوباره به‌روزرسانی کنید.",
+  refreshFailed: "به‌روزرسانی انجام نشد. آخرین داده‌ی ذخیره‌شده نمایش داده می‌شود.",
+  sessionExpired: "نشست تلگرام منقضی شده. مینی‌اپ را کامل ببندید و دوباره باز کنید.",
   privacy: "فقط مشاهده. لیست کیف‌پول‌ها در حساب تلگرام خودتان می‌ماند و روی سرورهای ما ذخیره نمی‌شود.",
   seedWarning: "هرگز seed phrase یا کلید خصوصی وارد نکنید."
 };
