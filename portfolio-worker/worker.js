@@ -72,21 +72,34 @@ const parseAmount = (raw, decimals) => {
   return Number(s) || 0; // plain decimal strings are treated as already decoded
 };
 
+// Alchemy returns at most 100 tokens per page and sends a pageKey when there are more. Wallets full of airdrop spam
+// (hundreds of junk tokens on Base, for example) push real tokens such as USDC onto later pages, so we follow pageKey.
+const MAX_PAGES = 5;
+
 async function alchemyTokens(env, address, networks) {
-  const res = await fetch(`https://api.g.alchemy.com/data/v1/${env.ALCHEMY_API_KEY}/assets/tokens/by-address`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({
-      addresses: [{ address, networks }],
-      withMetadata: true,
-      withPrices: true,
-      includeNativeTokens: true,
-      includeErc20Tokens: true
-    })
-  });
-  if (!res.ok) throw new Error(`alchemy ${res.status}`);
-  const json = await res.json();
-  return json?.data?.tokens ?? [];
+  const tokens = [];
+  let pageKey;
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const res = await fetch(`https://api.g.alchemy.com/data/v1/${env.ALCHEMY_API_KEY}/assets/tokens/by-address`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        addresses: [{ address, networks }],
+        withMetadata: true,
+        withPrices: true,
+        includeNativeTokens: true,
+        includeErc20Tokens: true,
+        ...(pageKey ? { pageKey } : {})
+      })
+    });
+    if (!res.ok) throw new Error(`alchemy ${res.status}`);
+    const json = await res.json();
+    tokens.push(...(json?.data?.tokens ?? []));
+    pageKey = json?.data?.pageKey;
+    if (!pageKey) return tokens;
+  }
+  tokens.truncated = true; // more pages exist than we are willing to read
+  return tokens;
 }
 
 function fromToken(t) {
@@ -114,16 +127,19 @@ async function evmWallet(env, address) {
   const results = await Promise.allSettled(chunks.map((c) => alchemyTokens(env, address, c)));
   const holdings = [];
   const errors = [];
+  let failed = 0;
   results.forEach((r, i) => {
-    if (r.status === "fulfilled") r.value.forEach((t) => { const h = fromToken(t); if (h) holdings.push(h); });
-    else errors.push(`evm group ${i + 1}: ${r.reason && r.reason.message}`);
+    if (r.status === "fulfilled") {
+      r.value.forEach((t) => { const h = fromToken(t); if (h) holdings.push(h); });
+      if (r.value.truncated) errors.push(`evm group ${i + 1}: token list cut at ${MAX_PAGES * 100}`);
+    } else {
+      failed += 1;
+      errors.push(`evm group ${i + 1}: ${r.reason && r.reason.message}`);
+    }
   });
-  return { status: errors.length === chunks.length ? "error" : "ok", holdings, errors };
+  return { status: failed === chunks.length ? "error" : "ok", holdings, errors };
 }
 
-// Alchemy gives no USD price for most SPL tokens (POLIS, ATLAS, ...). Only for those, ask DexScreener, and accept a
-// price only if the token has a real pool (liquidity >= $10k, the same bar the Radar uses). Airdrop spam has no pool,
-// so it stays hidden. Native SOL and everything Alchemy already priced never go through this path.
 const DEX_MIN_LIQUIDITY = 10000;
 const DEX_BATCH = 30;
 const DEX_MAX_MINTS = 60;
@@ -245,7 +261,7 @@ async function tronWallet(address, getPrices) {
 
 // Diagnostic: for every token Alchemy returns for a wallet, shows what Alchemy sent and whether our filter keeps it.
 async function debugTokens(env, address, groups) {
-  const out = { build: "reliability-v1", pages: [], lines: [] };
+  const out = { build: "pagination-v1", pages: [], lines: [] };
   const mask = (t) => String(t).split(env.ALCHEMY_API_KEY).join("***").slice(0, 300);
   for (const networks of groups) {
     let pageKey;
@@ -279,9 +295,9 @@ async function debugTokens(env, address, groups) {
       if (!pageKey) break;
     }
   }
-  out.lines.sort(); // dropped tokens (0 |) first
-  out.lines = out.lines.slice(0, 80);
-  return out;
+  const kept = out.lines.filter((l) => l.startsWith("1")).sort();
+  const dropped = out.lines.filter((l) => l.startsWith("0")).sort();
+  return { build: out.build, pages: out.pages, kept, droppedTotal: dropped.length, dropped: dropped.slice(0, 40) };
 }
 
 export default {
