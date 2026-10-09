@@ -45,8 +45,13 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
   const [label, setLabel] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const retryTimer = useRef<number | undefined>(undefined);
+  const retried = useRef(false);
+  const refreshRef = useRef<((list: StoredWallet[], auto?: boolean) => Promise<void>) | null>(null);
 
-  const refresh = useCallback(async (list: StoredWallet[]) => {
+  const refresh = useCallback(async (list: StoredWallet[], auto = false) => {
+    window.clearTimeout(retryTimer.current);
+    if (!auto) retried.current = false;
     if (!list.length) {
       commit(null);
       return;
@@ -59,19 +64,32 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
       const next: PortfolioSnapshot = {
         // If the whole request failed, do not pretend the saved data is fresh.
         updatedAt: fetched.error && previous ? previous.updatedAt : fetched.updatedAt,
-        wallets: fetched.wallets.map((w) =>
-          w.status === "error" ? previous?.wallets.find((p) => p.id === w.id && p.status === "ok") ?? w : w
-        )
+        wallets: fetched.wallets.map((w) => {
+          const prev = previous?.wallets.find((p) => p.id === w.id && p.status === "ok");
+          if (w.status === "error") return prev ?? w;
+          if (w.partial && prev) {
+            // A price source was down: keep tokens we already knew about instead of letting them vanish.
+            const have = new Set(w.holdings.map((h) => `${h.chain}:${h.symbol}`));
+            return { ...w, holdings: [...w.holdings, ...prev.holdings.filter((h) => !have.has(`${h.chain}:${h.symbol}`))] };
+          }
+          return w;
+        })
       };
       setRefreshError(fetched.error ?? (fetched.wallets.some((w) => w.status === "error") ? "wallet" : null));
       commit(next);
       void saveSnapshot(next);
+      // Price-source hiccups are usually short: retry once automatically.
+      if (next.wallets.some((w) => w.partial) && !retried.current) {
+        retried.current = true;
+        retryTimer.current = window.setTimeout(() => { void refreshRef.current?.(list, true); }, 4000);
+      }
     } catch {
       // keep showing the last snapshot
     } finally {
       setLoading(false);
     }
   }, [commit]);
+  refreshRef.current = refresh;
 
   // Data is requested only when the user enters the service.
   useEffect(() => {
@@ -85,7 +103,7 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
       if (!cancelled && cached) commit(cached);
       if (!cancelled) await refresh(list);
     })();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; window.clearTimeout(retryTimer.current); };
   }, [refresh, commit]);
 
   const live = useMemo(
@@ -189,7 +207,11 @@ export function PortfolioPanel({ copy, pf, onBack }: Props) {
           </p>
         ) : null}
 
-        {live.some((w) => w.partial) ? <p className="pf-note pf-note--sample">{pf.partial}</p> : null}
+        {live.some((w) => w.partial) ? (
+          <p className="pf-note pf-note--sample">
+            {pf.partial}{live.find((w) => w.partialReason)?.partialReason ? ` (${live.find((w) => w.partialReason)?.partialReason})` : ""}
+          </p>
+        ) : null}
 
         {isSampleMode() && wallets.length > 0 ? <p className="pf-note pf-note--sample">{pf.sample}</p> : null}
 
