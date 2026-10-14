@@ -30,7 +30,9 @@ import { ServicesPanel } from "./components/ServicesPanel";
 import { CryptoFlowPanel } from "./components/CryptoFlowPanel";
 import { RadarPanel } from "./components/RadarPanel";
 import { PortfolioPanel } from "./components/PortfolioPanel";
+import { GiftCardPanel } from "./components/GiftCardPanel";
 import { getPortfolioCopy } from "./portfolio/portfolio-copy";
+import { getGiftCardCopy } from "./giftcard/giftcard-copy";
 import { getRadarStatus } from "./api/radar";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp, useTelegramBackButton } from "./services/telegram-mini-app";
@@ -44,7 +46,7 @@ import type {
 } from "./types/api";
 
 export default function App() {
-  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR" | "PORTFOLIO";
+  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR" | "PORTFOLIO" | "GIFTCARD";
   const initialService = new URLSearchParams(window.location.search).get("service");
   const startsInAlerts = initialService === "alerts";
   const startsInRadar = initialService === "radar";
@@ -125,7 +127,7 @@ export default function App() {
   const appDirection = getAppDirection(appLanguage);
 
   useEffect(() => useTelegramBackButton(
-    activeTab === "CRYPTOFLOW" || activeTab === "RADAR" || activeTab === "PORTFOLIO" || activeModule === "alerts",
+    activeTab === "CRYPTOFLOW" || activeTab === "RADAR" || activeTab === "PORTFOLIO" || activeTab === "GIFTCARD" || activeModule === "alerts",
     () => {
       setActiveModule("hub");
       setActiveTab("SERVICES");
@@ -146,6 +148,13 @@ export default function App() {
     const url = new URL(frontendEnv.cryptoFlowUrl);
     url.searchParams.set("embed", "ramo-finance");
     url.searchParams.set("lang", appLanguage.toLowerCase());
+    return url.toString();
+  })();
+
+  const giftCardFrameUrl = (() => {
+    if (!frontendEnv.giftCardUrl) return "";
+    const url = new URL(frontendEnv.giftCardUrl);
+    url.searchParams.set("embed", "ramo-finance");
     return url.toString();
   })();
 
@@ -488,7 +497,7 @@ export default function App() {
     <main className="app-shell" dir={appDirection}>
         <SplashScreen visible={splashVisible} />
 
-      {activeTab !== "CRYPTOFLOW" && activeTab !== "RADAR" && activeTab !== "PORTFOLIO" ? (
+      {activeTab !== "CRYPTOFLOW" && activeTab !== "RADAR" && activeTab !== "PORTFOLIO" && activeTab !== "GIFTCARD" ? (
         <BottomTabs
           activeTab={activeTab}
           setActiveTab={(tab) => tab === "SERVICES" ? openServices() : setActiveTab(tab)}
@@ -504,6 +513,9 @@ export default function App() {
           openRadar={() => setActiveTab("RADAR")}
           openPortfolio={() => setActiveTab("PORTFOLIO")}
           portfolioCopy={getPortfolioCopy(appLanguage)}
+          openGiftCard={() => setActiveTab("GIFTCARD")}
+          giftCardCopy={getGiftCardCopy(appLanguage)}
+          giftCardEnabled={Boolean(giftCardFrameUrl)}
           radarEnabled={hasRadarAccess}
           initData={telegramMiniApp.initData}
         />
@@ -519,6 +531,16 @@ export default function App() {
         <PortfolioPanel
           copy={copy}
           pf={getPortfolioCopy(appLanguage)}
+          onBack={openServices}
+        />
+      ) : null}
+      {activeTab === "GIFTCARD" && giftCardFrameUrl ? (
+        <GiftCardPanel
+          copy={copy}
+          title={getGiftCardCopy(appLanguage).cardTitle}
+          src={giftCardFrameUrl}
+          initData={telegramMiniApp.initData}
+          language={appLanguage.toLowerCase()}
           onBack={openServices}
         />
       ) : null}

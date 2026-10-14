@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getRadarSignals } from "../api/radar";
 import cryptoFlowLogo from "../assets/cryptoflow-logo.png";
+import "../styles/giftcard.css";
 
 type Props = {
   copy: any;
@@ -9,6 +10,9 @@ type Props = {
   openRadar: () => void;
   openPortfolio: () => void;
   portfolioCopy: { cardTitle: string; cardDescription: string };
+  openGiftCard: () => void;
+  giftCardCopy: { cardTitle: string; cardDescription: string };
+  giftCardEnabled: boolean;
   radarEnabled: boolean;
   initData?: string;
 };
@@ -19,7 +23,7 @@ const cleanSymbol = (symbol: string) => symbol.endsWith("USDT") ? symbol.replace
 // here would never fire. Flip this to true to show the card again once polling is back on.
 const SHOW_PRICE_ALERTS = false;
 
-export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, openPortfolio, portfolioCopy, radarEnabled, initData }: Props) {
+export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, openPortfolio, portfolioCopy, openGiftCard, giftCardCopy, giftCardEnabled, radarEnabled, initData }: Props) {
   const [radarPreview, setRadarPreview] = useState<string[]>([]);
 
   useEffect(() => {
@@ -91,6 +95,19 @@ export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, ope
             <span>{portfolioCopy.cardDescription}</span>
           </div>
         </button>
+
+        {giftCardEnabled ? (
+          <button className="service-card service-card--giftcard" type="button" onClick={openGiftCard}>
+            <div className="service-card__header">
+              <span className="service-card__icon-sm" aria-hidden="true">🎁</span>
+              <strong>{giftCardCopy.cardTitle}</strong>
+              <span className="service-card__action">{copy.openService}</span>
+            </div>
+            <div className="service-card__preview service-card__preview--muted">
+              <span>{giftCardCopy.cardDescription}</span>
+            </div>
+          </button>
+        ) : null}
 
         {SHOW_PRICE_ALERTS ? (
           <button

@@ -1,0 +1,36 @@
+import type { PreferredLanguage } from "../types/api";
+
+const en = {
+  cardTitle: "Gift Cards",
+  cardDescription: "Send a crypto gift card on Telegram. Small service fee."
+};
+
+const fa: typeof en = {
+  cardTitle: "کارت هدیه",
+  cardDescription: "یک کارت هدیه‌ی کریپتو در تلگرام بفرستید. با کارمزد کم."
+};
+
+const ar: typeof en = {
+  cardTitle: "بطاقات الهدايا",
+  cardDescription: "أرسل بطاقة هدية بالعملات الرقمية عبر تيليجرام. برسوم خدمة صغيرة."
+};
+
+const es: typeof en = {
+  cardTitle: "Tarjetas de regalo",
+  cardDescription: "Envía una tarjeta de regalo cripto por Telegram. Con una pequeña comisión."
+};
+
+const zh: typeof en = {
+  cardTitle: "礼品卡",
+  cardDescription: "通过 Telegram 发送加密礼品卡，仅收取少量服务费。"
+};
+
+export type GiftCardCopy = typeof en;
+
+export const getGiftCardCopy = (language: PreferredLanguage | null): GiftCardCopy => {
+  if (language === "FA") return fa;
+  if (language === "AR") return ar;
+  if (language === "ES") return es;
+  if (language === "ZH") return zh;
+  return en;
+};
