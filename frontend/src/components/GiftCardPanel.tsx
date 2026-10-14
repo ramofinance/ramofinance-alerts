@@ -11,6 +11,7 @@ type Props = {
 
 // The gift card site lives on its own origin (like CryptoFlow), so its saved data can never be read by this app.
 // It cannot see our Telegram session, so once it says it is ready we hand it the login data, to that exact origin only.
+// It can also ask us to open its own address in the phone's browser (useful when a wallet app cannot be opened from inside Telegram).
 export function GiftCardPanel({ copy, title, src, initData, language, onBack }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
 
@@ -25,11 +26,27 @@ export function GiftCardPanel({ copy, title, src, initData, language, onBack }: 
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== frameOrigin) return;
       if (event.source !== frameRef.current?.contentWindow) return;
-      if (event.data?.type !== "ramo-gift:ready") return;
-      frameRef.current?.contentWindow?.postMessage(
-        { type: "ramo-gift:init", initData: initData ?? "", language },
-        frameOrigin
-      );
+      const type = event.data?.type;
+
+      if (type === "ramo-gift:ready") {
+        frameRef.current?.contentWindow?.postMessage(
+          { type: "ramo-gift:init", initData: initData ?? "", language },
+          frameOrigin
+        );
+        return;
+      }
+
+      if (type === "ramo-gift:open-link") {
+        try {
+          const url = new URL(String(event.data.url));
+          if (url.origin !== frameOrigin) return;
+          const webApp = (window as any).Telegram?.WebApp;
+          if (webApp?.openLink) webApp.openLink(url.toString());
+          else window.open(url.toString(), "_blank", "noopener");
+        } catch {
+          // ignore malformed links
+        }
+      }
     };
 
     window.addEventListener("message", onMessage);

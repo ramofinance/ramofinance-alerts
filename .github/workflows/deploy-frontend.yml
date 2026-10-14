@@ -40,7 +40,7 @@ jobs:
           # Paste the Cloudflare Worker URL here to turn on live portfolio balances (empty = sample preview)
           VITE_PORTFOLIO_API_URL: 'https://ramo-portfolio.rahbarmohsen87.workers.dev'
           # Gift Cards: paste the https URL of the separate gift card site here (it must NOT be on ramofinance.github.io). Empty = the service stays hidden.
-          VITE_GIFTCARD_URL: ''
+          VITE_GIFTCARD_URL: 'https://ramo-giftcard.pages.dev/'
         run: npm run build -w frontend
 
       - name: Setup Pages
