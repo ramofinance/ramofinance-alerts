@@ -33,6 +33,7 @@ import { PortfolioPanel } from "./components/PortfolioPanel";
 import { GiftCardPanel } from "./components/GiftCardPanel";
 import { getPortfolioCopy } from "./portfolio/portfolio-copy";
 import { getGiftCardCopy } from "./giftcard/giftcard-copy";
+import { getRadarLockedNote } from "./i18n/radar-lock-copy";
 import { getRadarStatus } from "./api/radar";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp, useTelegramBackButton } from "./services/telegram-mini-app";
@@ -510,13 +511,15 @@ export default function App() {
           copy={copy}
           openCryptoFlow={() => setActiveTab("CRYPTOFLOW")}
           openAlerts={openAlertsService}
-          openRadar={() => setActiveTab("RADAR")}
+          openRadar={() => { if (hasRadarAccess) setActiveTab("RADAR"); }}
           openPortfolio={() => setActiveTab("PORTFOLIO")}
           portfolioCopy={getPortfolioCopy(appLanguage)}
           openGiftCard={() => setActiveTab("GIFTCARD")}
           giftCardCopy={getGiftCardCopy(appLanguage)}
           giftCardEnabled={Boolean(giftCardFrameUrl)}
           radarEnabled={hasRadarAccess}
+          radarAccessKnown={Boolean(backendUser)}
+          radarLockedNote={getRadarLockedNote(appLanguage)}
           initData={telegramMiniApp.initData}
         />
       ) : null}
