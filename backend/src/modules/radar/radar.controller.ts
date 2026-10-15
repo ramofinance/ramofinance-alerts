@@ -2,6 +2,7 @@ import { UserRole } from "@prisma/client";
 import type { RequestHandler } from "express";
 import { z } from "zod";
 import { AppError } from "../../utils/app-error";
+import { radarReferralService } from "./radar-referral.service";
 import { radarService, runRadarScan } from "./radar.service";
 
 const zeroable = (max = 10_000_000_000_000) => z.number().min(0).max(max);
@@ -70,4 +71,23 @@ export const radarTestController: RequestHandler = async (_req, res, next) => {
 
 export const radarScanController: RequestHandler = async (_req, res, next) => {
   try { res.json({ success: true, data: await runRadarScan() }); } catch (error) { next(error); }
+};
+
+// Progress of the "invite people to the channel" unlock. GET only reads; POST also creates the personal link once.
+export const radarReferralController: RequestHandler = async (_req, res, next) => {
+  try {
+    const user = res.locals.authUser;
+    const progress = await radarReferralService.progress(user.id);
+    res.json({ success: true, data: { ...progress, unlocked: radarService.status(user).enabled } });
+  } catch (error) { next(error); }
+};
+
+export const radarReferralLinkController: RequestHandler = async (_req, res, next) => {
+  try {
+    const user = res.locals.authUser;
+    const unlocked = radarService.status(user).enabled;
+    if (!unlocked) await radarReferralService.ensureLink(user);
+    const progress = await radarReferralService.progress(user.id);
+    res.json({ success: true, data: { ...progress, unlocked } });
+  } catch (error) { next(error); }
 };

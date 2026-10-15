@@ -1,0 +1,13 @@
+.radar-unlock{flex:1 1 auto;overflow:auto;padding:22px 18px calc(28px + env(safe-area-inset-bottom));display:grid;align-content:start;gap:16px;color:#eef7ff}
+.radar-unlock h2{margin:0;font-size:24px}
+.radar-unlock p{margin:0;color:#a8b7ca;line-height:1.8;font-size:14px}
+.radar-unlock__count{font-size:18px;font-weight:900;color:#fbbf24}
+.radar-unlock__bar{height:12px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden}
+.radar-unlock__bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#f59e0b,#fbbf24);transition:width .3s}
+.radar-unlock__label{font-size:12px;color:#8697ac}
+.radar-unlock__link{width:100%;padding:12px;border-radius:14px;border:1px solid rgba(148,163,184,.3);background:rgba(255,255,255,.06);color:#e2e8f0;font:inherit;font-size:13px;direction:ltr;text-align:left}
+.radar-unlock__row{display:flex;flex-wrap:wrap;gap:10px}
+.radar-unlock__btn{flex:1 1 140px;padding:13px 16px;border-radius:14px;border:1px solid rgba(89,177,235,.35);background:rgba(17,61,91,.6);color:#72c7ff;font:inherit;font-weight:800;cursor:pointer}
+.radar-unlock__btn--primary{background:linear-gradient(135deg,#f59e0b,#d97706);border-color:transparent;color:#1b1204}
+.radar-unlock__ok{color:#6ee7b7;font-size:13px}
+.radar-unlock__error{color:#fca5a5;font-size:13px}

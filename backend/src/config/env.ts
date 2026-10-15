@@ -47,7 +47,9 @@ const envSchema = z.object({
   RADAR_SIGNAL_THRESHOLD: z.coerce.number().int().min(50).max(100).default(60),
   WHALE_ALERT_API_KEY: z.preprocess((value) => typeof value === "string" && !value.trim() ? undefined : value, z.string().min(1).optional()),
   COINGECKO_API_KEY: z.preprocess((value) => typeof value === "string" && !value.trim() ? undefined : value, z.string().min(1).optional()),
-  RADAR_WHALE_ALERT_MIN_USD: z.coerce.number().positive().default(1000000)
+  RADAR_WHALE_ALERT_MIN_USD: z.coerce.number().positive().default(1000000),
+  RADAR_REFERRAL_CHANNEL: z.string().default("@salamexchange"),
+  RADAR_REFERRAL_REQUIRED: z.coerce.number().int().min(1).max(1000).default(10)
 }).superRefine((values, context) => {
   if (values.NODE_ENV !== "production") {
     return;

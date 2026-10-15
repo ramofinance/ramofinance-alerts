@@ -16,7 +16,8 @@ type Props = {
   giftCardEnabled: boolean;
   radarEnabled: boolean;
   radarAccessKnown: boolean;
-  radarLockedNote: string;
+  openRadarUnlock: () => void;
+  radarUnlockHint: string;
   initData?: string;
 };
 
@@ -26,15 +27,8 @@ const cleanSymbol = (symbol: string) => symbol.endsWith("USDT") ? symbol.replace
 // here would never fire. Flip this to true to show the card again once polling is back on.
 const SHOW_PRICE_ALERTS = false;
 
-export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, openPortfolio, portfolioCopy, openGiftCard, giftCardCopy, giftCardEnabled, radarEnabled, radarAccessKnown, radarLockedNote, initData }: Props) {
+export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, openPortfolio, portfolioCopy, openGiftCard, giftCardCopy, giftCardEnabled, radarEnabled, radarAccessKnown, openRadarUnlock, radarUnlockHint, initData }: Props) {
   const [radarPreview, setRadarPreview] = useState<string[]>([]);
-  const [lockedNoteVisible, setLockedNoteVisible] = useState(false);
-
-  useEffect(() => {
-    if (!lockedNoteVisible) return undefined;
-    const timer = window.setTimeout(() => setLockedNoteVisible(false), 3000);
-    return () => window.clearTimeout(timer);
-  }, [lockedNoteVisible]);
 
   useEffect(() => {
     if (!radarEnabled) { setRadarPreview([]); return; }
@@ -98,7 +92,7 @@ export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, ope
           <button
             className="service-card service-card--radar service-card--locked"
             type="button"
-            onClick={() => { if (radarAccessKnown) setLockedNoteVisible(true); }}
+            onClick={() => { if (radarAccessKnown) openRadarUnlock(); }}
           >
             <div className="service-card__header">
               <span className="service-card__icon-sm" aria-hidden="true">🔎</span>
@@ -106,9 +100,7 @@ export function ServicesPanel({ copy, openCryptoFlow, openAlerts, openRadar, ope
               {radarAccessKnown ? <span className="service-card__lock" aria-hidden="true">🔒</span> : null}
             </div>
             <div className="service-card__preview service-card__preview--muted">
-              <span className={lockedNoteVisible ? "service-card__locked-note" : undefined} aria-live="polite">
-                {lockedNoteVisible ? radarLockedNote : copy.radarServiceDescription}
-              </span>
+              <span>{radarAccessKnown ? radarUnlockHint : copy.radarServiceDescription}</span>
             </div>
           </button>
         )}

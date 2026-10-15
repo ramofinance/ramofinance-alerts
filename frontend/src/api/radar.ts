@@ -50,3 +50,22 @@ export const runRadarScan = (initData?: string) =>
     {},
     telegramOptions(initData)
   );
+
+export type RadarReferral = {
+  required: number;
+  joined: number;
+  unlocked: boolean;
+  link: string | null;
+  channelUrl: string | null;
+};
+
+export const getRadarReferral = (initData?: string) =>
+  apiGet<RadarReferral>("/api/radar/referral", telegramOptions(initData));
+
+// Creates the person's own invite link on first use, then returns the same progress shape.
+export const createRadarReferralLink = (initData?: string) =>
+  apiPost<RadarReferral, Record<string, never>>(
+    "/api/radar/referral/link",
+    {},
+    telegramOptions(initData)
+  );

@@ -33,7 +33,8 @@ import { PortfolioPanel } from "./components/PortfolioPanel";
 import { GiftCardPanel } from "./components/GiftCardPanel";
 import { getPortfolioCopy } from "./portfolio/portfolio-copy";
 import { getGiftCardCopy } from "./giftcard/giftcard-copy";
-import { getRadarLockedNote } from "./i18n/radar-lock-copy";
+import { RadarUnlockPanel } from "./components/RadarUnlockPanel";
+import { getRadarReferralCopy } from "./radar/referral-copy";
 import { getRadarStatus } from "./api/radar";
 import { getAppCopy, getAppDirection } from "./i18n/app-copy";
 import { initializeTelegramMiniApp, useTelegramBackButton } from "./services/telegram-mini-app";
@@ -47,7 +48,7 @@ import type {
 } from "./types/api";
 
 export default function App() {
-  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR" | "PORTFOLIO" | "GIFTCARD";
+  type TabKey = "SERVICES" | "HOME" | "CHART" | "ALERTS" | "SETTINGS" | "CRYPTOFLOW" | "RADAR" | "PORTFOLIO" | "GIFTCARD" | "RADARUNLOCK";
   const initialService = new URLSearchParams(window.location.search).get("service");
   const startsInAlerts = initialService === "alerts";
   const startsInRadar = initialService === "radar";
@@ -128,7 +129,7 @@ export default function App() {
   const appDirection = getAppDirection(appLanguage);
 
   useEffect(() => useTelegramBackButton(
-    activeTab === "CRYPTOFLOW" || activeTab === "RADAR" || activeTab === "PORTFOLIO" || activeTab === "GIFTCARD" || activeModule === "alerts",
+    activeTab === "CRYPTOFLOW" || activeTab === "RADAR" || activeTab === "PORTFOLIO" || activeTab === "GIFTCARD" || activeTab === "RADARUNLOCK" || activeModule === "alerts",
     () => {
       setActiveModule("hub");
       setActiveTab("SERVICES");
@@ -498,7 +499,7 @@ export default function App() {
     <main className="app-shell" dir={appDirection}>
         <SplashScreen visible={splashVisible} />
 
-      {activeTab !== "CRYPTOFLOW" && activeTab !== "RADAR" && activeTab !== "PORTFOLIO" && activeTab !== "GIFTCARD" ? (
+      {activeTab !== "CRYPTOFLOW" && activeTab !== "RADAR" && activeTab !== "PORTFOLIO" && activeTab !== "GIFTCARD" && activeTab !== "RADARUNLOCK" ? (
         <BottomTabs
           activeTab={activeTab}
           setActiveTab={(tab) => tab === "SERVICES" ? openServices() : setActiveTab(tab)}
@@ -519,7 +520,8 @@ export default function App() {
           giftCardEnabled={Boolean(giftCardFrameUrl)}
           radarEnabled={hasRadarAccess}
           radarAccessKnown={Boolean(backendUser)}
-          radarLockedNote={getRadarLockedNote(appLanguage)}
+          openRadarUnlock={() => setActiveTab("RADARUNLOCK")}
+          radarUnlockHint={getRadarReferralCopy(appLanguage).cardHint}
           initData={telegramMiniApp.initData}
         />
       ) : null}
@@ -545,6 +547,20 @@ export default function App() {
           initData={telegramMiniApp.initData}
           language={appLanguage.toLowerCase()}
           onBack={openServices}
+        />
+      ) : null}
+      {activeTab === "RADARUNLOCK" ? (
+        <RadarUnlockPanel
+          copy={copy}
+          referralCopy={getRadarReferralCopy(appLanguage)}
+          initData={telegramMiniApp.initData}
+          dir={appDirection}
+          onBack={openServices}
+          onOpenRadar={() => setActiveTab("RADAR")}
+          onUnlocked={() => {
+            setRadarEnabled(true);
+            setBackendUser((current) => (current ? { ...current, radarPreviewAccess: true } : current));
+          }}
         />
       ) : null}
       {activeTab === "RADAR" && backendUser ? (

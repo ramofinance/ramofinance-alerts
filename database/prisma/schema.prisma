@@ -358,3 +358,22 @@ model Subscription {
   @@index([userId])
   @@index([status])
 }
+
+// Radar unlock by inviting people to the community channel: one personal invite link per user.
+model RadarReferralLink {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  inviteLink String   @unique
+  createdAt  DateTime @default(now())
+}
+
+// A person counts once, ever, for the first inviter whose link they used.
+model RadarReferralJoin {
+  id                String    @id @default(uuid())
+  inviterUserId     String
+  invitedTelegramId String    @unique
+  joinedAt          DateTime  @default(now())
+  leftAt            DateTime?
+
+  @@index([inviterUserId, leftAt])
+}

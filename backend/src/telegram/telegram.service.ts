@@ -13,9 +13,15 @@ import { upsertTelegramUserContext } from "./telegram-user-context";
 import { handleAdminTextCommand } from "./telegram-admin-access";
 import { radarAccessService } from "../modules/radar/radar-access.service";
 import { radarService } from "../modules/radar/radar.service";
+import { radarReferralService } from "../modules/radar/radar-referral.service";
 
 export const telegramService = {
   async processUpdate(update: TelegramUpdate) {
+    // Someone joined or left the community channel (used for the Radar invite unlock).
+    if (update.chat_member) {
+      return radarReferralService.handleChatMember(update.chat_member);
+    }
+
     const callbackQuery = update.callback_query;
 
     if (callbackQuery?.from) {
