@@ -1,4 +1,5 @@
 import { TelegramNotificationStatus } from "@prisma/client";
+import { env } from "../../config/env";
 import { prisma } from "../../database/prisma";
 import { sendTelegramMessage } from "../../telegram/telegram-api";
 import { logger } from "../../utils/logger";
@@ -201,6 +202,13 @@ export const processDueTelegramAlertNotifications = async () => {
 
 export const startTelegramAlertNotificationWorker = () => {
   if (workerTimer) {
+    return;
+  }
+
+  // Price alerts are the only thing that schedules these notifications. While they are off there is nothing to send,
+  // and querying the database every 5 seconds would keep the free Neon database awake around the clock.
+  if (!env.PRICE_POLLING_ENABLED) {
+    logger.info("Telegram alert notification worker not started because price alerts are off");
     return;
   }
 
